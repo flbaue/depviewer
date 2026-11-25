@@ -1,7 +1,7 @@
 #!/bin/sh
 # Checks for depviewer. Run from anywhere: scripts/check.sh
 #
-#  1. DepScan.java compiles warning-free (javac -Xlint:all -Werror)
+#  1. the scanner (src/depviewer) compiles warning-free (javac -Xlint:all -Werror)
 #  2. scanning test/fixture produces the expected model (test/check_model.py)
 #  3. the generated HTML has its data and views embedded
 #  4. the viewer script parses (node --check), if node is installed
@@ -19,7 +19,7 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 step() { printf '\n== %s\n' "$*"; }
 
 step "compile scanner"
-javac -Xlint:all -Werror -d "$OUT/classes" DepScan.java
+javac -Xlint:all -Werror -d "$OUT/classes" src/depviewer/*.java
 echo ok
 
 step "template markers"

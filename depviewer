@@ -1,5 +1,15 @@
 #!/bin/sh
-# Scan a Java project and write a self-contained dependency viewer (deps.html).
+# Scan projects and write a self-contained dependency viewer (deps.html).
 # Usage: depviewer [options] <project-dir>...   (see --help)
+#
+# Compiles src/ with javac on first use (and whenever a source changed) into build/depviewer-classes.
+set -e
 DIR="$(cd "$(dirname "$0")" && pwd)"
-exec java "$DIR/DepScan.java" --template "$DIR/viewer.html" "$@"
+CLASSES="$DIR/build/depviewer-classes"
+STAMP="$CLASSES/.stamp"
+if [ ! -f "$STAMP" ] || [ -n "$(find "$DIR/src" -name '*.java' -newer "$STAMP" | head -1)" ]; then
+  mkdir -p "$CLASSES"
+  javac -nowarn -d "$CLASSES" "$DIR"/src/depviewer/*.java >&2
+  touch "$STAMP"
+fi
+DEPVIEWER_HOME="$DIR" exec java -cp "$CLASSES" depviewer.DepScan --template "$DIR/viewer.html" "$@"

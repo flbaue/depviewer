@@ -25,7 +25,7 @@ open deps.html
 To try it without a project of your own, run `scripts/check.sh` and open `build/fixture.html`.
 That's a small Java + Kotlin example with a deliberate package cycle and a "Layers" view.
 
-- **DepScan.java** scans the sources. It finds `src/{main,test}/{java,kotlin}` folders
+- **The scanner** (`src/depviewer/`, compiled by the `depviewer` script on first use) scans the sources. It finds `src/{main,test}/{java,kotlin}` folders
   (Maven/Gradle layout) and names modules after their `artifactId`. Needs JDK 17+, no other
   dependencies.
   - **Java** is parsed and attributed by the JDK compiler (`javac` Trees API), so references are

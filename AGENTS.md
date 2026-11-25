@@ -12,7 +12,7 @@ no frameworks** — a JDK 17+ and a browser are all a user needs.
 
 | File | Role |
 |---|---|
-| `DepScan.java` | Scanner. Single-file Java program run via the source launcher (`java DepScan.java`). Java: uses the `javac` Trees API to parse *and attribute* the sources, so every reference is resolved exactly. Kotlin: a built-in lexer/declaration parser with name-based resolution (no Kotlin compiler) — see `docs/specs/kotlin-support.md`. Emits JSON, or embeds it into the viewer template. |
+| `src/depviewer/` | Scanner (Java 17, JDK only, package `depviewer`). `DepScan` = CLI, source discovery, orchestration, output; `Model` = nodes/edges/packages/externals/JSON writer shared by all languages; `JavaScanner` = javac Trees API (parses *and attributes*, exact); `KotlinScanner` = built-in lexer/parser, name-based resolution (`docs/specs/kotlin-support.md`). The `depviewer` wrapper compiles it into `build/depviewer-classes` on first use. Without the wrapper: `javac -d out src/depviewer/*.java && java -cp out depviewer.DepScan …`. |
 | `docs/specs/` | Feature specs (behaviour, constraints, out of scope). Start here for any change. |
 | `viewer.html` | Viewer template. One self-contained HTML file with inline CSS and vanilla JS. The scanner replaces `/*DEPS_DATA*/null` with the model and `/*DEPS_VIEWS*/null` with exported views. |
 | `depviewer` | POSIX shell wrapper that passes `--template` and runs the scanner. |
@@ -34,7 +34,8 @@ The maintainer wants every feature and behaviour change done this way:
    smoke test) for the viewer. Run them and confirm they fail for the right reason.
 3. **Implement until green**, then run the whole `scripts/check.sh`.
 4. **Check for regressions on real code**: rescan a larger project with the previous scanner
-   version (`git show HEAD:DepScan.java`) and the new one and compare the JSON; differences must
+   version (`git archive HEAD src | tar -x -C <tmp>`, compile it there) and the new one and compare
+   the JSON (ignoring `generated`); differences must
    be intended.
 5. Update the spec's status, the README and this file if behaviour or invariants changed.
 
@@ -101,8 +102,8 @@ When you fix a scanner bug, add the case to the fixture and a check that fails w
 
 ## Conventions
 
-- Scanner: Java 17 language level, standard library only, single file. Keep `javac -Xlint:all`
-  warning-free.
+- Scanner: Java 17 language level, standard library only, one file per language plus the shared
+  core (`src/depviewer/`). Keep `javac -Xlint:all` warning-free.
 - Viewer: vanilla JS in one IIFE, no external scripts, fonts or CDNs (it must work offline from
   `file://`). Colours are CSS variables on `:root` with light and dark variants — add new colours
   to all three blocks. Browser storage access stays wrapped in `try/catch` (it throws in some
