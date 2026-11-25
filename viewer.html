@@ -62,7 +62,7 @@ main { flex: 1; display: flex; min-height: 0; }
 #rows { position: relative; }
 #arcs { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
 
-.row { height: 24px; display: flex; align-items: center; white-space: nowrap; position: relative; cursor: default; user-select: none; }
+.row { height: 24px; display: flex; align-items: center; white-space: nowrap; position: absolute; left: 0; right: 0; cursor: default; user-select: none; }
 .row.d0 { background: var(--band0); } .row.d1 { background: var(--band1); } .row.d2 { background: var(--band2); } .row.d3 { background: var(--band3); }
 .row.d4 { background: var(--band4); } .row.d5 { background: var(--band5); } .row.d6 { background: var(--band6); } .row.d7 { background: var(--band7); }
 .row.sep { box-shadow: inset 0 1px 0 var(--sep); }
@@ -264,6 +264,7 @@ let D = null;   // loaded data (original structure)
 let M = null;   // display tree for the current view
 let V = { views: [], current: null };
 let gen = 0, rows = [], arcs = [], active = [], rowArcs = new Map();
+let win = { lo: 0, hi: 0 }, geo = null;   // rows in the DOM (docs/specs/viewer-performance.md), arc geometry
 const st = { sort: 'levelize', tests: false, ext: true, nest: false, only: false, level: 2, expanded: new Set(),
   sel: null, selArc: null, hover: null, hoverArc: null, query: '', findPos: -1, editing: null };
 
@@ -581,17 +582,18 @@ function computeRows() {
   rows = [];
   const walk = list => { for (const n of list) { n.row = rows.length; rows.push(n); if (st.expanded.has(n.key) && n.sorted.length) walk(n.sorted); } };
   walk(M.sorted);
+  // Nearest visible ancestor-or-self of every node: the first collapsed node on its path, else
+  // the node itself (null when that one is hidden). M.nodes lists parents before children.
+  for (const n of M.nodes) {
+    const p = n.anc.length > 1 ? n.anc[n.anc.length - 2] : null;
+    const stop = p ? p.stop : null;
+    n.stop = stop || (st.expanded.has(n.key) ? null : n);
+    const r = stop || n;
+    n.rp = r.row >= 0 ? r : null;
+  }
 }
 
-// Nearest visible ancestor-or-self
-function rep(n) {
-  const A = n.anc;
-  for (let i = 0; i < A.length; i++) {
-    const a = A[i];
-    if (i === A.length - 1 || !st.expanded.has(a.key)) return a.row >= 0 ? a : null;
-  }
-  return null;
-}
+const rep = n => n.rp;
 
 function computeArcs() {
   const map = new Map();
@@ -599,18 +601,23 @@ function computeArcs() {
     if (e.nest && !st.nest) continue;
     const rf = rep(e.f), rt = rep(e.t);
     if (!rf || !rt || rf === rt) continue;
-    const key = rf.key + '>' + rt.key;
-    let a = map.get(key);
-    if (!a) map.set(key, a = { key, from: rf, to: rt, count: 0, edges: [], cyc: false, nest: e.nest });
+    const id = rf.row * rows.length + rt.row;
+    let a = map.get(id);
+    if (!a) map.set(id, a = { key: rf.key + '>' + rt.key, from: rf, to: rt, count: 0, edges: [], cyc: false, nest: e.nest });
     a.count += e.c; a.edges.push(e); a.cyc = a.cyc || e.cyc;
   }
   return [...map.values()];
 }
 
 let measureCtx = null;
+const widths = new Map();
 function textWidth(s) {
-  if (!measureCtx) { measureCtx = document.createElement('canvas').getContext('2d'); measureCtx.font = getComputedStyle(document.body).font; }
-  return measureCtx.measureText(s).width;
+  let w = widths.get(s);
+  if (w === undefined) {
+    if (!measureCtx) { measureCtx = document.createElement('canvas').getContext('2d'); measureCtx.font = getComputedStyle(document.body).font; }
+    widths.set(s, w = measureCtx.measureText(s).width);
+  }
+  return w;
 }
 
 // File icon by language: J (default, Java), K, TS, JS, D
@@ -629,7 +636,7 @@ function rowHTML(n) {
   if (st.query && n.n.toLowerCase().includes(st.query)) cls.push('match');
   const open = st.expanded.has(n.key), has = n.sorted.length > 0;
   const drag = curView() && (assignTarget(n) || n.k === 'group') && st.editing !== n.key ? ' draggable="true"' : '';
-  const style = `padding-left:${6 + n.depth * IND}px${n.group ? `;--gc:${esc(n.group.color)}` : ''}`;
+  const style = `top:${n.row * H}px;padding-left:${6 + n.depth * IND}px${n.group ? `;--gc:${esc(n.group.color)}` : ''}`;
   let body;
   if (n.k === 'group') {
     body = (st.editing === n.key ? `<input class="gname" value="${esc(n.n)}" spellcheck="false">` : `<span class="nm">${esc(n.n)}</span>`) +
@@ -640,55 +647,84 @@ function rowHTML(n) {
     body = `<span class="nm${n.test ? ' test' : ''}${n.st ? ' stat' : ''}">${esc(n.n)}</span>` + (metric !== '' ? `<span class="metric">${metric}</span>` : '');
   }
   const title = `${KIND_LABEL[n.k] || n.k}: ${n.q}${n.cyc ? ' — part of a cycle' : ''}${drag ? ' — drag onto a group to assign' : ''}`;
-  return `<div class="${cls.join(' ')}"${drag} style="${style}" title="${esc(title)}">` +
+  return `<div class="${cls.join(' ')}" data-r="${n.row}"${drag} style="${style}" title="${esc(title)}">` +
     `<span class="tog${has ? '' : ' none'}">${open ? '−' : '+'}</span>${icon(n)}${body}</div>`;
 }
 
 function draw() {
   if (!M) return;
   computeRows();
-  rowsEl.innerHTML = rows.map(rowHTML).join('');
   const W = view.clientWidth, HT = rows.length * H;
   let maxLabel = 0;
-  for (const n of rows) maxLabel = Math.max(maxLabel, 6 + n.depth * IND + 19 + 22 + textWidth(n.n) + (st.sort === 'loc' || st.sort === 'elems' ? 44 : 0));
+  const metric = st.sort === 'loc' || st.sort === 'elems' ? 44 : 0;
+  for (const n of rows) maxLabel = Math.max(maxLabel, 6 + n.depth * IND + 19 + 22 + textWidth(n.n) + metric);
   const ax = Math.round(Math.min(Math.max(maxLabel + 36, W * 0.5), Math.max(maxLabel + 36, W - 110)));
   const width = Math.max(W, ax + 110);
   // Left (downward) arcs stay between the widest label and the anchor column (docs/specs/viewer-arcs.md).
-  const maxL = Math.max(5, ax - maxLabel - 12), maxR = Math.max(24, width - ax - 14);
+  geo = { ax, maxL: Math.max(5, ax - maxLabel - 12), maxR: Math.max(24, width - ax - 14) };
   arcs = computeArcs();
   rowArcs = new Map();
   const add = (n, i) => { let l = rowArcs.get(n); if (!l) rowArcs.set(n, l = []); l.push(i); };
-  arcs.sort((a, b) => Math.abs(b.to.row - b.from.row) - Math.abs(a.to.row - a.from.row)); // long arcs below short ones
-  let paths = '', hits = '';
+  for (const a of arcs) { a.lo = Math.min(a.from.row, a.to.row); a.hi = Math.max(a.from.row, a.to.row); }
+  arcs.sort((a, b) => (b.hi - b.lo) - (a.hi - a.lo)); // long arcs below short ones
   arcs.forEach((a, i) => {
-    const y1 = a.from.row * H + H / 2, y2 = a.to.row * H + H / 2, up = y2 < y1;
-    const ry = Math.abs(y2 - y1) / 2, rx = Math.max(5, Math.min(ry, up ? maxR : maxL));
-    const dir = up ? 1 : -1;
-    a.cls = a.nest ? 'nest' : a.cyc && up ? 'cyc' : up ? 'up' : 'down';
-    const d = `M${ax + dir * 5} ${y1}A${rx.toFixed(1)} ${ry} 0 0 0 ${ax + dir * 8} ${y2}`;
-    const w = (1.1 + Math.min(2.6, Math.log2(a.count) * 0.55)).toFixed(2);
-    paths += `<path class="arc ${a.cls}" data-a="${i}" d="${d}" stroke-width="${w}" marker-end="url(#m-${a.cls})"/>`;
-    hits += `<path class="hit" data-a="${i}" d="${d}"><title>${esc(a.from.n)} → ${esc(a.to.n)} (${a.count})</title></path>`;
+    a.cls = a.nest ? 'nest' : a.cyc && a.to.row < a.from.row ? 'cyc' : a.to.row < a.from.row ? 'up' : 'down';
     add(a.from, i); add(a.to, i);
   });
-  let anchors = '';
-  for (const n of rowArcs.keys()) anchors += `<circle class="anc" data-r="${n.row}" cx="${ax}" cy="${n.row * H + H / 2}" r="4"/>`;
-  const marker = c => `<marker id="m-${c}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0L10,5L0,10z" style="fill:var(--${c})"/></marker>`;
   svg.setAttribute('width', width);
   svg.setAttribute('height', HT);
-  svg.innerHTML = `<defs>${['down', 'up', 'cyc', 'nest'].map(marker).join('')}</defs>${paths}${anchors}${hits}`;
   rowsEl.style.width = width + 'px';
   rowsEl.style.height = HT + 'px';
   if (st.selArc) st.selArc = arcs.find(x => x.key === st.selArc.key) || null;
-  focus();
+  renderWindow(true);
   // Read by scripts/check.sh (headless smoke test).
   document.body.dataset.rows = rows.length;
   document.body.dataset.arcs = arcs.length;
   document.body.dataset.view = (curView() || { name: '' }).name;
   document.body.dataset.labels = Math.ceil(maxLabel);
+}
+
+// Only the rows around the visible part of the scroll area, and the arcs that pass through them,
+// are in the DOM. Re-rendered when the visible part gets within one screen of the window's edge.
+const MARKERS = `<defs>${['down', 'up', 'cyc', 'nest'].map(c => `<marker id="m-${c}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0L10,5L0,10z" style="fill:var(--${c})"/></marker>`).join('')}</defs>`;
+function renderWindow(force) {
+  if (!M || !geo) return;
+  const screen = Math.max(1, Math.ceil(view.clientHeight / H));
+  const first = Math.floor(view.scrollTop / H), last = first + screen;
+  if (!force && (win.lo === 0 || first - win.lo >= screen) && (win.hi >= rows.length || win.hi - last >= screen)) return;
+  const lo = Math.max(0, first - 2 * screen), hi = Math.min(rows.length, last + 2 * screen);
+  win = { lo, hi };
+  rowsEl.innerHTML = rows.slice(lo, hi).map(rowHTML).join('');
+  const { ax, maxL, maxR } = geo;
+  // Arcs that only pass through the window (both ends outside) are bundled into one path per colour
+  // and width: no arrowheads (they are off-screen) and no hover. The selection's arcs stay single.
+  const keep = new Set(st.selArc ? [st.selArc] : st.sel ? (rowArcs.get(st.sel) || []).map(i => arcs[i]) : []);
+  const inWin = r => r >= lo && r < hi, bundles = new Map();
+  let paths = '', hits = '', anchors = '';
+  arcs.forEach((a, i) => {
+    if (a.hi < lo || a.lo >= hi) return;
+    const y1 = a.from.row * H + H / 2, y2 = a.to.row * H + H / 2, up = y2 < y1;
+    const ry = Math.abs(y2 - y1) / 2, rx = Math.max(5, Math.min(ry, up ? maxR : maxL));
+    const dir = up ? 1 : -1;
+    const d = `M${ax + dir * 5} ${y1}A${rx.toFixed(1)} ${ry} 0 0 0 ${ax + dir * 8} ${y2}`;
+    const w = (1.1 + Math.min(2.6, Math.log2(a.count) * 0.55)).toFixed(2);
+    if (!inWin(a.from.row) && !inWin(a.to.row) && !keep.has(a)) {
+      const k = a.cls + ' ' + (Math.round(w * 4) / 4).toFixed(2);
+      bundles.set(k, (bundles.get(k) || '') + d);
+      return;
+    }
+    paths += `<path class="arc ${a.cls}" data-a="${i}" d="${d}" stroke-width="${w}" marker-end="url(#m-${a.cls})"/>`;
+    hits += `<path class="hit" data-a="${i}" d="${d}"/>`;
+  });
+  for (let r = lo; r < hi; r++) if (rowArcs.has(rows[r])) anchors += `<circle class="anc" data-r="${r}" cx="${ax}" cy="${r * H + H / 2}" r="4"/>`;
+  let bundled = '';
+  for (const [k, d] of bundles) { const [cls, w] = k.split(' '); bundled += `<path class="arc ${cls}" d="${d}" stroke-width="${w}"/>`; }
+  svg.innerHTML = MARKERS + bundled + paths + anchors + hits;
+  focus();
   const input = rowsEl.querySelector('.gname');
   if (input) { input.focus(); input.select(); }
 }
+const rowEl = r => r >= win.lo && r < win.hi ? rowsEl.children[r - win.lo] : null;
 
 function focus() {
   const fa = st.hoverArc || st.selArc;
@@ -700,7 +736,7 @@ function focus() {
   svg.querySelectorAll('path.arc').forEach(p => p.classList.toggle('on', on.has(+p.dataset.a)));
   svg.querySelectorAll('circle.anc').forEach(c => c.classList.toggle('on', peers.has(rows[+c.dataset.r])));
   const rs = rowsEl.children;
-  for (let i = 0; i < rs.length; i++) rs[i].classList.toggle('peer', peers.has(rows[i]) && rows[i] !== fn);
+  for (let i = 0; i < rs.length; i++) { const n = rows[win.lo + i]; rs[i].classList.toggle('peer', peers.has(n) && n !== fn); }
 }
 
 function refresh() { analyze(); draw(); showPanel(); }
@@ -811,7 +847,7 @@ function showPanel() {
 
 // ------------------------------------------------------------------ interaction
 
-const nodeAt = el => { const r = el.closest && el.closest('.row'); return r ? rows[[...rowsEl.children].indexOf(r)] : null; };
+const nodeAt = el => { const r = el.closest && el.closest('.row'); return r ? rows[+r.dataset.r] : null; };
 
 function reveal(n, select = true) {
   if (n.hid) {
@@ -823,7 +859,7 @@ function reveal(n, select = true) {
   if (select) { st.sel = n; st.selArc = null; }
   draw(); showPanel();
   const y = n.row * H;
-  if (y < view.scrollTop || y > view.scrollTop + view.clientHeight - H) view.scrollTop = y - view.clientHeight / 2;
+  if (y < view.scrollTop || y > view.scrollTop + view.clientHeight - H) { view.scrollTop = y - view.clientHeight / 2; renderWindow(false); }
 }
 
 function toggle(n) {
@@ -837,7 +873,7 @@ function toggle(n) {
 function select(n) {
   st.sel = st.sel === n ? null : n; st.selArc = null;
   rowsEl.querySelectorAll('.row.sel').forEach(r => r.classList.remove('sel'));
-  if (st.sel) rowsEl.children[n.row].classList.add('sel');
+  if (st.sel && rowEl(n.row)) rowEl(n.row).classList.add('sel');
   focus(); showPanel();
 }
 
@@ -898,7 +934,7 @@ rowsEl.addEventListener('dragover', ev => {
   const target = n && n.group;
   if (dragGroup && target && inGroup(curView(), target.gid, dragGroup)) { setDrop(null); return; } // into itself: not allowed
   ev.preventDefault();
-  setDrop(target ? rowsEl.children[target.row] : null);
+  setDrop(target ? rowEl(target.row) : null);
   ev.dataTransfer.dropEffect = 'move';
 });
 rowsEl.addEventListener('drop', ev => {
@@ -913,7 +949,17 @@ rowsEl.addEventListener('drop', ev => {
 });
 rowsEl.addEventListener('dragend', endDrag);
 
-svg.addEventListener('mouseover', ev => { if (ev.target.classList.contains('hit')) { st.hoverArc = arcs[+ev.target.dataset.a]; focus(); } });
+svg.addEventListener('mouseover', ev => {
+  const t = ev.target;
+  if (!t.classList.contains('hit')) return;
+  const a = st.hoverArc = arcs[+t.dataset.a];
+  if (!t.firstChild) { // tooltip created on first hover: one element less per arc in the DOM
+    const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    title.textContent = `${a.from.n} → ${a.to.n} (${a.count})`;
+    t.appendChild(title);
+  }
+  focus();
+});
 svg.addEventListener('mouseout', ev => { if (ev.target.classList.contains('hit')) { st.hoverArc = null; focus(); } });
 svg.addEventListener('click', ev => {
   if (!ev.target.classList.contains('hit')) return;
@@ -1017,7 +1063,7 @@ $('#viewFile').addEventListener('change', ev => {
 
 $('#find').addEventListener('input', ev => {
   st.query = ev.target.value.trim().toLowerCase(); st.findPos = -1;
-  rowsEl.querySelectorAll('.row').forEach((r, i) => r.classList.toggle('match', !!st.query && rows[i].n.toLowerCase().includes(st.query)));
+  rowsEl.querySelectorAll('.row').forEach(r => r.classList.toggle('match', !!st.query && rows[+r.dataset.r].n.toLowerCase().includes(st.query)));
 });
 $('#find').addEventListener('keydown', ev => {
   if (ev.key !== 'Enter' || !st.query || !M) return;
@@ -1046,10 +1092,30 @@ window.addEventListener('drop', ev => {
 });
 
 let raf = 0, lastW = 0;
-new ResizeObserver(() => { if (view.clientWidth === lastW) return; lastW = view.clientWidth; cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); }).observe(view);
+new ResizeObserver(() => { if (view.clientWidth === lastW) return renderWindow(false); lastW = view.clientWidth; cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); }).observe(view);
+view.addEventListener('scroll', () => renderWindow(false), { passive: true });
+
+// ?bench: click through the expensive actions once and publish their times in ms, including
+// style and layout (read by scripts/check.sh, docs/specs/viewer-performance.md).
+function bench() {
+  const time = f => { const t0 = performance.now(); f(); void view.scrollHeight; rowsEl.getBoundingClientRect(); return Math.round(performance.now() - t0); };
+  const click = s => () => $(s).click();
+  const r = {};
+  r.load = time(() => {}); // the initial render's pending style and layout, so it is not counted as Files
+  r.files = time(click('#levels button[data-v="2"]'));
+  r.types = time(click('#levels button[data-v="3"]'));
+  r.members = time(click('#levels button[data-v="4"]'));
+  r.sort = time(click('#sort button[data-v="alpha"]'));
+  r.levelize = time(click('#sort button[data-v="levelize"]'));
+  r.hover = time(() => { st.hover = rows[Math.floor(rows.length / 2)]; focus(); });
+  r.scroll = time(() => { view.scrollTop = view.scrollHeight / 2; view.dispatchEvent(new Event('scroll')); });
+  r.domRows = rowsEl.children.length;
+  r.domArcs = svg.querySelectorAll('path.arc').length;
+  document.body.dataset.bench = JSON.stringify(r);
+}
 
 const param = new URLSearchParams(location.search).get('data');
-if (EMBEDDED) load(EMBEDDED);
+if (EMBEDDED) { load(EMBEDDED); if (new URLSearchParams(location.search).has('bench')) bench(); }
 else if (param) fetch(param).then(r => r.json()).then(load).catch(e => { $('#empty').hidden = false; alert('Could not load ' + param + ': ' + e.message); });
 else { $('#empty').hidden = false; renderViewSel(); showPanel(); }
 })();

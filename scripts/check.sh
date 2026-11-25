@@ -112,6 +112,11 @@ if [ -n "$CHROME" ]; then
   # Arcs stay out of the label area (docs/specs/viewer-arcs.md); members give the longest arcs.
   python3 -I test/checks/viewer_arcs.py "$OUT/fixture-members.dom.html"
   echo "ok ($rows rows, $arcs arcs, view '$view'; Kotlin rows render)"
+  # Performance on a large synthetic model (docs/specs/viewer-performance.md); real time, no virtual time.
+  python3 -I test/gen_large.py viewer.html "$OUT/large.html"
+  "$CHROME" --headless=new --disable-gpu --no-sandbox --no-first-run --user-data-dir="$OUT/chrome-profile" \
+    --window-size=1400,1000 --dump-dom "file://$(pwd)/$OUT/large.html?bench" > "$OUT/large.dom.html" 2>/dev/null
+  python3 -I test/checks/viewer_perf.py "$OUT/large.dom.html"
   if [ -n "$HAVE_TS" ]; then
     "$CHROME" --headless=new --disable-gpu --no-sandbox --no-first-run --user-data-dir="$OUT/chrome-profile" \
       --window-size=1400,1000 --virtual-time-budget=5000 --dump-dom "file://$(pwd)/$OUT/fixture-ts.html?level=3" > "$OUT/fixture-ts.dom.html" 2>/dev/null

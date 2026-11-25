@@ -20,7 +20,8 @@ no frameworks** — a JDK 17+ and a browser are all a user needs.
 | `extractors/dart/` | Dart extractor: `bin/extract.dart` on `package:analyzer`. Pinned in `pubspec.yaml`/`pubspec.lock`. |
 | `scripts/check.sh` | **The** check. Run it before you say you are done. |
 | `test/fixture/`, `test/fixture-ts/`, `test/fixture-dart/` | Small projects with known dependencies per language (Java + Kotlin, TypeScript/JavaScript, Dart), each with a deliberate cycle and some unresolvable or external references. |
-| `test/checks/` | Model assertions: `jvm.py`, `typescript.py`, `dart.py` (one per fixture) on top of `common.py`. |
+| `test/checks/` | Model assertions: `jvm.py`, `typescript.py`, `dart.py` (one per fixture) on top of `common.py`. Viewer assertions on DOMs dumped by headless Chrome: `viewer_arcs.py` (arc geometry), `viewer_perf.py` (timings on the large model). |
+| `test/gen_large.py` | Generates a large synthetic model (~10,000 rows, ~38,000 arcs at member level) embedded in the viewer, for the performance check (`docs/specs/viewer-performance.md`). |
 | `test/fixture-views.json` | A "Layers" view used by the headless browser smoke test and the screenshots. |
 | `scripts/screenshots.sh` | Regenerates `docs/screenshot-{light,dark}.png` for the README. Run it after visible UI changes and look at the result. |
 
@@ -120,7 +121,11 @@ changes between major versions.
 - Everything inserted with `innerHTML` goes through `esc()`. Names come from scanned code and
   user input — never interpolate them raw. The scanner's `js()` escapes `<`, `>` and `&` so the
   data cannot close the `<script>` element.
-- `document.body.dataset.rows/arcs/view` are read by the smoke test; keep them.
+- `document.body.dataset.rows/arcs/view/labels` (and `bench` with `?bench`) are read by the smoke
+  test; keep them. `rows`/`arcs` count the whole tree, not what is in the DOM.
+- Rows and arcs are virtualised (`docs/specs/viewer-performance.md`): only rows `win.lo..win.hi`
+  are in `#rows`. Never map DOM children to `rows` by index; use `data-r` / `rowEl(r)`, and expect
+  `rowEl` to return `null` for rows outside the window.
 
 ## Conventions
 
