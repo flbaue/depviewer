@@ -1,0 +1,5 @@
+#!/bin/sh
+# Scan a Java project and write a self-contained dependency viewer (deps.html).
+# Usage: depviewer [options] <project-dir>...   (see --help)
+DIR="$(cd "$(dirname "$0")" && pwd)"
+exec java "$DIR/DepScan.java" --template "$DIR/viewer.html" "$@"
