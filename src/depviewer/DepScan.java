@@ -34,7 +34,15 @@ import static depviewer.Model.*;
 public class DepScan {
 
     static final Set<String> SKIP_DIRS = Set.of("target", "build", "out", "bin", "node_modules", ".git", ".mvn",
-            ".idea", ".gradle", ".svn", ".settings");
+            ".idea", ".gradle", ".svn", ".settings", ".dart_tool", "dist", "coverage", ".next");
+    static final Pattern TS_FILE = Pattern.compile(".*\\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$");
+    static final Pattern TS_TEST = Pattern.compile("(^|.*/)(__tests__|tests?)/.*|.*\\.(test|spec)\\.[^/]+$");
+    static final List<String> DART_MAIN = List.of("lib", "bin", "web", "tool"), DART_TEST = List.of("test", "integration_test");
+
+    static boolean skipped(Path rel) {
+        for (Path seg : rel) if (SKIP_DIRS.contains(seg.toString())) return true;
+        return false;
+    }
 
     static final class Root {
         final Path dir, projectDir;
@@ -103,13 +111,15 @@ public class DepScan {
             roots.addAll(findRoots(abs, tests));
         }
         if (title == null) title = inputs.get(0).toAbsolutePath().normalize().getFileName().toString();
+        List<Toolchain.Module> tsModules = new ArrayList<>(), dartModules = new ArrayList<>();
+        for (Path in : inputs) findToolchainModules(in.toAbsolutePath().normalize(), tsModules, dartModules);
 
         Map<Path, Root> rootOfFile = new LinkedHashMap<>(), rootOfKt = new LinkedHashMap<>();
         for (Root r : roots) {
             try (var s = Files.walk(r.dir)) {
                 s.filter(p -> !p.getFileName().toString().equals("module-info.java"))
                         .filter(p -> !p.getFileName().toString().equals("package-info.java"))
-                        .filter(p -> SKIP_DIRS.stream().noneMatch(d -> r.dir.relativize(p).toString().startsWith(d + "/")))
+                        .filter(p -> !skipped(r.dir.relativize(p)))
                         .forEach(p -> {
                             String f = p.getFileName().toString();
                             if (f.endsWith(".java")) rootOfFile.putIfAbsent(p.toAbsolutePath().normalize(), r);
@@ -117,9 +127,16 @@ public class DepScan {
                         });
             }
         }
-        if (rootOfFile.isEmpty() && rootOfKt.isEmpty()) die("no .java or .kt files found");
-        long modules = roots.stream().map(r -> r.module).distinct().count();
-        System.err.printf("Scanning %d Java and %d Kotlin files in %d module(s)...%n", rootOfFile.size(), rootOfKt.size(), modules);
+        int tsFiles = tsModules.stream().mapToInt(m -> m.files.size()).sum(), dartFiles = dartModules.stream().mapToInt(m -> m.files.size()).sum();
+        if (rootOfFile.isEmpty() && rootOfKt.isEmpty() && tsFiles == 0 && dartFiles == 0) die("no source files found (.java, .kt, .ts/.js, .dart)");
+        StringBuilder what = new StringBuilder();
+        if (!rootOfFile.isEmpty() || !rootOfKt.isEmpty()) {
+            long modules = roots.stream().filter(r -> rootOfFile.containsValue(r) || rootOfKt.containsValue(r)).map(r -> r.module).distinct().count();
+            what.append(String.format("%d Java and %d Kotlin files in %d module(s)", rootOfFile.size(), rootOfKt.size(), modules));
+        }
+        if (tsFiles > 0) what.append(what.length() > 0 ? ", " : "").append(String.format("%d TypeScript/JavaScript files in %d module(s)", tsFiles, tsModules.size()));
+        if (dartFiles > 0) what.append(what.length() > 0 ? ", " : "").append(String.format("%d Dart files in %d module(s)", dartFiles, dartModules.size()));
+        System.err.println("Scanning " + what + "...");
 
         // Kotlin declarations first, so that Java references to Kotlin types (unresolvable for
         // javac) can be matched by name when the Java references are resolved.
@@ -132,11 +149,19 @@ public class DepScan {
         if (!rootOfFile.isEmpty()) java.scan(rootOfFile, roots, cp, errors, firstErrors);
         java.resolve();
         kotlin.resolveAll();
+        Path home = Paths.get(Toolchain.env("DEPVIEWER_HOME", template != null && template.toAbsolutePath().getParent() != null
+                ? template.toAbsolutePath().getParent().toString() : ".")).toAbsolutePath().normalize();
+        for (Toolchain tc : List.of(new Toolchain("typescript", "TypeScript/JavaScript", home), new Toolchain("dart", "Dart", home))) {
+            tc.scan(tc.language.equals("dart") ? dartModules : tsModules.stream().filter(m -> !m.files.isEmpty()).collect(Collectors.toList()), tests);
+            errors[0] += tc.errors;
+        }
         String json = toJson(title, edges.values(), errors[0]);
         writeOutput(out, template, views, json);
 
-        long typeCount = nodes.stream().filter(n -> n.id.startsWith("T:")).count();
-        long memberCount = nodes.stream().filter(n -> n.id.startsWith("M:")).count();
+        Set<String> typeKinds = Set.of("class", "interface", "enum", "record", "annotation", "object", "typealias", "namespace", "mixin", "extension");
+        Set<String> memberKinds = Set.of("ctor", "method", "field", "enumconst");
+        long typeCount = nodes.stream().filter(n -> typeKinds.contains(n.kind)).count();
+        long memberCount = nodes.stream().filter(n -> memberKinds.contains(n.kind)).count();
         int depCount = edges.values().stream().mapToInt(e -> e.count).sum();
         System.err.printf("%d types, %d members, %d dependencies (%d distinct) -> %s%n",
                 typeCount, memberCount, depCount, edges.size(), out.toAbsolutePath().normalize());
@@ -190,6 +215,69 @@ public class DepScan {
         });
         if (found.isEmpty()) found.add(new Root(in, in, in.getFileName().toString(), false));
         return found;
+    }
+
+    /** Folders with package.json (TypeScript/JavaScript) or pubspec.yaml (Dart) below `in`, with their files. */
+    static void findToolchainModules(Path in, List<Toolchain.Module> ts, List<Toolchain.Module> dart) throws IOException {
+        Files.walkFileTree(in, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                if (!dir.equals(in) && SKIP_DIRS.contains(dir.getFileName().toString())) return FileVisitResult.SKIP_SUBTREE;
+                if (Files.isRegularFile(dir.resolve("package.json"))) ts.add(tsModule(dir));
+                if (Files.isRegularFile(dir.resolve("pubspec.yaml"))) dart.add(dartModule(dir));
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+    static Toolchain.Module tsModule(Path dir) throws IOException {
+        String name = null;
+        try {
+            Object pj = Json.parse(Files.readString(dir.resolve("package.json")));
+            if (pj instanceof Map) name = Toolchain.str(((Map<?, ?>) pj).get("name"));
+        } catch (IllegalArgumentException ignored) {
+        }
+        Toolchain.Module m = new Toolchain.Module(dir, name != null ? name : dir.getFileName().toString());
+        Files.walkFileTree(dir, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path d, BasicFileAttributes attrs) {
+                if (d.equals(dir)) return FileVisitResult.CONTINUE;
+                if (SKIP_DIRS.contains(d.getFileName().toString()) || Files.exists(d.resolve("package.json"))) return FileVisitResult.SKIP_SUBTREE;
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path f, BasicFileAttributes attrs) {
+                String rel = dir.relativize(f).toString().replace('\\', '/');
+                if (TS_FILE.matcher(rel).matches() && !rel.endsWith(".d.ts") && !rel.matches(".*\\.d\\.[cm]ts$"))
+                    m.files.add(new String[]{rel, TS_TEST.matcher(rel).matches() ? "1" : "0"});
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        m.files.sort(Comparator.comparing(f -> f[0]));
+        return m;
+    }
+
+    static Toolchain.Module dartModule(Path dir) throws IOException {
+        Matcher nm = Pattern.compile("(?m)^name:\\s*['\"]?([\\w.-]+)").matcher(Files.readString(dir.resolve("pubspec.yaml")));
+        Toolchain.Module m = new Toolchain.Module(dir, nm.find() ? nm.group(1) : dir.getFileName().toString());
+        for (String sub : concat(DART_MAIN, DART_TEST)) {
+            Path root = dir.resolve(sub);
+            if (!Files.isDirectory(root)) continue;
+            String test = DART_TEST.contains(sub) ? "1" : "0";
+            try (var s = Files.walk(root)) {
+                s.filter(p -> p.toString().endsWith(".dart") && !skipped(dir.relativize(p)))
+                        .forEach(p -> m.files.add(new String[]{dir.relativize(p).toString().replace('\\', '/'), test}));
+            }
+        }
+        m.files.sort(Comparator.comparing(f -> f[0]));
+        return m;
+    }
+
+    static List<String> concat(List<String> a, List<String> b) {
+        List<String> l = new ArrayList<>(a);
+        l.addAll(b);
+        return l;
     }
 
     static String moduleName(Path project) {

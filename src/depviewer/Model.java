@@ -30,7 +30,7 @@ final class Model {
         final int idx;
         final String id, kind;
         final int parent;
-        String name, q, path, vis;
+        String name, q, path, vis, sep;
         int line, loc;
         boolean test, isStatic;
         // For resolving Kotlin references by name: simple member name ("<init>" for constructors),
@@ -78,6 +78,24 @@ final class Model {
             sb.append(part);
             Node n = node("P:" + module + ":" + sb, part, "package", parent);
             n.q = sb.toString();
+            parent = n.idx;
+        }
+        return parent;
+    }
+
+    /** Package nodes for a folder path (TypeScript, Dart): one per segment, joined with '/'. "" = the module itself. */
+    static int folderPackage(String module, String dir) {
+        Node mod = node("R:" + module, module, "module", -1);
+        int parent = mod.idx;
+        if (dir.isEmpty()) return parent;
+        StringBuilder sb = new StringBuilder();
+        for (String part : dir.split("/")) {
+            if (part.isEmpty()) continue;
+            if (sb.length() > 0) sb.append('/');
+            sb.append(part);
+            Node n = node("P:" + module + ":" + sb, part, "package", parent);
+            n.q = sb.toString();
+            n.sep = "/";
             parent = n.idx;
         }
         return parent;
@@ -144,6 +162,7 @@ final class Model {
             if (n.vis != null) sb.append(",\"v\":").append(js(n.vis));
             if (n.q != null && !n.q.equals(n.name)) sb.append(",\"q\":").append(js(n.q));
             if (n.path != null) sb.append(",\"path\":").append(js(n.path));
+            if (n.sep != null) sb.append(",\"sep\":").append(js(n.sep));
             sb.append('}');
         }
         sb.append("],\n\"edges\":[");

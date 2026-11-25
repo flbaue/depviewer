@@ -6,3 +6,5 @@ example-*.html
 .DS_Store
 build/
 !test/fixture-views.json
+extractors/typescript/node_modules/
+extractors/dart/.dart_tool/

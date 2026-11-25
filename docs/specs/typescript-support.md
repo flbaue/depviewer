@@ -43,14 +43,20 @@ references are resolved exactly like javac does for Java.
 - Top-level functions and variables are direct children of their file. All top-level
   declarations are listed, exported or not (as in Kotlin); local declarations inside functions
   are not.
+- Constructor parameter properties (`constructor(private readonly id: string)`) are also fields.
+- Member names carry parameter types like Java/Kotlin: `add(Product)`; untyped parameters (plain
+  JavaScript) show as `any`.
 - Visibility: `private`/`#private` → private, `protected` → protected, everything else public;
   `static` members are static.
-- Qualified names: `<path>#Name` and `<path>#Class.member`.
+- Qualified names: `<path>#Name` and `<path>#Class.member`; externals `<package>.<Name>`
+  (`@acme/events.Emitter`, `(builtin).Map`).
+- Files directly in the module folder belong to the module itself (no package row).
 
 ## Dependencies
 
 Every identifier inside a declaration (signatures, initializers, bodies, decorators) that the
-type checker resolves to a declaration produces an edge from the innermost declaring node:
+type checker resolves to a declaration produces an edge from the innermost declaring node
+(top-level statements that are not declarations, e.g. in scripts and tests, count for the file):
 
 - to a project declaration → that node (member if it is a member, else type/function/variable);
   import aliases and re-exports are followed to the original declaration;

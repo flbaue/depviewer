@@ -1,53 +1,13 @@
-"""Checks the model DepScan produces for test/fixture.
-
-Usage: python3 test/check_model.py <deps.json>
-
-Each check names one fact about the fixture sources. When you change the scanner on purpose,
-update the expectation here in the same commit (and say why in the commit message).
-"""
-import json
+"""Model checks for test/fixture (Java + Kotlin). Usage: python3 -I test/checks/jvm.py <deps.json>"""
+import os
 import sys
 
-failures = []
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from common import Checker  # noqa: E402
 
-
-def check(cond, msg):
-    if not cond:
-        failures.append(msg)
-
-
-data = json.load(open(sys.argv[1], encoding="utf-8"))
-nodes, kinds = data["nodes"], data["edgeKinds"]
-
-
-def qname(n):
-    return n.get("q", n.get("path", n["n"]))
-
-
-by_q = {}
-for i, n in enumerate(nodes):
-    by_q.setdefault(qname(n), i)
-edges = {(f, t, kinds[k]): (c, lines) for f, t, k, c, lines in data["edges"]}
-
-
-def node(q, kind=None):
-    i = by_q.get(q)
-    check(i is not None, f"missing node {q}")
-    if i is not None and kind:
-        check(nodes[i]["k"] == kind, f"{q}: expected kind {kind}, got {nodes[i]['k']}")
-    return i
-
-
-def edge(src, dst, kind, present=True):
-    f, t = by_q.get(src), by_q.get(dst)
-    if f is None or t is None:
-        check(False, f"edge {src} -{kind}-> {dst}: endpoint missing")
-        return
-    found = (f, t, kind) in edges
-    check(found == present, f"edge {src} -{kind}-> {dst} should {'exist' if present else 'not exist'}")
-    if found and present:
-        c, lines = edges[(f, t, kind)]
-        check(c >= 1 and all(l > 0 for l in lines), f"edge {src} -{kind}-> {dst}: bad count/lines {c} {lines}")
+c = Checker(sys.argv[1])
+check, node, edge = c.check, c.node, c.edge
+data, nodes, by_q, edges = c.data, c.nodes, c.by_q, c.edges
 
 
 # --- structure -------------------------------------------------------------
@@ -77,9 +37,7 @@ check(nodes[node("src/main/java/com/example/domain/Order.java")].get("t") is Non
 check(nodes[node("?Test", "ext-type")]["p"] == node("(unresolved)", "ext-package"), "unresolved import not grouped")
 
 # Parents come before children (the viewer relies on it).
-for i, n in enumerate(nodes):
-    if "p" in n:
-        check(n["p"] < i, f"node {i} ({qname(n)}) appears before its parent")
+c.parents_first()
 
 # --- dependencies ----------------------------------------------------------
 edge("com.example.infra.InMemoryOrderRepository", "com.example.domain.OrderRepository", "implements")
@@ -150,9 +108,4 @@ edge("com.example.domain.OrderTest.totalIsZeroForNewOrder()", "com.example.domai
 bogus = [q for q in by_q if q.startswith("?") and q[1:].split(".")[0] in ("NotificationService", "EmailNotifier")]
 check(not bogus, f"Java->Kotlin references must not end up as unresolved externals: {bogus}")
 
-if failures:
-    print(f"model check FAILED ({len(failures)}):")
-    for f in failures:
-        print("  - " + f)
-    sys.exit(1)
-print(f"model check ok ({len(nodes)} nodes, {len(edges)} edges)")
+c.finish("jvm")

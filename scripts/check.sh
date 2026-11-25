@@ -34,7 +34,19 @@ step "scan fixture"
 ./depviewer -o "$OUT/fixture.html" --views test/fixture-views.json test/fixture 2>/dev/null
 
 step "model"
-python3 -I test/check_model.py "$OUT/fixture.json"
+python3 -I test/checks/jvm.py "$OUT/fixture.json"
+
+step "TypeScript/JavaScript (docs/specs/typescript-support.md)"
+NODE_BIN=${DEPVIEWER_NODE:-node}
+if command -v "$NODE_BIN" >/dev/null 2>&1; then
+  ./depviewer -o "$OUT/fixture-ts.json" test/fixture-ts
+  python3 -I test/checks/typescript.py "$OUT/fixture-ts.json"
+  ./depviewer -o "$OUT/fixture-ts.html" test/fixture-ts 2>/dev/null
+  HAVE_TS=1
+else
+  echo "skipped: node not installed (set DEPVIEWER_NODE)"
+  HAVE_TS=
+fi
 
 step "generated html"
 grep -q '/\*DEPS_DATA\*/null' "$OUT/fixture.html" && fail "data was not embedded"
@@ -85,6 +97,15 @@ if [ -n "$CHROME" ]; then
   grep -q 'class="ic k-object"' "$OUT/fixture-members.dom.html" || fail "Kotlin object row missing (or ?level=4 not applied)"
   grep -Eq '<span class="nm[^"]*">Companion</span>' "$OUT/fixture-members.dom.html" || fail "companion object row missing"
   echo "ok ($rows rows, $arcs arcs, view '$view'; Kotlin rows render)"
+  if [ -n "$HAVE_TS" ]; then
+    "$CHROME" --headless=new --disable-gpu --no-sandbox --no-first-run --user-data-dir="$OUT/chrome-profile" \
+      --window-size=1400,1000 --virtual-time-budget=5000 --dump-dom "file://$(pwd)/$OUT/fixture-ts.html?level=3" > "$OUT/fixture-ts.dom.html" 2>/dev/null
+    grep -q '<span class="nm">features/payments</span>' "$OUT/fixture-ts.dom.html" || fail "folder packages must merge with '/' (features/payments)"
+    grep -q 'class="ic k-file ts"' "$OUT/fixture-ts.dom.html" || fail "TypeScript file icon missing"
+    grep -q 'class="ic k-file js"' "$OUT/fixture-ts.dom.html" || fail "JavaScript file icon missing"
+    grep -q 'class="ic k-namespace"' "$OUT/fixture-ts.dom.html" || fail "namespace row missing"
+    echo "ok (TypeScript fixture renders)"
+  fi
 else
   echo "skipped: no Chrome/Chromium found (set CHROME_BIN)"
 fi
