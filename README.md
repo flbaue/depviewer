@@ -13,8 +13,9 @@ the dependencies between them as arcs, levelized and with cycles highlighted.
   <img alt="depviewer showing a small example project in a user-defined Layers view: groups Application, Domain and Service with dependency arcs between files; red arcs mark the upward dependencies of a Domain/Service cycle" src="docs/screenshot-light.png">
 </picture>
 
-*The bundled example project in a "Layers" view: green arcs are downward dependencies; the red
-arcs show `Domain` depending back on `Service`, a cycle between the layers.*
+*The bundled example project in a "Layers" view with nested groups (`Core` contains `Domain` and
+`Service`): green arcs are downward dependencies; the red arcs show `Domain` depending back on
+`Service`, a cycle inside `Core`.*
 
 ```
 ./depviewer [-o deps.html] [--no-tests] [--cp <classpath>] <project-dir>...
@@ -44,7 +45,8 @@ That's a small example with a deliberate package cycle and a "Layers" view.
 - **Views & groups**: *+ Group* creates an empty group (and a view if none is selected). Drag
   modules, packages or files onto a group row — or pick the group in the details panel — to
   assign them; a package takes everything inside it, a more specific assignment wins, and dragging
-  onto an ungrouped row removes it again. Collapse groups to see (and levelize) the dependencies
+  onto an ungrouped row removes it again. Groups can be nested (*+ Sub* on a group row, or drag a
+  group onto another), e.g. layers containing components. Collapse groups to see (and levelize) the dependencies
   between them. Each view is an independent set of groups, so you can keep one for layers, one
   for bounded contexts, one for patterns…
   Views are stored in the browser (localStorage, per project title); *⋯ › Export views* saves them

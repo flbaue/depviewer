@@ -68,8 +68,10 @@ When you fix a scanner bug, add the case to the fixture and a check that fails w
   key: `R:<module>`, `P:<module>:<package>`, `F:<module>:<path>`, `X`, `XP:<package>`,
   `XT:<qualified type>`. Changing how these are built silently breaks everyone's saved views. If
   you must, add a migration in `loadViews()`.
-- Exported view format: `{ "current"?: id, "views": [ { id, name, groups: [{id, name, color}], assign: { key: groupId | "" } } ] }`;
-  `""` means "explicitly ungrouped" (overrides an assigned ancestor).
+- Exported view format: `{ "current"?: id, "views": [ { id, name, groups: [{id, name, color, parent?: groupId}], assign: { key: groupId | "" } } ] }`;
+  `""` means "explicitly ungrouped" (overrides an assigned ancestor). `parent` nests a group; a
+  missing parent or a parent loop (hand-edited files) must degrade to a top-level group, never hang
+  or crash — `inGroup()` guards the walks.
 - The two template markers must stay in `viewer.html` exactly once each (`check.sh` enforces it).
 - Everything inserted with `innerHTML` goes through `esc()`. Names come from scanned code and
   user input — never interpolate them raw. The scanner's `js()` escapes `<`, `>` and `&` so the

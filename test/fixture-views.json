@@ -6,14 +6,16 @@
       "name": "Layers",
       "groups": [
         { "id": "ui", "name": "Application", "color": "#e07a2f" },
-        { "id": "svc", "name": "Service", "color": "#2a9d8f" },
-        { "id": "dom", "name": "Domain", "color": "#8e5cd9" }
+        { "id": "core", "name": "Core", "color": "#577590" },
+        { "id": "svc", "name": "Service", "color": "#2a9d8f", "parent": "core" },
+        { "id": "dom", "name": "Domain", "color": "#8e5cd9", "parent": "core" },
+        { "id": "infra", "name": "Infrastructure", "color": "#c9a227" }
       ],
       "assign": {
         "P:fixture:com.example.app": "ui",
         "P:fixture:com.example.service": "svc",
         "P:fixture:com.example.domain": "dom",
-        "P:fixture:com.example.infra": "dom"
+        "P:fixture:com.example.infra": "infra"
       }
     }
   ]

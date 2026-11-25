@@ -71,8 +71,12 @@ if [ -n "$CHROME" ]; then
   [ "$rows" -gt 5 ] || fail "viewer rendered only $rows rows"
   [ "$arcs" -gt 0 ] || fail "viewer drew no arcs"
   [ "$view" = "Layers" ] || fail "embedded view not active (got '$view')"
-  for g in Application Service Domain; do
+  for g in Application Core Service Domain Infrastructure; do
     grep -q "<span class=\"nm\">$g</span>" "$OUT/fixture.dom.html" || fail "group row '$g' missing"
+  done
+  # Service and Domain are subgroups of Core: one indentation level (16px) deeper than top-level groups.
+  for g in Service:2a9d8f Domain:8e5cd9; do
+    grep -q "padding-left:22px;--gc:#${g#*:}\"" "$OUT/fixture.dom.html" || fail "group '${g%%:*}' is not nested under Core"
   done
   echo "ok ($rows rows, $arcs arcs, view '$view')"
 else

@@ -316,15 +316,16 @@ function newView(name) {
   return v;
 }
 
-function addGroup() {
+function addGroup(parentId) {
   if (!D) return;
   let v = curView();
   if (!v) v = newView('View ' + (V.views.length + 1));
-  const g = { id: uid(), name: 'Group ' + (v.groups.length + 1), color: COLORS[v.groups.length % COLORS.length] };
+  const g = { id: uid(), name: (parentId ? 'Subgroup ' : 'Group ') + (v.groups.length + 1), color: COLORS[v.groups.length % COLORS.length] };
+  if (parentId) { g.parent = parentId; st.expanded.add('G:' + parentId); }
   v.groups.push(g); saveViews();
   st.editing = 'G:' + g.id;
   build(); refresh();
-  view.scrollTop = 0;
+  if (!parentId) view.scrollTop = 0;
 }
 
 function renameGroup(gid, name) {
@@ -332,11 +333,39 @@ function renameGroup(gid, name) {
   if (g && name.trim()) { g.name = name.trim(); saveViews(); }
 }
 
+// Is group `id` the same as, or nested (at any depth) inside, group `ancestorId`?
+function inGroup(v, id, ancestorId) {
+  const seen = new Set();
+  for (let g = v.groups.find(x => x.id === id); g && !seen.has(g.id); g = v.groups.find(x => x.id === g.parent)) {
+    if (g.id === ancestorId) return true;
+    seen.add(g.id);
+  }
+  return false;
+}
+const groupPath = (v, g) => {
+  const names = [], seen = new Set();
+  for (let x = g; x && !seen.has(x.id); x = v.groups.find(y => y.id === x.parent)) { names.unshift(x.name); seen.add(x.id); }
+  return names.join(' › ');
+};
+
+function moveGroup(gid, parentId) {
+  const v = curView(), g = v && v.groups.find(x => x.id === gid);
+  if (!g || (parentId && inGroup(v, parentId, gid))) return; // not into itself or its own subgroups
+  if ((g.parent || null) === (parentId || null)) return;
+  if (parentId) { g.parent = parentId; st.expanded.add('G:' + parentId); } else delete g.parent;
+  saveViews(); build(); refresh();
+}
+
 function deleteGroup(gid) {
   const v = curView(); if (!v) return;
   const g = v.groups.find(x => x.id === gid);
   const n = Object.values(v.assign).filter(x => x === gid).length;
-  if (n && !confirm(`Delete group "${g.name}"? Its ${n} assignment(s) are removed; the elements go back to where they were.`)) return;
+  const subs = v.groups.filter(x => x.parent === gid);
+  const parts = [];
+  if (n) parts.push(`its ${n} assignment(s) are removed and the elements go back to where they were`);
+  if (subs.length) parts.push(`its ${subs.length} subgroup(s) move up one level`);
+  if (parts.length && !confirm(`Delete group "${g.name}"? ${parts.join('; ')}.`)) return;
+  for (const s of subs) { if (g.parent) s.parent = g.parent; else delete s.parent; }
   v.groups = v.groups.filter(x => x.id !== gid);
   for (const k of Object.keys(v.assign)) if (v.assign[k] === gid) delete v.assign[k];
   saveViews(); build(); refresh();
@@ -379,6 +408,14 @@ function build() {
   const mk = o => Object.assign({ children: [], parent: null, line: 0, loc0: 0, test0: false, path: '', v: '', st: false, clone: true }, o);
   const groups = v ? v.groups.map(g => mk({ key: 'G:' + g.id, n: g.name, k: 'group', q: g.name, gid: g.id, color: g.color, clone: false })) : [];
   const gById = new Map(groups.map(g => [g.gid, g]));
+  const topGroups = [];
+  for (const g of groups) {
+    const pid = v.groups.find(x => x.id === g.gid).parent;
+    // A missing parent or a parent loop (e.g. from a hand-edited import) puts the group at the top.
+    if (pid && gById.has(pid) && !inGroup(v, pid, g.gid)) gById.get(pid).children.push(g);
+    else topGroups.push(g);
+  }
+  for (const g of groups) for (const c of g.children) c.parent = g;
   const top = [], clones = new Map();
   for (const n of D.nodes) if (!CONTAINER.has(n.k)) { n.parent = n.op; n.children = n.oc.slice(); }
   const eff = n => {
@@ -397,7 +434,7 @@ function build() {
   };
   for (const u of D.nodes) if (UNIT.has(u.k)) { const p = container(u.op, eff(u)); u.parent = p; p.children.push(u); }
 
-  const roots = v && st.only ? groups : groups.concat(top);
+  const roots = v && st.only ? topGroups : topGroups.concat(top);
   const compact = n => {
     while (n.k === 'package' && n.children.length === 1 && n.children[0].k === 'package') {
       const c = n.children[0];
@@ -508,8 +545,8 @@ function analyze() {
     else if (st.sort === 'loc') kids.sort((a, b) => (b.loc - a.loc) || byName(a, b));
     else if (st.sort === 'elems') kids.sort((a, b) => (b.elems - a.elems) || byName(a, b));
     else kids.sort(byName);
-    // Groups stay on top (levelized among themselves), External at the bottom.
-    if (!parent) kids = kids.filter(c => c.k === 'group').concat(kids.filter(c => c.k !== 'group' && c.k !== 'ext-root'), kids.filter(c => c.k === 'ext-root'));
+    // Groups (and subgroups) stay above other siblings, levelized among themselves; External at the bottom.
+    kids =kids.filter(c => c.k === 'group').concat(kids.filter(c => c.k !== 'group' && c.k !== 'ext-root'), kids.filter(c => c.k === 'ext-root'));
     if (st.sort === 'levelize') for (let i = 1; i < kids.length; i++) kids[i].sep = kids[i].level !== kids[i - 1].level || (kids[i].k === 'group') !== (kids[i - 1].k === 'group');
     for (const c of kids) c.sorted = proc(c, c.children);
     return kids;
@@ -577,13 +614,13 @@ function rowHTML(n) {
   if (n.k === 'group') cls.push('grp');
   if (st.query && n.n.toLowerCase().includes(st.query)) cls.push('match');
   const open = st.expanded.has(n.key), has = n.sorted.length > 0;
-  const drag = curView() && assignTarget(n) ? ' draggable="true"' : '';
+  const drag = curView() && (assignTarget(n) || n.k === 'group') && st.editing !== n.key ? ' draggable="true"' : '';
   const style = `padding-left:${6 + n.depth * IND}px${n.group ? `;--gc:${esc(n.group.color)}` : ''}`;
   let body;
   if (n.k === 'group') {
     body = (st.editing === n.key ? `<input class="gname" value="${esc(n.n)}" spellcheck="false">` : `<span class="nm">${esc(n.n)}</span>`) +
       (n.children.length ? '' : `<span class="metric">empty — drag packages or files here</span>`) +
-      `<span class="gact"><button data-act="rename" title="Rename group">Rename</button><button data-act="delete" title="Delete group">Delete</button></span>`;
+      `<span class="gact"><button data-act="sub" title="Add a subgroup inside this group">+ Sub</button><button data-act="rename" title="Rename group">Rename</button><button data-act="delete" title="Delete group">Delete</button></span>`;
   } else {
     const metric = st.sort === 'loc' ? n.loc : st.sort === 'elems' ? n.elems : '';
     body = `<span class="nm${n.test ? ' test' : ''}${n.st ? ' stat' : ''}">${esc(n.n)}</span>` + (metric !== '' ? `<span class="metric">${metric}</span>` : '');
@@ -683,9 +720,16 @@ function groupSelect(n) {
   if (!v || !o) return '';
   let cur = null;
   for (let a = o; a; a = a.op) if (hasOwn(v.assign, a.okey)) { cur = v.assign[a.okey] || null; break; }
-  const opts = `<option value="">(none)</option>` + v.groups.map(g => `<option value="${esc(g.id)}"${g.id === cur ? ' selected' : ''}>${esc(g.name)}</option>`).join('');
   const what = o === n || (n.origins && n.origins.includes(o)) ? '' : ` <span class="sub">(${esc(o.n)})</span>`;
-  return `<span>Group</span><span><select data-assign="${esc(o.okey)}">${opts}</select>${what}</span>`;
+  return `<span>Group</span><span><select data-assign="${esc(o.okey)}">${groupOptions(v, cur)}</select>${what}</span>`;
+}
+
+// <option>s for all groups of a view as full paths ("Core › Domain"), optionally leaving out a subtree.
+function groupOptions(v, selected, exclude) {
+  return `<option value="">(none)</option>` + v.groups
+    .filter(g => !exclude || !inGroup(v, g.id, exclude))
+    .map(g => [groupPath(v, g), g]).sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([p, g]) => `<option value="${esc(g.id)}"${g.id === selected ? ' selected' : ''}>${esc(p)}</option>`).join('');
 }
 
 function showPanel() {
@@ -707,6 +751,7 @@ function showPanel() {
       <i style="border-color:var(--nest);border-top-style:dashed"></i><span>Dependency on own parent (“Parent deps”)</span></div>
       <div class="help"><h3>Groups &amp; views</h3>
       ${v ? `<p>You are in the view <b>${esc(v.name)}</b>. Drag packages, files or modules onto a group row (or pick a group in the details of a selected element). Assigning a package moves everything inside it; a more specific assignment wins. Drag something back onto an ungrouped row to remove it from its group.</p>
+      <p>Groups can be nested: use <b>+ Sub</b> on a group row, drag one group onto another, or pick a parent in the group's details. Drag a group onto an ungrouped row to move it back to the top level.</p>
       <p>Collapse the groups to see the dependencies between them. Levelize orders them so that every group only depends on groups below it, and red arcs show where that is broken.</p>`
         : `<p>Click <b>+ Group</b> to create a view with an empty group, then drag packages or files onto it. Use several views to look at the code from different angles: layers, bounded contexts, patterns…</p>`}
       <p>Views are saved in this browser. Use ⋯ › Export views to keep or share them.</p>
@@ -733,9 +778,13 @@ function showPanel() {
       .sort((a, b) => origLabel(a).localeCompare(origLabel(b)));
     extra = `<h3>Assigned (${items.length})</h3>` + (items.length
       ? `<ul style="padding-left:0">${items.map(o => `<li data-o="${esc(o.okey)}"><button class="x" data-unassign="${esc(o.okey)}" title="Remove from group">✕</button>${icon(o)}${esc(origLabel(o))}</li>`).join('')}</ul>`
-      : `<p class="help">Nothing yet. Drag packages, files or modules onto the group row.</p>`);
+      : `<p class="help">Nothing directly. Drag packages, files or modules onto the group row${n.children.some(c => c.k === 'group') ? ', or into one of its subgroups' : ''}.</p>`);
   }
-  const gs = groupSelect(n);
+  let gs = groupSelect(n);
+  if (n.k === 'group') {
+    const v = curView(), g = v.groups.find(x => x.id === n.gid);
+    gs = `<span>Parent</span><span><select data-parent="${esc(n.gid)}">${groupOptions(v, g.parent || null, n.gid)}</select></span>`;
+  }
   pbody.innerHTML = `<h2>${icon(n)}${esc(n.n)}${n.cyc ? '<span class="badge">cycle</span>' : ''}</h2>` +
     (n.q !== n.n ? `<div class="sub">${esc(n.q)}</div>` : '') +
     `<div class="kv">${kv.map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join('')}${gs}</div>` + extra +
@@ -789,6 +838,7 @@ rowsEl.addEventListener('click', ev => {
   const act = ev.target.dataset && ev.target.dataset.act;
   if (act === 'rename') { st.editing = n.key; draw(); return; }
   if (act === 'delete') return deleteGroup(n.gid);
+  if (act === 'sub') return addGroup(n.gid);
   if (ev.target.classList.contains('tog')) return toggle(n);
   select(n);
 });
@@ -808,32 +858,44 @@ rowsEl.addEventListener('focusout', ev => { if (ev.target.classList.contains('gn
 rowsEl.addEventListener('mousemove', ev => { const n = nodeAt(ev.target); if (n !== st.hover) { st.hover = n; focus(); } });
 rowsEl.addEventListener('mouseleave', () => { st.hover = null; focus(); });
 
-// Drag & drop assignment
-let dragKey = null, dropRow = null;
+// Drag & drop: elements onto a group assign them; a group onto another group nests it.
+// Dropping onto an ungrouped row ungroups the element / moves the group to the top level.
+let dragKey = null, dragGroup = null, dropRow = null;
 const setDrop = el => { if (dropRow === el) return; if (dropRow) dropRow.classList.remove('drop'); dropRow = el; if (el) el.classList.add('drop'); };
+const endDrag = () => { dragKey = dragGroup = null; setDrop(null); document.body.classList.remove('dragging'); };
 rowsEl.addEventListener('dragstart', ev => {
-  const n = nodeAt(ev.target), o = assignTarget(n);
-  if (!o || !curView()) { ev.preventDefault(); return; }
-  dragKey = o.okey;
-  ev.dataTransfer.setData('text/plain', origLabel(o));
+  const n = nodeAt(ev.target);
+  if (!curView() || !n) { ev.preventDefault(); return; }
+  if (n.k === 'group') { dragGroup = n.gid; ev.dataTransfer.setData('text/plain', n.n); }
+  else {
+    const o = assignTarget(n);
+    if (!o) { ev.preventDefault(); return; }
+    dragKey = o.okey;
+    ev.dataTransfer.setData('text/plain', origLabel(o));
+  }
   ev.dataTransfer.effectAllowed = 'move';
   document.body.classList.add('dragging');
 });
 rowsEl.addEventListener('dragover', ev => {
-  if (!dragKey) return;
-  ev.preventDefault();
+  if (!dragKey && !dragGroup) return;
   const n = nodeAt(ev.target);
-  setDrop(n && n.group ? rowsEl.children[n.group.row] : null);
+  const target = n && n.group;
+  if (dragGroup && target && inGroup(curView(), target.gid, dragGroup)) { setDrop(null); return; } // into itself: not allowed
+  ev.preventDefault();
+  setDrop(target ? rowsEl.children[target.row] : null);
   ev.dataTransfer.dropEffect = 'move';
 });
 rowsEl.addEventListener('drop', ev => {
-  if (!dragKey) return;
+  if (!dragKey && !dragGroup) return;
   ev.preventDefault(); ev.stopPropagation();
-  const n = nodeAt(ev.target), key = dragKey;
-  dragKey = null; setDrop(null); document.body.classList.remove('dragging');
-  if (n) assign(key, n.group ? n.group.gid : null);
+  const n = nodeAt(ev.target), key = dragKey, gid = dragGroup;
+  endDrag();
+  if (!n) return;
+  const target = n.group ? n.group.gid : null;
+  if (gid) moveGroup(gid, target);
+  else assign(key, target);
 });
-rowsEl.addEventListener('dragend', () => { dragKey = null; setDrop(null); document.body.classList.remove('dragging'); });
+rowsEl.addEventListener('dragend', endDrag);
 
 svg.addEventListener('mouseover', ev => { if (ev.target.classList.contains('hit')) { st.hoverArc = arcs[+ev.target.dataset.a]; focus(); } });
 svg.addEventListener('mouseout', ev => { if (ev.target.classList.contains('hit')) { st.hoverArc = null; focus(); } });
@@ -856,6 +918,7 @@ pbody.addEventListener('click', ev => {
 });
 pbody.addEventListener('change', ev => {
   if (ev.target.dataset.assign) assign(ev.target.dataset.assign, ev.target.value || null);
+  else if (ev.target.dataset.parent) moveGroup(ev.target.dataset.parent, ev.target.value || null);
 });
 document.addEventListener('keydown', ev => {
   if (ev.key === 'Escape' && !/INPUT|SELECT|TEXTAREA/.test(ev.target.tagName)) { st.sel = st.selArc = null; draw(); showPanel(); }
