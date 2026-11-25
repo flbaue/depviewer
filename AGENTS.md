@@ -12,7 +12,8 @@ no frameworks** — a JDK 17+ and a browser are all a user needs.
 
 | File | Role |
 |---|---|
-| `DepScan.java` | Scanner. Single-file Java program run via the source launcher (`java DepScan.java`). Uses the `javac` Trees API to parse *and attribute* the sources, so every reference is resolved exactly. Emits JSON, or embeds it into the viewer template. |
+| `DepScan.java` | Scanner. Single-file Java program run via the source launcher (`java DepScan.java`). Java: uses the `javac` Trees API to parse *and attribute* the sources, so every reference is resolved exactly. Kotlin: a built-in lexer/declaration parser with name-based resolution (no Kotlin compiler) — see `docs/specs/kotlin-support.md`. Emits JSON, or embeds it into the viewer template. |
+| `docs/specs/` | Feature specs (behaviour, constraints, out of scope). Start here for any change. |
 | `viewer.html` | Viewer template. One self-contained HTML file with inline CSS and vanilla JS. The scanner replaces `/*DEPS_DATA*/null` with the model and `/*DEPS_VIEWS*/null` with exported views. |
 | `depviewer` | POSIX shell wrapper that passes `--template` and runs the scanner. |
 | `scripts/check.sh` | **The** check. Run it before you say you are done. |
@@ -20,6 +21,25 @@ no frameworks** — a JDK 17+ and a browser are all a user needs.
 | `test/check_model.py` | Assertions about the model scanned from the fixture. |
 | `test/fixture-views.json` | A "Layers" view used by the headless browser smoke test and the screenshots. |
 | `scripts/screenshots.sh` | Regenerates `docs/screenshot-{light,dark}.png` for the README. Run it after visible UI changes and look at the result. |
+
+## Workflow: spec first, then test-driven
+
+The maintainer wants every feature and behaviour change done this way:
+
+1. **Spec first.** Write or update a spec in `docs/specs/<feature>.md` before writing code: goal,
+   constraints, the expected behaviour as checkable statements, and what is out of scope.
+   Small bug fixes can skip the spec but not the test.
+2. **Tests next, and watch them fail.** Turn the spec's statements into checks — fixture code
+   plus assertions in `test/check_model.py` for the scanner, `scripts/check.sh` (headless
+   smoke test) for the viewer. Run them and confirm they fail for the right reason.
+3. **Implement until green**, then run the whole `scripts/check.sh`.
+4. **Check for regressions on real code**: rescan a larger project with the previous scanner
+   version (`git show HEAD:DepScan.java`) and the new one and compare the JSON; differences must
+   be intended.
+5. Update the spec's status, the README and this file if behaviour or invariants changed.
+
+If a test fails because the test itself was wrong, fix the test and say so in the commit — do
+not weaken a test to make an implementation pass.
 
 ## How to verify your change
 
@@ -54,7 +74,8 @@ When you fix a scanner bug, add the case to the fixture and a check that fails w
 ```
 
 - Node kinds: `module`, `package` (one node per name segment; the viewer merges chains),
-  `file`, `class|interface|enum|record|annotation`, `ctor|method|field|enumconst`,
+  `file`, `class|interface|enum|record|annotation|object|typealias`, `ctor|method|field|enumconst`
+  (Kotlin top-level functions/properties are direct children of their `file`),
   `ext-root`, `ext-package`, `ext-type`. Optional fields are omitted when empty/default.
 - **Parents always come before children** in `nodes`; the viewer relies on it.
 - Edges go from the innermost declaring element (member, or type for `extends`/annotations) to the

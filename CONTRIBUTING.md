@@ -14,7 +14,9 @@ For viewer problems: browser, what you did, what you expected, and a screenshot 
 1. Fork and branch from `main`.
 2. Read [AGENTS.md](AGENTS.md) — it is the technical guide for humans and AI agents alike
    (structure, data model, invariants, conventions).
-3. Make a focused change. No new dependencies or build tooling without discussing it first.
+3. For a feature or behaviour change, write or update a spec in `docs/specs/` first, then add
+   tests that fail, then implement (see "Workflow" in AGENTS.md). Make a focused change; no new
+   dependencies or build tooling without discussing it first.
 4. Run `scripts/check.sh` (needs JDK 17+ and python3; node and Chrome enable the extra checks).
    For scanner fixes, add a case to `test/fixture/` and a check to `test/check_model.py`.
    For viewer changes, also open `build/fixture.html` and try your change by hand.
