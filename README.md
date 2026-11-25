@@ -22,6 +22,9 @@ the dependencies between them as arcs, levelized and with cycles highlighted.
 open deps.html
 ```
 
+New here? The **[quick start](docs/quick-start.md)** walks you through scanning a project,
+reading the arcs, finding cycles and drawing your architecture as groups.
+
 To try it without a project of your own, run `scripts/check.sh` and open `build/fixture.html`.
 That's a small Java + Kotlin example with a deliberate package cycle and a "Layers" view;
 `build/fixture-ts.html` and `build/fixture-dart.html` are the TypeScript and Dart examples.
