@@ -44,17 +44,27 @@ final class Toolchain {
         if (modules.isEmpty()) return;
         List<String> base = command();
         if (base == null) return;
-        for (Module m : modules) {
+        // Dart: one run over all packages, so references between them (workspaces, path
+        // dependencies) resolve to the real declarations. TypeScript: one run per module.
+        List<List<Module>> runs = new ArrayList<>();
+        if (language.equals("dart")) runs.add(modules);
+        else for (Module m : modules) runs.add(List.of(m));
+        for (List<Module> run : runs) {
+            String names = run.stream().map(m -> m.name).collect(java.util.stream.Collectors.joining(", "));
             Path input = Files.createTempFile("depviewer-" + language, ".json");
             try {
-                StringBuilder sb = new StringBuilder("{\"root\":").append(js(m.dir.toString()))
-                        .append(",\"module\":").append(js(m.name)).append(",\"files\":[");
-                boolean first = true;
-                for (String[] f : m.files) {
-                    if (!tests && f[1].equals("1")) continue;
-                    if (!first) sb.append(',');
-                    first = false;
-                    sb.append("{\"path\":").append(js(f[0])).append(",\"test\":").append(f[1].equals("1")).append('}');
+                Module first = run.get(0);
+                StringBuilder sb = new StringBuilder("{\"root\":").append(js(first.dir.toString()))
+                        .append(",\"module\":").append(js(first.name)).append(",\"files\":[");
+                boolean firstFile = true;
+                for (Module m : run) {
+                    for (String[] f : m.files) {
+                        if (!tests && f[1].equals("1")) continue;
+                        if (!firstFile) sb.append(',');
+                        firstFile = false;
+                        sb.append("{\"path\":").append(js(f[0])).append(",\"test\":").append(f[1].equals("1"))
+                                .append(",\"module\":").append(js(m.name)).append(",\"root\":").append(js(m.dir.toString())).append('}');
+                    }
                 }
                 Files.writeString(input, sb.append("]}").toString());
                 List<String> cmd = new ArrayList<>(base);
@@ -65,10 +75,10 @@ final class Toolchain {
                     String out;
                     try (InputStream in = p.getInputStream()) { out = new String(in.readAllBytes(), StandardCharsets.UTF_8); }
                     int code = p.waitFor();
-                    if (code != 0) { System.err.printf("%s: extractor failed for %s (exit code %d), module skipped%n", label, m.name, code); continue; }
-                    merge(m.name, Json.parse(out));
+                    if (code != 0) { System.err.printf("%s: extractor failed for %s (exit code %d), skipped%n", label, names, code); continue; }
+                    merge(first.name, Json.parse(out));
                 } catch (IOException | IllegalArgumentException | ClassCastException e) {
-                    System.err.printf("%s: extractor failed for %s (%s), module skipped%n", label, m.name, e.getMessage());
+                    System.err.printf("%s: extractor failed for %s (%s), skipped%n", label, names, e.getMessage());
                 }
             } finally {
                 Files.deleteIfExists(input);
@@ -173,7 +183,8 @@ final class Toolchain {
             if (kind.equals("file")) {
                 String path = str(n.get("path"));
                 String pkg = str(n.getOrDefault("package", ""));
-                Node f = node("F:" + module + ":" + path, path.substring(path.lastIndexOf('/') + 1), "file", folderPackage(module, pkg == null ? "" : pkg));
+                String fileModule = n.get("module") != null ? str(n.get("module")) : module;   // multi-module runs
+                Node f = node("F:" + fileModule + ":" + path, path.substring(path.lastIndexOf('/') + 1), "file", folderPackage(fileModule, pkg == null ? "" : pkg));
                 f.path = path;
                 f.test = Boolean.TRUE.equals(n.get("test"));
                 f.line = 1;

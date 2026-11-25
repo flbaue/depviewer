@@ -75,6 +75,10 @@ writes one JSON document to stdout (diagnostics to stderr):
 ```
 
 - `id`s are only meaningful inside one fragment; the core prefixes them with language and module.
+- One extractor run may cover several modules (e.g. all Dart packages of a scan, so references
+  between them resolve to the real declarations). Then each input file carries `"module"` and each
+  file node in the fragment carries the same `"module"`; paths are relative to that module's folder.
+  Without it, the run's module applies.
 - Parents come before children; every non-file node has a parent from the same fragment.
 - `kind` uses the existing node kinds plus `namespace`, `mixin`, `extension` (see viewer below).
 - `package` is a folder path with `/` separators (`""` for the project root). The core builds

@@ -19,12 +19,19 @@ references are resolved exactly.
   resolve). If `.dart_tool/package_config.json` is missing the scan still runs, imports of other
   packages count as errors, and a hint is printed.
 - If Dart is missing, Dart modules are skipped with a message.
+- All Dart packages found in one scan are analysed in **one** extractor run, so references between
+  them (pub workspaces, `path:` dependencies) link to the real declarations instead of showing the
+  other package as external. The missing-`package_config.json` hint looks in the package folder and
+  its parents (a workspace member uses the workspace root's config).
 
 ## Sources
 
 - Module root: a folder with `pubspec.yaml`. Source folders: `lib/`, `bin/`, `web/`, `tool/`,
   and test folders `test/`, `integration_test/` (flagged as tests). Generated files
   (`*.g.dart`, `*.freezed.dart`) are included but nothing below `.dart_tool/` or `build/`.
+- Files the package's `analysis_options.yaml` excludes (`analyzer: exclude:`) cannot be analysed;
+  they are skipped with one note per module, and the rest of the module is scanned normally.
+- A file that fails to analyse never fails the module: it is skipped with a note.
 
 ## Model
 
@@ -62,7 +69,8 @@ annotations and everything else → `uses`. Imports/exports/part directives are 
 
 ## Fixture expectations (test/fixture-dart)
 
-A small shop app package (`name: shop_app`, no third-party dependencies): an abstract interface
+A small pub workspace: the shop app package (`name: shop_app`) and `packages/shop_core` (a
+`Currency` class used by the app), no third-party dependencies. The app contains: an abstract interface
 and implementing class, a mixin, an enum with a method, an extension, a typedef, named and
 factory constructors, a private member, top-level function and variable, a `part` file, a
 deliberate folder cycle, a test file and uses of `dart:core`/`dart:async` types. Concrete

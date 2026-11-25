@@ -31,31 +31,50 @@ late Set<String> ourFiles;                 // absolute paths
 
 Future<void> main(List<String> args) async {
   final input = jsonDecode(File(args.first).readAsStringSync()) as Map<String, dynamic>;
-  final root = p.normalize(p.absolute(input['root'] as String));
-  final files = {
-    for (final f in (input['files'] as List).cast<Map<String, dynamic>>())
-      p.normalize(p.join(root, f['path'] as String)): f['test'] == true,
-  };
-  ourFiles = files.keys.toSet();
-  if (!File(p.join(root, '.dart_tool', 'package_config.json')).existsSync()) {
-    stderr.writeln('dart: ${input['module']}: no .dart_tool/package_config.json - run `dart pub get` (or `flutter pub get`) '
-        'so imports of other packages resolve');
+  final defaultRoot = p.normalize(p.absolute(input['root'] as String));
+  // One run may cover several packages (all Dart packages of a scan): each file names its module and root.
+  final files = <String, ({bool test, String module, String root})>{};
+  for (final f in (input['files'] as List).cast<Map<String, dynamic>>()) {
+    final root = p.normalize(p.absolute((f['root'] ?? defaultRoot) as String));
+    files[p.normalize(p.join(root, f['path'] as String))] =
+        (test: f['test'] == true, module: (f['module'] ?? input['module']) as String, root: root);
   }
-
-  final collection = AnalysisContextCollection(includedPaths: [root]);
-  final units = <String, ResolvedUnitResult>{};
-  for (final path in files.keys) {
-    final result = await collection.contextFor(path).currentSession.getResolvedUnit(path);
-    if (result is ResolvedUnitResult) {
-      units[path] = result;
-      out['errors'] = (out['errors'] as int) + result.diagnostics.where((d) => d.severity == Severity.error).length;
-    } else {
-      stderr.writeln('dart: could not resolve $path');
+  ourFiles = files.keys.toSet();
+  final roots = {for (final f in files.values) f.root: f.module};
+  for (final e in roots.entries) {
+    if (!hasPackageConfig(e.key)) {
+      stderr.writeln('dart: ${e.value}: no .dart_tool/package_config.json here or in a parent folder - run `dart pub get` '
+          '(or `flutter pub get`) so imports of other packages resolve');
     }
+  }
+  // Included paths must not overlap (a workspace member lies inside the workspace root).
+  final included = roots.keys.where((r) => !roots.keys.any((o) => o != r && p.isWithin(o, r))).toList();
+  final collection = AnalysisContextCollection(includedPaths: included);
+  final root = included.length == 1 ? included.first : defaultRoot;
+  final units = <String, ResolvedUnitResult>{};
+  var excluded = 0;
+  for (final path in files.keys) {
+    try {
+      final result = await collection.contextFor(path).currentSession.getResolvedUnit(path);
+      if (result is ResolvedUnitResult) {
+        units[path] = result;
+        out['errors'] = (out['errors'] as int) + result.diagnostics.where((d) => d.severity == Severity.error).length;
+      } else {
+        stderr.writeln('dart: could not resolve ${p.relative(path, from: root)}, skipped');
+      }
+    } on StateError {
+      excluded++; // excluded by analysis_options.yaml: the analyzer has no context for it
+    } catch (e) {
+      stderr.writeln('dart: ${p.relative(path, from: root)} failed to analyse ($e), skipped');
+    }
+  }
+  if (excluded > 0) {
+    stderr.writeln('dart: $excluded file(s) skipped - excluded from analysis by analysis_options.yaml');
   }
   // Declarations of all files first (references may point to any of them), then references.
   for (final e in units.entries) {
-    Declarations(p.relative(e.key, from: root).replaceAll(r'\', '/'), files[e.key]!, e.value).run();
+    final f = files[e.key]!;
+    Declarations(f.module, p.relative(e.key, from: f.root).replaceAll(r'\', '/'), f.test, e.value).run();
   }
   for (final e in units.entries) {
     e.value.unit.accept(References(e.value.lineInfo, declOfAst[e.value.unit]!));
@@ -63,13 +82,21 @@ Future<void> main(List<String> args) async {
   stdout.write(jsonEncode(out));
 }
 
+/// A package uses the package_config.json of its own folder or of a parent (pub workspaces).
+bool hasPackageConfig(String dir) {
+  for (var d = dir;; d = p.dirname(d)) {
+    if (File(p.join(d, '.dart_tool', 'package_config.json')).existsSync()) return true;
+    if (p.dirname(d) == d) return false;
+  }
+}
+
 // ---------------------------------------------------------------- declarations
 
 class Declarations {
-  final String rel;
+  final String module, path, rel; // rel = id base "module|path", unique across the packages of one run
   final bool test;
   final ResolvedUnitResult result;
-  Declarations(this.rel, this.test, this.result);
+  Declarations(this.module, this.path, this.test, this.result) : rel = '$module|$path';
 
   LineInfo get lines => result.lineInfo;
   int lineOf(int offset) => lines.getLocation(offset).lineNumber;
@@ -78,7 +105,7 @@ class Declarations {
     final start = lineOf(decl.offset);
     nodes.add({
       'id': id, 'name': name, 'kind': kind, 'parent': parent, 'line': start,
-      'loc': lineOf(decl.end) - start + 1, 'q': id, 'vis': vis ?? (name.startsWith('_') ? '-' : '+'), 'static': isStatic,
+      'loc': lineOf(decl.end) - start + 1, 'q': id.substring(module.length + 1), 'vis': vis ?? (name.startsWith('_') ? '-' : '+'), 'static': isStatic,
     });
     kindOf[id] = kind;
     declOfAst[decl] = id;
@@ -87,8 +114,8 @@ class Declarations {
   }
 
   void run() {
-    final dir = rel.contains('/') ? rel.substring(0, rel.lastIndexOf('/')) : '';
-    nodes.add({'id': rel, 'kind': 'file', 'path': rel, 'package': dir, 'test': test, 'loc': lines.lineCount});
+    final dir = path.contains('/') ? path.substring(0, path.lastIndexOf('/')) : '';
+    nodes.add({'id': rel, 'kind': 'file', 'path': path, 'package': dir, 'module': module, 'test': test, 'loc': lines.lineCount});
     kindOf[rel] = 'file';
     declOfAst[result.unit] = rel;
     final prefix = '$rel#';

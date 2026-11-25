@@ -62,6 +62,18 @@ for ext in ["dart:core.Map", "dart:core.String", "dart:async.Future", "dart:asyn
     node(ext, "ext-type")
 check(nodes[node("dart:async.Future")]["p"] == node("dart:async", "ext-package"), "external type not in its package")
 
+# Files excluded by analysis_options.yaml are skipped; the rest of the module is still scanned.
+check(c.by_q.get("lib/src/generated/api.g.dart#GeneratedApi") is None, "analyzer-excluded file must be skipped")
+
+# Workspace: the second package is its own module, and the app's references into it link to its
+# real declarations (not to an external package).
+core = node("shop_core", "module")
+check(nodes[node("lib/currency.dart", "file")].get("p") is not None, "shop_core file missing")
+node("lib/currency.dart#Currency", "class")
+node("lib/currency.dart#Currency.format(double)", "method")
+check(not any(n.get("k") == "ext-package" and n.get("n") == "shop_core" for n in nodes),
+      "a scanned package must not appear as an external package")
+
 # --- dependencies --------------------------------------------------------------
 edge(PD + "Product", PD + "Priced", "implements")
 edge(CD + "Cart", CD + "Describable", "implements")                       # with (mixin)
@@ -81,6 +93,8 @@ edge(CD + "Cart.total()", PD + "Product.price()", "call")
 edge(CD + "Cart.describe()", MD + "formatMoney(double)", "call")           # models -> util
 edge(CD + "Cart.describe()", CD + "Cart.total()", "call")
 edge(MD + "formatMoney(double)", MD + "currency", "access")
+edge(MD + "formatMoney(double)", "lib/currency.dart#Currency.format(double)", "call")   # into shop_core
+edge(MD + "formatMoney(double)", "lib/currency.dart#Currency.eur", "access")
 edge(MD + "CartChecks", CD + "Cart", "uses")                               # util -> models (cycle)
 edge(MD + "CartChecks.isEmpty", CD + "Cart.total()", "call")
 edge(KD + "Checkout._events", "dart:async.StreamController", "new")

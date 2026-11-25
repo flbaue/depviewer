@@ -1,0 +1,6 @@
+name: shop_core
+description: Second package of the fixture workspace (used by shop_app).
+publish_to: none
+resolution: workspace
+environment:
+  sdk: ">=3.6.0 <4.0.0"

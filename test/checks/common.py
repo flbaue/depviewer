@@ -18,7 +18,7 @@ class Checker:
         self.edges = {(f, t, kinds[k]): (c, lines) for f, t, k, c, lines in self.data["edges"]}
         # node() returns -1 for a missing node, which indexes this placeholder, so checks like
         # nodes[node(q)].get("t") report the missing node instead of crashing.
-        self.nodes.append({"n": "", "k": "", "missing": True})
+        self.nodes.append({"n": "", "k": "", "p": None, "missing": True})
 
     @staticmethod
     def qname(n):

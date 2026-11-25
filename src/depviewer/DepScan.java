@@ -151,11 +151,13 @@ public class DepScan {
         kotlin.resolveAll();
         Path home = Paths.get(Toolchain.env("DEPVIEWER_HOME", template != null && template.toAbsolutePath().getParent() != null
                 ? template.toAbsolutePath().getParent().toString() : ".")).toAbsolutePath().normalize();
-        for (Toolchain tc : List.of(new Toolchain("typescript", "TypeScript/JavaScript", home), new Toolchain("dart", "Dart", home))) {
+        List<Toolchain> toolchains = List.of(new Toolchain("typescript", "TypeScript/JavaScript", home), new Toolchain("dart", "Dart", home));
+        int totalErrors = errors[0];
+        for (Toolchain tc : toolchains) {
             tc.scan(tc.language.equals("dart") ? dartModules : tsModules.stream().filter(m -> !m.files.isEmpty()).collect(Collectors.toList()), tests);
-            errors[0] += tc.errors;
+            totalErrors += tc.errors;
         }
-        String json = toJson(title, edges.values(), errors[0]);
+        String json = toJson(title, edges.values(), totalErrors);
         writeOutput(out, template, views, json);
 
         Set<String> typeKinds = Set.of("class", "interface", "enum", "record", "annotation", "object", "typealias", "namespace", "mixin", "extension");
@@ -170,6 +172,10 @@ public class DepScan {
             System.err.println("      Missing libraries? Run 'mvn dependency:copy-dependencies' or pass --cp.");
             if (!rootOfKt.isEmpty()) System.err.println("      (Java references to Kotlin code are expected here; they are matched by name.)");
             firstErrors.forEach(e -> System.err.println("      " + e));
+        }
+        for (Toolchain tc : toolchains) {
+            if (tc.errors > 0) System.err.printf("note: %d %s errors reported by the %s toolchain%s%n", tc.errors, tc.label, tc.label,
+                    tc.language.equals("dart") ? " (unresolved imports? run 'dart pub get' / 'flutter pub get' in the project)" : "");
         }
     }
 
