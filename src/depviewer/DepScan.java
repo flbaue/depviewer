@@ -266,7 +266,7 @@ public class DepScan {
             if (!Files.isDirectory(root)) continue;
             String test = DART_TEST.contains(sub) ? "1" : "0";
             try (var s = Files.walk(root)) {
-                s.filter(p -> p.toString().endsWith(".dart") && !skipped(dir.relativize(p)))
+                s.filter(p -> p.toString().endsWith(".dart") && !skipped(root.relativize(p)))   // `bin/` is a Dart source folder
                         .forEach(p -> m.files.add(new String[]{dir.relativize(p).toString().replace('\\', '/'), test}));
             }
         }

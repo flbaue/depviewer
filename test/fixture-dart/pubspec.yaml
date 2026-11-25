@@ -1,0 +1,5 @@
+name: shop_app
+description: Fixture for depviewer's Dart support (no third-party dependencies, so `dart pub get --offline` works).
+publish_to: none
+environment:
+  sdk: ">=3.0.0 <4.0.0"

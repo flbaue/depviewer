@@ -1,6 +1,6 @@
 # Spec: Dart support
 
-Status: draft
+Status: implemented
 Tests: `test/checks/dart.py` on `test/fixture-dart/`, smoke test in `scripts/check.sh`
 Depends on: [multi-language.md](multi-language.md)
 

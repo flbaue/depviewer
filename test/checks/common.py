@@ -16,6 +16,9 @@ class Checker:
         for i, n in enumerate(self.nodes):
             self.by_q.setdefault(self.qname(n), i)
         self.edges = {(f, t, kinds[k]): (c, lines) for f, t, k, c, lines in self.data["edges"]}
+        # node() returns -1 for a missing node, which indexes this placeholder, so checks like
+        # nodes[node(q)].get("t") report the missing node instead of crashing.
+        self.nodes.append({"n": "", "k": "", "missing": True})
 
     @staticmethod
     def qname(n):
@@ -28,7 +31,9 @@ class Checker:
     def node(self, q, kind=None):
         i = self.by_q.get(q)
         self.check(i is not None, f"missing node {q}")
-        if i is not None and kind:
+        if i is None:
+            return -1
+        if kind:
             self.check(self.nodes[i]["k"] == kind, f"{q}: expected kind {kind}, got {self.nodes[i]['k']}")
         return i
 
@@ -44,7 +49,7 @@ class Checker:
             self.check(c >= 1 and all(l > 0 for l in lines), f"edge {src} -{kind}-> {dst}: bad count/lines {c} {lines}")
 
     def parents_first(self):
-        for i, n in enumerate(self.nodes):
+        for i, n in enumerate(self.nodes[:-1]):
             if "p" in n:
                 self.check(n["p"] < i, f"node {i} ({self.qname(n)}) appears before its parent")
 

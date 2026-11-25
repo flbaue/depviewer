@@ -48,6 +48,19 @@ else
   HAVE_TS=
 fi
 
+step "Dart (docs/specs/dart-support.md)"
+DART_BIN=${DEPVIEWER_DART:-dart}
+if command -v "$DART_BIN" >/dev/null 2>&1; then
+  (cd test/fixture-dart && "$DART_BIN" pub get --offline >/dev/null)   # no dependencies: works offline
+  ./depviewer -o "$OUT/fixture-dart.json" test/fixture-dart
+  python3 -I test/checks/dart.py "$OUT/fixture-dart.json"
+  ./depviewer -o "$OUT/fixture-dart.html" test/fixture-dart 2>/dev/null
+  HAVE_DART=1
+else
+  echo "skipped: dart not installed (set DEPVIEWER_DART)"
+  HAVE_DART=
+fi
+
 step "generated html"
 grep -q '/\*DEPS_DATA\*/null' "$OUT/fixture.html" && fail "data was not embedded"
 grep -q '/\*DEPS_VIEWS\*/null' "$OUT/fixture.html" && fail "views were not embedded"
@@ -105,6 +118,14 @@ if [ -n "$CHROME" ]; then
     grep -q 'class="ic k-file js"' "$OUT/fixture-ts.dom.html" || fail "JavaScript file icon missing"
     grep -q 'class="ic k-namespace"' "$OUT/fixture-ts.dom.html" || fail "namespace row missing"
     echo "ok (TypeScript fixture renders)"
+  fi
+  if [ -n "$HAVE_DART" ]; then
+    "$CHROME" --headless=new --disable-gpu --no-sandbox --no-first-run --user-data-dir="$OUT/chrome-profile" \
+      --window-size=1400,1000 --virtual-time-budget=5000 --dump-dom "file://$(pwd)/$OUT/fixture-dart.html?level=3" > "$OUT/fixture-dart.dom.html" 2>/dev/null
+    grep -q 'class="ic k-file dart"' "$OUT/fixture-dart.dom.html" || fail "Dart file icon missing"
+    grep -q 'class="ic k-mixin"' "$OUT/fixture-dart.dom.html" || fail "mixin row missing"
+    grep -q 'class="ic k-extension"' "$OUT/fixture-dart.dom.html" || fail "extension row missing"
+    echo "ok (Dart fixture renders)"
   fi
 else
   echo "skipped: no Chrome/Chromium found (set CHROME_BIN)"

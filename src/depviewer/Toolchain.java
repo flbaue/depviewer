@@ -59,13 +59,17 @@ final class Toolchain {
                 Files.writeString(input, sb.append("]}").toString());
                 List<String> cmd = new ArrayList<>(base);
                 cmd.add(input.toString());
-                ProcessBuilder pb = new ProcessBuilder(cmd).redirectError(ProcessBuilder.Redirect.INHERIT);
-                Process p = pb.start();
-                String out;
-                try (InputStream in = p.getInputStream()) { out = new String(in.readAllBytes(), StandardCharsets.UTF_8); }
-                int code = p.waitFor();
-                if (code != 0) { System.err.printf("%s: extractor failed for %s (exit code %d), module skipped%n", label, m.name, code); continue; }
-                merge(m.name, Json.parse(out));
+                try {
+                    ProcessBuilder pb = new ProcessBuilder(cmd).redirectError(ProcessBuilder.Redirect.INHERIT);
+                    Process p = pb.start();
+                    String out;
+                    try (InputStream in = p.getInputStream()) { out = new String(in.readAllBytes(), StandardCharsets.UTF_8); }
+                    int code = p.waitFor();
+                    if (code != 0) { System.err.printf("%s: extractor failed for %s (exit code %d), module skipped%n", label, m.name, code); continue; }
+                    merge(m.name, Json.parse(out));
+                } catch (IOException | IllegalArgumentException | ClassCastException e) {
+                    System.err.printf("%s: extractor failed for %s (%s), module skipped%n", label, m.name, e.getMessage());
+                }
             } finally {
                 Files.deleteIfExists(input);
             }
@@ -135,13 +139,22 @@ final class Toolchain {
     }
 
     /** Runs a setup command; when nodeBin is given, its folder is put first on PATH (npm needs node). */
-    static int run(Path dir, List<String> cmd, String nodeBin) throws IOException, InterruptedException {
+    static int run(Path dir, List<String> cmd, String nodeBin) throws InterruptedException {
+        if (!Files.isDirectory(dir)) {
+            System.err.println("extractor folder missing: " + dir);
+            return -1;
+        }
         ProcessBuilder pb = new ProcessBuilder(cmd).directory(dir.toFile()).redirectOutput(ProcessBuilder.Redirect.DISCARD)
                 .redirectError(ProcessBuilder.Redirect.INHERIT);
         if (nodeBin != null && Path.of(nodeBin).getParent() != null) {
             pb.environment().put("PATH", Path.of(nodeBin).getParent() + java.io.File.pathSeparator + System.getenv("PATH"));
         }
-        return pb.start().waitFor();
+        try {
+            return pb.start().waitFor();
+        } catch (IOException e) {
+            System.err.println("could not run " + cmd.get(0) + ": " + e.getMessage());
+            return -1;
+        }
     }
 
     // ------------------------------------------------ merging

@@ -17,9 +17,16 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      # ubuntu-latest ships python3, node and Google Chrome, so every step of the script runs.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: "3.12.0"
+      # Every toolchain must be present so that no step of the script is skipped in CI.
       - name: Fail instead of skipping
         run: |
           command -v node
+          command -v dart
           command -v google-chrome
       - run: scripts/check.sh
