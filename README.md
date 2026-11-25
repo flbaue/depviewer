@@ -1,6 +1,6 @@
 # depviewer
 
-A small dependency explorer for Java and Kotlin projects: browse the package/file/class/member tree and see
+A small dependency explorer for Java, Kotlin, TypeScript/JavaScript and Dart projects: browse the package/file/class/member tree and see
 the dependencies between them as arcs, levelized and with cycles highlighted.
 
 > **AI notice:** this project was written almost entirely by an AI coding agent
@@ -23,11 +23,14 @@ open deps.html
 ```
 
 To try it without a project of your own, run `scripts/check.sh` and open `build/fixture.html`.
-That's a small Java + Kotlin example with a deliberate package cycle and a "Layers" view.
+That's a small Java + Kotlin example with a deliberate package cycle and a "Layers" view;
+`build/fixture-ts.html` and `build/fixture-dart.html` are the TypeScript and Dart examples.
 
-- **The scanner** (`src/depviewer/`, compiled by the `depviewer` script on first use) scans the sources. It finds `src/{main,test}/{java,kotlin}` folders
-  (Maven/Gradle layout) and names modules after their `artifactId`. Needs JDK 17+, no other
-  dependencies.
+- **The scanner** (`src/depviewer/`, compiled by the `depviewer` script on first use) scans the
+  sources. It finds Maven/Gradle source folders (`src/{main,test}/{java,kotlin}`, module name from
+  the `artifactId`), `package.json` folders (TypeScript/JavaScript) and `pubspec.yaml` folders
+  (Dart); one scan can cover a mixed repository. Needs JDK 17+; TypeScript and Dart additionally
+  need their own toolchain (below). A language whose toolchain is missing is skipped with a note.
   - **Java** is parsed and attributed by the JDK compiler (`javac` Trees API), so references are
     resolved exactly (overloads, inherited members, static imports…).
   - **Kotlin** (`.kt`) is read by a built-in parser, because there is no Kotlin compiler in the
@@ -35,6 +38,17 @@ That's a small Java + Kotlin example with a deliberate package cycle and a "Laye
     variables and properties, call chains like `event.order.total()`. When a name is ambiguous,
     it is left out rather than guessed. Java ↔ Kotlin references are included in both
     directions. Details and limitations: [docs/specs/kotlin-support.md](docs/specs/kotlin-support.md).
+  - **TypeScript / JavaScript** (`.ts .tsx .js .jsx .mjs .cjs …`) are analysed with the TypeScript
+    compiler API and its type checker, so imports, re-exports and default exports resolve exactly.
+    Needs Node.js 18+ (or `DEPVIEWER_NODE`); uses the project's own `typescript` package if
+    installed, else a pinned copy that `npm ci` installs on first use.
+    [docs/specs/typescript-support.md](docs/specs/typescript-support.md)
+  - **Dart** (incl. Flutter) is analysed with the official Dart analyzer. Needs the Dart SDK 3.x
+    (`dart`, or `DEPVIEWER_DART`; Flutter's bundled `dart` works); the extractor's dependencies are
+    installed with `dart pub get` on first use. Run `dart pub get` / `flutter pub get` in your
+    project first so imports of other packages resolve.
+    [docs/specs/dart-support.md](docs/specs/dart-support.md)
+  - How the languages fit together: [docs/specs/multi-language.md](docs/specs/multi-language.md).
 - **viewer.html** is the template; the scanner embeds the data and writes one self-contained HTML
   file. `-o deps.json` writes data only; open it in the viewer via *Open…*, drag & drop, or
   `viewer.html?data=deps.json`. Add `?level=1`…`4` to open the tree at packages, files, types or

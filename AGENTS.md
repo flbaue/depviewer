@@ -12,13 +12,15 @@ no frameworks** — a JDK 17+ and a browser are all a user needs.
 
 | File | Role |
 |---|---|
-| `src/depviewer/` | Scanner (Java 17, JDK only, package `depviewer`). `DepScan` = CLI, source discovery, orchestration, output; `Model` = nodes/edges/packages/externals/JSON writer shared by all languages; `JavaScanner` = javac Trees API (parses *and attributes*, exact); `KotlinScanner` = built-in lexer/parser, name-based resolution (`docs/specs/kotlin-support.md`). The `depviewer` wrapper compiles it into `build/depviewer-classes` on first use. Without the wrapper: `javac -d out src/depviewer/*.java && java -cp out depviewer.DepScan …`. |
+| `src/depviewer/` | Scanner (Java 17, JDK only, package `depviewer`). `DepScan` = CLI, source discovery, orchestration, output; `Model` = nodes/edges/packages/externals/JSON writer shared by all languages; `JavaScanner` = javac Trees API (parses *and attributes*, exact); `KotlinScanner` = built-in lexer/parser, name-based resolution (`docs/specs/kotlin-support.md`); `Toolchain` = runs a language extractor and merges its JSON fragment; `Json` = minimal JSON reader. The `depviewer` wrapper compiles it into `build/depviewer-classes` on first use. Without the wrapper: `javac -d out src/depviewer/*.java && java -cp out depviewer.DepScan …`. |
 | `docs/specs/` | Feature specs (behaviour, constraints, out of scope). Start here for any change. |
 | `viewer.html` | Viewer template. One self-contained HTML file with inline CSS and vanilla JS. The scanner replaces `/*DEPS_DATA*/null` with the model and `/*DEPS_VIEWS*/null` with exported views. |
 | `depviewer` | POSIX shell wrapper that passes `--template` and runs the scanner. |
+| `extractors/typescript/` | TypeScript/JavaScript extractor: `extract.mjs` on the TypeScript compiler API (Node). Pinned in `package-lock.json`. |
+| `extractors/dart/` | Dart extractor: `bin/extract.dart` on `package:analyzer`. Pinned in `pubspec.yaml`/`pubspec.lock`. |
 | `scripts/check.sh` | **The** check. Run it before you say you are done. |
-| `test/fixture/` | Small Java project with known dependencies (incl. a deliberate package cycle and an unresolvable test import). |
-| `test/check_model.py` | Assertions about the model scanned from the fixture. |
+| `test/fixture/`, `test/fixture-ts/`, `test/fixture-dart/` | Small projects with known dependencies per language (Java + Kotlin, TypeScript/JavaScript, Dart), each with a deliberate cycle and some unresolvable or external references. |
+| `test/checks/` | Model assertions: `jvm.py`, `typescript.py`, `dart.py` (one per fixture) on top of `common.py`. |
 | `test/fixture-views.json` | A "Layers" view used by the headless browser smoke test and the screenshots. |
 | `scripts/screenshots.sh` | Regenerates `docs/screenshot-{light,dark}.png` for the README. Run it after visible UI changes and look at the result. |
 
@@ -30,7 +32,7 @@ The maintainer wants every feature and behaviour change done this way:
    constraints, the expected behaviour as checkable statements, and what is out of scope.
    Small bug fixes can skip the spec but not the test.
 2. **Tests next, and watch them fail.** Turn the spec's statements into checks — fixture code
-   plus assertions in `test/check_model.py` for the scanner, `scripts/check.sh` (headless
+   plus assertions in `test/checks/<fixture>.py` for the scanner, `scripts/check.sh` (headless
    smoke test) for the viewer. Run them and confirm they fail for the right reason.
 3. **Implement until green**, then run the whole `scripts/check.sh`.
 4. **Check for regressions on real code**: rescan a larger project with the previous scanner
@@ -58,7 +60,7 @@ also open `build/fixture.html` in a browser and try the feature yourself** — i
 browser, do it; otherwise say plainly in your summary that the UI was not tried. Check both light
 and dark mode and a narrow (phone) width if you touched layout or CSS.
 
-When you change what the scanner emits on purpose, update `test/check_model.py` in the same commit.
+When you change what the scanner emits on purpose, update `test/checks/` in the same commit.
 When you fix a scanner bug, add the case to the fixture and a check that fails without your fix
 (`check.sh` must have failed before the fix; confirm it).
 
@@ -75,14 +77,34 @@ When you fix a scanner bug, add the case to the fixture and a check that fails w
 ```
 
 - Node kinds: `module`, `package` (one node per name segment; the viewer merges chains),
-  `file`, `class|interface|enum|record|annotation|object|typealias`, `ctor|method|field|enumconst`
-  (Kotlin top-level functions/properties are direct children of their `file`),
+  `file`, `class|interface|enum|record|annotation|object|typealias|namespace|mixin|extension`,
+  `ctor|method|field|enumconst` (top-level functions/variables of Kotlin, TypeScript and Dart are
+  direct children of their `file`); folder-based packages (TypeScript, Dart) carry `"sep": "/"`,
   `ext-root`, `ext-package`, `ext-type`. Optional fields are omitted when empty/default.
 - **Parents always come before children** in `nodes`; the viewer relies on it.
 - Edges go from the innermost declaring element (member, or type for `extends`/annotations) to the
   most specific target that exists in the model (member → type → external top-level type).
   Imports, `this`/`super`, local variables and compiler-generated code produce no edges.
 - Keep the JSON compact; real projects have hundreds of thousands of edges.
+
+## Adding a language
+
+Read `docs/specs/multi-language.md` first, then follow the workflow above:
+
+1. Spec `docs/specs/<language>-support.md` (toolchain, sources, model mapping, dependency rules,
+   fixture expectations, out of scope).
+2. Fixture `test/fixture-<language>/` and `test/checks/<language>.py`; add both to
+   `scripts/check.sh` (skip with a note when the toolchain is missing) and the toolchain to the CI
+   workflow. Watch the checks fail.
+3. Extractor in `extractors/<language>/`, written against the language's official tooling, with
+   pinned dependencies, printing the fragment format; discovery and a `Toolchain` command in
+   `src/depviewer/`. File lists and test flags are computed in Java and passed to the extractor.
+4. Read the extractor's full output on the fixture for wrong dependencies the checks do not
+   cover, and compare a Java-only project against the previous version (must be identical).
+
+When the API of a toolchain library is new to you, read its installed sources (e.g. in the pub
+cache or `node_modules`) instead of writing from memory - the Dart analyzer API in particular
+changes between major versions.
 
 ## Invariants that are easy to break
 

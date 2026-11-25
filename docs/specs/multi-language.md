@@ -1,6 +1,6 @@
 # Spec: multi-language architecture
 
-Status: draft
+Status: implemented
 Tests: `scripts/check.sh` (all fixtures), regression comparison against the previous version
 
 ## Goal
@@ -24,20 +24,20 @@ additions are TypeScript/JavaScript ([typescript-support.md](typescript-support.
 ## Code layout
 
 ```
-depviewer                  wrapper: compiles src/ with javac on first run (or when sources
-                           changed) into build/depviewer-classes, then runs it
-src/DepScan.java           CLI, source discovery, orchestration, output
-src/Model.java             nodes, edges, packages, externals, JSON writer
-src/Json.java              minimal JSON reader (for extractor output)
-src/JavaScanner.java       javac-based Java scanner
-src/KotlinScanner.java     built-in Kotlin scanner
-src/Toolchain.java         runs an extractor and merges its fragment into the model
-extractors/typescript/     extract.mjs + package.json/package-lock.json (typescript)
-extractors/dart/           bin/extract.dart + pubspec.yaml/pubspec.lock (analyzer)
-viewer.html                unchanged role
+depviewer                          wrapper: compiles src/ with javac on first run (or when
+                                   sources changed) into build/depviewer-classes, then runs it
+src/depviewer/DepScan.java         CLI, source discovery, orchestration, output
+src/depviewer/Model.java           nodes, edges, packages, externals, JSON writer
+src/depviewer/Json.java            minimal JSON reader (for extractor output)
+src/depviewer/JavaScanner.java     javac-based Java scanner
+src/depviewer/KotlinScanner.java   built-in Kotlin scanner
+src/depviewer/Toolchain.java       runs an extractor and merges its fragment into the model
+extractors/typescript/             extract.mjs + package.json/package-lock.json (typescript)
+extractors/dart/                   bin/extract.dart + pubspec.yaml/pubspec.lock (analyzer)
+viewer.html                        unchanged role
 ```
 
-Running without the wrapper: `javac -d out src/*.java && java -cp out DepScan …`.
+Running without the wrapper: `javac -d out src/depviewer/*.java && java -cp out depviewer.DepScan …`.
 
 ## Discovery
 

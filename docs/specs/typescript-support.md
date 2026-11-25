@@ -1,6 +1,6 @@
 # Spec: TypeScript and JavaScript support
 
-Status: draft
+Status: implemented
 Tests: `test/checks/typescript.py` on `test/fixture-ts/`, smoke test in `scripts/check.sh`
 Depends on: [multi-language.md](multi-language.md)
 
