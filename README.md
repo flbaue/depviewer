@@ -8,6 +8,14 @@ the dependencies between them as arcs, levelized and with cycles highlighted.
 > See [How it was built](#how-it-was-built) below. Review it like any third-party code before you
 > rely on it.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-dark.png">
+  <img alt="depviewer showing a small example project in a user-defined Layers view: groups Application, Domain and Service with dependency arcs between files; red arcs mark the upward dependencies of a Domain/Service cycle" src="docs/screenshot-light.png">
+</picture>
+
+*The bundled example project in a "Layers" view: green arcs are downward dependencies; the red
+arcs show `Domain` depending back on `Service`, a cycle between the layers.*
+
 ```
 ./depviewer [-o deps.html] [--no-tests] [--cp <classpath>] <project-dir>...
 open deps.html

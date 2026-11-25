@@ -18,7 +18,8 @@ no frameworks** — a JDK 17+ and a browser are all a user needs.
 | `scripts/check.sh` | **The** check. Run it before you say you are done. |
 | `test/fixture/` | Small Java project with known dependencies (incl. a deliberate package cycle and an unresolvable test import). |
 | `test/check_model.py` | Assertions about the model scanned from the fixture. |
-| `test/fixture-views.json` | A "Layers" view used by the headless browser smoke test. |
+| `test/fixture-views.json` | A "Layers" view used by the headless browser smoke test and the screenshots. |
+| `scripts/screenshots.sh` | Regenerates `docs/screenshot-{light,dark}.png` for the README. Run it after visible UI changes and look at the result. |
 
 ## How to verify your change
 
