@@ -10,7 +10,7 @@
   --band0: #f4f7fc; --band1: #e9f0fa; --band2: #dfe9f8; --band3: #d4e2f6; --band4: #c9dbf3; --band5: #bfd4f1; --band6: #b5cdee; --band7: #abc6eb;
   --sep: #7f8aa0; --sel: #ffe27a; --peer: #fff4c2; --match: #ff9d00;
   --down: #4b9a17; --up: #2a73cc; --cyc: #d92436; --nest: #9aa3b5;
-  --pkg: #b97a2e; --file: #3d6fb4; --cls: #2e8b57; --ifc: #7c4dcc; --enm: #a3742a; --rec: #198a8a; --ann: #8a5a9e;
+  --pkg: #b97a2e; --file: #3d6fb4; --obj: #b8487a; --kt: #7f52ff; --tal: #5f7f99; --cls: #2e8b57; --ifc: #7c4dcc; --enm: #a3742a; --rec: #198a8a; --ann: #8a5a9e;
   --mth: #3765c0; --ctor: #2f8f8f; --fld: #e39a2b; --ext: #7a8394; --mod: #4d5d80; --priv: #c8453b;
   --btn: #ffffff; --btn-b: #c3cad6; --accent: #2a73cc;
   color-scheme: light;
@@ -21,7 +21,7 @@
     --band0: #161c25; --band1: #1a222d; --band2: #1e2735; --band3: #222c3c; --band4: #263244; --band5: #2a374b; --band6: #2e3c52; --band7: #324159;
     --sep: #6f7b91; --sel: #5c4b12; --peer: #3a3418; --match: #ffb340;
     --down: #6cc23a; --up: #5ea2f0; --cyc: #ff5466; --nest: #6f7b91;
-    --pkg: #d49a52; --file: #6c9be0; --cls: #4fbf82; --ifc: #a585f0; --enm: #cc9a4a; --rec: #3cbcbc; --ann: #b88ad0;
+    --pkg: #d49a52; --file: #6c9be0; --obj: #e07aa6; --kt: #a68bff; --tal: #8fb0c9; --cls: #4fbf82; --ifc: #a585f0; --enm: #cc9a4a; --rec: #3cbcbc; --ann: #b88ad0;
     --mth: #6f97f0; --ctor: #52c0c0; --fld: #f0b050; --ext: #8e98aa; --mod: #8898c0; --priv: #f07a70;
     --btn: #222935; --btn-b: #3a4455; --accent: #5ea2f0;
     color-scheme: dark;
@@ -32,7 +32,7 @@
   --band0: #161c25; --band1: #1a222d; --band2: #1e2735; --band3: #222c3c; --band4: #263244; --band5: #2a374b; --band6: #2e3c52; --band7: #324159;
   --sep: #6f7b91; --sel: #5c4b12; --peer: #3a3418; --match: #ffb340;
   --down: #6cc23a; --up: #5ea2f0; --cyc: #ff5466; --nest: #6f7b91;
-  --pkg: #d49a52; --file: #6c9be0; --cls: #4fbf82; --ifc: #a585f0; --enm: #cc9a4a; --rec: #3cbcbc; --ann: #b88ad0;
+  --pkg: #d49a52; --file: #6c9be0; --obj: #e07aa6; --kt: #a68bff; --tal: #8fb0c9; --cls: #4fbf82; --ifc: #a585f0; --enm: #cc9a4a; --rec: #3cbcbc; --ann: #b88ad0;
   --mth: #6f97f0; --ctor: #52c0c0; --fld: #f0b050; --ext: #8e98aa; --mod: #8898c0; --priv: #f07a70;
   --btn: #222935; --btn-b: #3a4455; --accent: #5ea2f0;
   color-scheme: dark;
@@ -83,11 +83,14 @@ main { flex: 1; display: flex; min-height: 0; }
 .k-package { background-color: var(--pkg); }
 .k-ext-package { background-color: var(--ext); }
 .k-file { background: var(--bg); border: 1.5px solid var(--file); color: var(--file); border-radius: 2px 6px 2px 2px; width: 14px; } .k-file::before { content: "J"; }
-.k-class, .k-interface, .k-enum, .k-record, .k-annotation, .k-ext-type { border-radius: 50%; }
+.k-class, .k-interface, .k-enum, .k-record, .k-annotation, .k-object, .k-typealias, .k-ext-type { border-radius: 50%; }
 .k-class { background: var(--cls); } .k-class::before { content: "C"; }
 .k-interface { background: var(--ifc); } .k-interface::before { content: "I"; }
 .k-enum { background: var(--enm); } .k-enum::before { content: "E"; }
 .k-record { background: var(--rec); } .k-record::before { content: "R"; }
+.k-object { background: var(--obj); } .k-object::before { content: "O"; }
+.k-typealias { background: var(--tal); } .k-typealias::before { content: "A"; }
+.k-file.kt { border-color: var(--kt); color: var(--kt); } .k-file.kt::before { content: "K"; }
 .k-annotation { background: var(--ann); } .k-annotation::before { content: "@"; }
 .k-ext-type { background: var(--ext); } .k-ext-type::before { content: "T"; }
 .k-ext-root { background: var(--ext); } .k-ext-root::before { content: "X"; }
@@ -233,12 +236,12 @@ const EMBEDDED_VIEWS = /*DEPS_VIEWS*/null;
 
 const H = 24, IND = 16;
 const LEVEL = { group: 0, module: 0, package: 1, file: 2, class: 3, interface: 3, enum: 3, record: 3, annotation: 3,
-  ctor: 4, method: 4, field: 4, enumconst: 4, 'ext-root': 0, 'ext-package': 2, 'ext-type': 3 };
+  object: 3, typealias: 3, ctor: 4, method: 4, field: 4, enumconst: 4, 'ext-root': 0, 'ext-package': 2, 'ext-type': 3 };
 const KRANK = { group: -1, module: 0, package: 1, 'ext-package': 1, file: 2, 'ext-type': 2, class: 3, interface: 3, enum: 3,
-  record: 3, annotation: 3, enumconst: 4, ctor: 5, method: 6, field: 7, 'ext-root': 9 };
+  record: 3, annotation: 3, object: 3, typealias: 3, enumconst: 4, ctor: 5, method: 6, field: 7, 'ext-root': 9 };
 const KIND_LABEL = { group: 'Group', module: 'Module', package: 'Package', file: 'Source file', class: 'Class', interface: 'Interface',
   enum: 'Enum', record: 'Record', annotation: 'Annotation type', ctor: 'Constructor', method: 'Method', field: 'Field',
-  enumconst: 'Enum constant', 'ext-root': 'External', 'ext-package': 'External package', 'ext-type': 'External type' };
+  enumconst: 'Enum constant', object: 'Object', typealias: 'Type alias', 'ext-root': 'External', 'ext-package': 'External package', 'ext-type': 'External type' };
 const VIS = { '+': 'public', '#': 'protected', '-': 'private', '~': 'package-private' };
 const CONTAINER = new Set(['module', 'package', 'ext-root', 'ext-package']);
 const UNIT = new Set(['file', 'ext-type']);
@@ -279,7 +282,9 @@ function load(data) {
   st.sel = st.selArc = st.hover = null;
   loadViews();
   build();
-  expandTo(2);
+  // ?level=1..4 opens the tree at Packages / Files / Types / Members (default: Files)
+  const lv = +new URLSearchParams(location.search).get('level');
+  expandTo(lv >= 1 && lv <= 4 ? lv : 2);
   refresh();
 }
 
@@ -603,7 +608,7 @@ function textWidth(s) {
 
 const icon = n => n.k === 'group'
   ? `<span class="ic k-group" style="--gc:${esc(n.color)}"></span>`
-  : `<span class="ic k-${n.k}${n.v === '-' && LEVEL[n.k] === 4 ? ' priv' : ''}"></span>`;
+  : `<span class="ic k-${n.k}${n.k === 'file' && /\.kt$/.test(n.n) ? ' kt' : ''}${n.v === '-' && LEVEL[n.k] === 4 ? ' priv' : ''}"></span>`;
 
 function rowHTML(n) {
   const cls = ['row', 'd' + Math.min(n.depth, 7)];

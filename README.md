@@ -1,6 +1,6 @@
 # depviewer
 
-A small dependency explorer for Java projects: browse the package/file/class/member tree and see
+A small dependency explorer for Java and Kotlin projects: browse the package/file/class/member tree and see
 the dependencies between them as arcs, levelized and with cycles highlighted.
 
 > **AI notice:** this project was written almost entirely by an AI coding agent
@@ -23,15 +23,22 @@ open deps.html
 ```
 
 To try it without a project of your own, run `scripts/check.sh` and open `build/fixture.html`.
-That's a small example with a deliberate package cycle and a "Layers" view.
+That's a small Java + Kotlin example with a deliberate package cycle and a "Layers" view.
 
-- **DepScan.java** parses and attributes the sources with the JDK compiler (`javac` Trees API), so
-  references are resolved exactly (overloads, inherited members, static imports…). It finds
-  `src/main/java` / `src/test/java` folders (Maven/Gradle layout) and names modules after their
-  `artifactId`. Needs JDK 17+, no other dependencies.
+- **DepScan.java** scans the sources. It finds `src/{main,test}/{java,kotlin}` folders
+  (Maven/Gradle layout) and names modules after their `artifactId`. Needs JDK 17+, no other
+  dependencies.
+  - **Java** is parsed and attributed by the JDK compiler (`javac` Trees API), so references are
+    resolved exactly (overloads, inherited members, static imports…).
+  - **Kotlin** (`.kt`) is read by a built-in parser, because there is no Kotlin compiler in the
+    JDK. References are resolved by name: imports, same package, declared types of parameters,
+    variables and properties, call chains like `event.order.total()`. When a name is ambiguous,
+    it is left out rather than guessed. Java ↔ Kotlin references are included in both
+    directions. Details and limitations: [docs/specs/kotlin-support.md](docs/specs/kotlin-support.md).
 - **viewer.html** is the template; the scanner embeds the data and writes one self-contained HTML
   file. `-o deps.json` writes data only; open it in the viewer via *Open…*, drag & drop, or
-  `viewer.html?data=deps.json`.
+  `viewer.html?data=deps.json`. Add `?level=1`…`4` to open the tree at packages, files, types or
+  members.
 
 ## Viewer
 

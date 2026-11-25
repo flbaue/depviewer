@@ -78,7 +78,13 @@ if [ -n "$CHROME" ]; then
   for g in Service:2a9d8f Domain:8e5cd9; do
     grep -q "padding-left:22px;--gc:#${g#*:}\"" "$OUT/fixture.dom.html" || fail "group '${g%%:*}' is not nested under Core"
   done
-  echo "ok ($rows rows, $arcs arcs, view '$view')"
+  # Kotlin in the viewer (docs/specs/kotlin-support.md): "K" file icon, object kind; ?level=4 expands to members.
+  "$CHROME" --headless=new --disable-gpu --no-sandbox --no-first-run --user-data-dir="$OUT/chrome-profile" \
+    --window-size=1400,1000 --virtual-time-budget=5000 --dump-dom "$url?level=4" > "$OUT/fixture-members.dom.html" 2>/dev/null
+  grep -q 'class="ic k-file kt"' "$OUT/fixture-members.dom.html" || fail "Kotlin file icon missing"
+  grep -q 'class="ic k-object"' "$OUT/fixture-members.dom.html" || fail "Kotlin object row missing (or ?level=4 not applied)"
+  grep -Eq '<span class="nm[^"]*">Companion</span>' "$OUT/fixture-members.dom.html" || fail "companion object row missing"
+  echo "ok ($rows rows, $arcs arcs, view '$view'; Kotlin rows render)"
 else
   echo "skipped: no Chrome/Chromium found (set CHROME_BIN)"
 fi
