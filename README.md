@@ -38,3 +38,7 @@ open deps.html
 Library types resolve when their jars are on the classpath: `target/dependency/*.jar`, `lib/` and
 `libs/` are picked up automatically (`mvn dependency:copy-dependencies`), otherwise pass `--cp`.
 Unresolvable references are grouped under *External › (unresolved)*.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
