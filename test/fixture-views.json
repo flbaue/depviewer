@@ -1,0 +1,20 @@
+{
+  "current": "layers",
+  "views": [
+    {
+      "id": "layers",
+      "name": "Layers",
+      "groups": [
+        { "id": "ui", "name": "Application", "color": "#e07a2f" },
+        { "id": "svc", "name": "Service", "color": "#2a9d8f" },
+        { "id": "dom", "name": "Domain", "color": "#8e5cd9" }
+      ],
+      "assign": {
+        "P:fixture:com.example.app": "ui",
+        "P:fixture:com.example.service": "svc",
+        "P:fixture:com.example.domain": "dom",
+        "P:fixture:com.example.infra": "dom"
+      }
+    }
+  ]
+}

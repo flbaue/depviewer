@@ -629,6 +629,10 @@ function draw() {
   rowsEl.style.height = HT + 'px';
   if (st.selArc) st.selArc = arcs.find(x => x.key === st.selArc.key) || null;
   focus();
+  // Read by scripts/check.sh (headless smoke test).
+  document.body.dataset.rows = rows.length;
+  document.body.dataset.arcs = arcs.length;
+  document.body.dataset.view = (curView() || { name: '' }).name;
   const input = rowsEl.querySelector('.gname');
   if (input) { input.focus(); input.select(); }
 }

@@ -4,3 +4,5 @@ deps.json
 example-*.html
 *-views.json
 .DS_Store
+build/
+!test/fixture-views.json
