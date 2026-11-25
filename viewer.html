@@ -653,7 +653,8 @@ function draw() {
   for (const n of rows) maxLabel = Math.max(maxLabel, 6 + n.depth * IND + 19 + 22 + textWidth(n.n) + (st.sort === 'loc' || st.sort === 'elems' ? 44 : 0));
   const ax = Math.round(Math.min(Math.max(maxLabel + 36, W * 0.5), Math.max(maxLabel + 36, W - 110)));
   const width = Math.max(W, ax + 110);
-  const maxL = ax - 8, maxR = Math.max(24, width - ax - 14);
+  // Left (downward) arcs stay between the widest label and the anchor column (docs/specs/viewer-arcs.md).
+  const maxL = Math.max(5, ax - maxLabel - 12), maxR = Math.max(24, width - ax - 14);
   arcs = computeArcs();
   rowArcs = new Map();
   const add = (n, i) => { let l = rowArcs.get(n); if (!l) rowArcs.set(n, l = []); l.push(i); };
@@ -684,6 +685,7 @@ function draw() {
   document.body.dataset.rows = rows.length;
   document.body.dataset.arcs = arcs.length;
   document.body.dataset.view = (curView() || { name: '' }).name;
+  document.body.dataset.labels = Math.ceil(maxLabel);
   const input = rowsEl.querySelector('.gname');
   if (input) { input.focus(); input.select(); }
 }

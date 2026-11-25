@@ -109,6 +109,8 @@ if [ -n "$CHROME" ]; then
   grep -q 'class="ic k-file kt"' "$OUT/fixture-members.dom.html" || fail "Kotlin file icon missing"
   grep -q 'class="ic k-object"' "$OUT/fixture-members.dom.html" || fail "Kotlin object row missing (or ?level=4 not applied)"
   grep -Eq '<span class="nm[^"]*">Companion</span>' "$OUT/fixture-members.dom.html" || fail "companion object row missing"
+  # Arcs stay out of the label area (docs/specs/viewer-arcs.md); members give the longest arcs.
+  python3 -I test/checks/viewer_arcs.py "$OUT/fixture-members.dom.html"
   echo "ok ($rows rows, $arcs arcs, view '$view'; Kotlin rows render)"
   if [ -n "$HAVE_TS" ]; then
     "$CHROME" --headless=new --disable-gpu --no-sandbox --no-first-run --user-data-dir="$OUT/chrome-profile" \
