@@ -92,7 +92,9 @@ When you fix a scanner bug, add the case to the fixture and a check that fails w
 
 ## Adding a language
 
-Read `docs/specs/multi-language.md` first, then follow the workflow above:
+Read `docs/specs/multi-language.md` and the accepted decision in
+`docs/adr/0001-language-support.md` first (every language becomes an extractor run once per scan,
+using the user's toolchain first; its migration plan is in progress), then follow the workflow above:
 
 1. Spec `docs/specs/<language>-support.md` (toolchain, sources, model mapping, dependency rules,
    fixture expectations, out of scope).

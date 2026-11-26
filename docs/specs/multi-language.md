@@ -1,6 +1,8 @@
 # Spec: multi-language architecture
 
-Status: implemented
+Status: implemented. Being replaced step by step by the architecture decided in
+[ADR 0001](../adr/0001-language-support.md): every language (Java and Kotlin included) as an
+extractor behind a versioned contract, one run per scan, the user's toolchains first.
 Tests: `scripts/check.sh` (all fixtures), regression comparison against the previous version
 
 ## Goal
