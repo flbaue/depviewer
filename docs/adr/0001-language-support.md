@@ -187,17 +187,18 @@ family; this is a fallback, not the main mechanism.
 
 Each step follows the spec-first, test-driven workflow (AGENTS.md) and is its own issue:
 
-1. **Contract spec and conformance test**: write `extractor-contract.md` (version 1 = today's
+1. **Contract spec and conformance test** ([#10](https://github.com/flbaue/depviewer/issues/10)): write `extractor-contract.md` (version 1 = today's
    fragment plus request, handshake, `contract`, per-file module), the conformance checker, and run
    it on the TypeScript and Dart extractors.
-2. **Once-per-scan runs** for TypeScript (fixes #4), with a monorepo fixture.
-3. **Toolchain selection and provenance**: `--describe`, the selection order and supported ranges,
+2. **Once-per-scan runs** for TypeScript (fixes #4), with a monorepo fixture ([#11](https://github.com/flbaue/depviewer/issues/11)).
+3. **Toolchain selection and provenance** ([#12](https://github.com/flbaue/depviewer/issues/12)): `--describe`, the selection order and supported ranges,
    the `analysis` field, and showing it in the viewer.
-4. **`jvm` extractor**: move Java and Kotlin behind the contract with identical output; then remove
+4. **`jvm` extractor** ([#13](https://github.com/flbaue/depviewer/issues/13)): move Java and Kotlin behind the contract with identical output; then remove
    the in-process path.
-5. **Exact Kotlin** (#7) inside the `jvm` extractor, using the project's Kotlin version.
-6. **New languages**, each with its own spec: Go, C#, Python, Swift (order to be decided; Go and C#
-   have the most exact official tooling).
+5. **Exact Kotlin** ([#7](https://github.com/flbaue/depviewer/issues/7)) inside the `jvm` extractor, using the project's Kotlin version.
+6. **New languages**, each with its own spec: Go ([#14](https://github.com/flbaue/depviewer/issues/14)), C# ([#15](https://github.com/flbaue/depviewer/issues/15)), Python
+   ([#16](https://github.com/flbaue/depviewer/issues/16)), Swift ([#17](https://github.com/flbaue/depviewer/issues/17)). Order to be decided; Go and C# have the most exact official
+   tooling.
 
 ## Open questions
 
