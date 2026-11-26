@@ -26,7 +26,7 @@ For viewer problems: browser, what you did, what you expected, and a screenshot 
 
 ## AI-assisted contributions
 
-This project was itself written with an AI coding agent (see the README), and AI-assisted
+This project was itself written with an AI coding agent (see [How it was built](docs/how-it-was-built.md)), and AI-assisted
 contributions are welcome under the same rules as any other:
 
 - **You are responsible for what you submit.** Read and understand the change; don't submit code

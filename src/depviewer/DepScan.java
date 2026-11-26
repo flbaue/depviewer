@@ -21,13 +21,14 @@ import java.util.stream.Collectors;
 import static depviewer.Model.*;
 
 /**
- * Scans Java and Kotlin sources and writes a dependency model: module > package > file >
- * type > method/field, plus the dependencies between them. Output is a self-contained HTML
- * viewer (or JSON).
+ * Scans Java, Kotlin, TypeScript/JavaScript and Dart sources and writes a dependency model:
+ * module > package > file > type > method/field, plus the dependencies between them. Output is a
+ * self-contained HTML viewer (or JSON).
  *
  * Java is parsed and attributed by the JDK compiler (exact symbol resolution). Kotlin has no
  * compiler in the JDK, so Kotlin files are read by a small built-in parser and references are
- * resolved by name (imports, same package, declared/inferred types) - see the Kotlin section.
+ * resolved by name (KotlinScanner). TypeScript/JavaScript and Dart are analysed by external
+ * extractors on their official toolchains (Toolchain, docs/specs/multi-language.md).
  *
  * Usage: java DepScan.java [options] <project-or-source-dir>...
  */
@@ -62,18 +63,21 @@ public class DepScan {
         System.out.println(String.join("\n",
                 "Usage: depviewer [options] <project-or-source-dir>...",
                 "",
-                "  Finds src/main/{java,kotlin} (and src/test/{java,kotlin}) folders below each directory;",
-                "  a directory without them is scanned as a plain source root. Java and Kotlin files",
-                "  (.java, .kt) are supported.",
+                "  Finds the modules below each directory: src/{main,test}/{java,kotlin} folders (Java,",
+                "  Kotlin), package.json (TypeScript/JavaScript, needs Node.js) and pubspec.yaml (Dart,",
+                "  needs the Dart SDK). A directory without any of them is scanned as a plain Java/Kotlin",
+                "  source root. Languages whose toolchain is missing are skipped with a note.",
                 "",
                 "Options:",
                 "  -o, --out <file>     output file: .html (viewer, default deps.html) or .json (data only)",
-                "  --cp <classpath>     extra classpath for resolving libraries (jars from",
-                "                       target/dependency are picked up automatically)",
+                "  --cp <classpath>     extra classpath for resolving Java/Kotlin libraries (jars in",
+                "                       target/dependency, lib/ and libs/ are picked up automatically)",
                 "  --no-tests           skip test source folders",
                 "  --title <text>       title shown in the viewer",
                 "  --views <file>       embed group views exported from the viewer (⋯ > Export views)",
-                "  --template <file>    viewer template (default: viewer.html next to the script)"));
+                "  --template <file>    viewer template (default: viewer.html next to the script)",
+                "",
+                "Docs: docs/quick-start.md, docs/usage.md, docs/languages.md"));
     }
 
     static void die(String msg) {

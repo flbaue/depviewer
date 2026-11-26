@@ -40,7 +40,9 @@ The maintainer wants every feature and behaviour change done this way:
    version (`git archive HEAD src | tar -x -C <tmp>`, compile it there) and the new one and compare
    the JSON (ignoring `generated`); differences must
    be intended.
-5. Update the spec's status, the README and this file if behaviour or invariants changed.
+5. Update the spec's status, the user docs (`docs/usage.md`, `languages.md`, `viewer.md`,
+   `quick-start.md`; the README only for the overview) and this file if behaviour or invariants
+   changed.
 
 If a test fails because the test itself was wrong, fix the test and say so in the commit — do
 not weaken a test to make an implementation pass.

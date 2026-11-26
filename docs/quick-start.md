@@ -1,7 +1,7 @@
 # Quick start
 
-From zero to "where are the cycles in my code?" in about five minutes. For the full reference
-see the [README](../README.md).
+From zero to "where are the cycles in my code?" in about five minutes. The reference docs are
+[usage](usage.md), [languages](languages.md) and [the viewer](viewer.md).
 
 ## 1. What you need
 
@@ -46,6 +46,7 @@ open myproject.html
   of compile errors; dependencies between your own classes are still found.
 - **Dart/Flutter**: run `dart pub get` / `flutter pub get` in your project first.
 - Large projects take up to about a minute to scan.
+- All options and what gets scanned: [usage](usage.md); per-language details: [languages](languages.md).
 
 ## 4. Read the picture
 
