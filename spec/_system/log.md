@@ -66,3 +66,6 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 
 ## [2026-11-27] clarify | FR-018 acceptance criterion
 - The maintainer chose to fix the wording, not the viewer: *Find…* jumps to the first matching row (a file at Packages level), not to a type. [[FR-018-find-elements-by-name]] criterion reworded; behaviour unchanged.
+
+## [2026-11-27] implement | FR-018 Find elements by name
+- Check only, no code changed. The reworded criterion passes: in `build/fixture.html` at Packages, `Repository` and Enter expanded `infra` and selected `InMemoryOrderRepository.java` (tried by hand in a browser). `delivery: implemented`, confirmed by the maintainer.
