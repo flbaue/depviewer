@@ -2,7 +2,7 @@
 id: ISS-001
 type: issue
 title: "Should check find architecture.json on its own?"
-status: open
+status: resolved
 created: 2026-11-27
 updated: 2026-11-27
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
@@ -13,7 +13,7 @@ kind: ambiguity
 category: requirements
 raised-by: agent
 owner: "[[STK-004-maintainer]]"
-resolved: null
+resolved: 2026-11-27
 ---
 
 # Should check find architecture.json on its own?
@@ -28,4 +28,4 @@ resolved: null
 1. Find `architecture.json` in the first project directory when `--rules` is missing. Less typing for developers and agents.
 2. Always require `--rules`. Explicit, no surprise when several projects are scanned.
 
-**Resolution.**
+**Resolution.** Option 1, decided by the maintainer on 2026-11-27: without `--rules`, `check` reads `architecture.json` from the first project directory. With `--model` and no `--rules`, or when the file is missing, it exits 2. Applied in [[FR-036-provide-the-check-command-and-its-exit-codes]].

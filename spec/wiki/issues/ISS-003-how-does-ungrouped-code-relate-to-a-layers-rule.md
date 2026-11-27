@@ -2,7 +2,7 @@
 id: ISS-003
 type: issue
 title: "How does ungrouped code relate to a layers rule?"
-status: open
+status: resolved
 created: 2026-11-27
 updated: 2026-11-27
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
@@ -13,7 +13,7 @@ kind: ambiguity
 category: requirements
 raised-by: agent
 owner: "[[STK-004-maintainer]]"
-resolved: null
+resolved: 2026-11-27
 ---
 
 # How does ungrouped code relate to a layers rule?
@@ -29,4 +29,4 @@ resolved: null
 2. Ungrouped code counts as a bottom layer.
 3. A field on the rule decides.
 
-**Resolution.**
+**Resolution.** Option 1, decided by the maintainer on 2026-11-27: layers ignore ungrouped code in both directions, and `no-ungrouped` covers teams that want every file in a group. Applied in [[FR-030-enforce-a-layer-order]].

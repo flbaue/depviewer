@@ -88,3 +88,8 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 ## [2026-11-27] capture | SRC-024 README cleanup as a standing rule
 - Source: [[SRC-024-github-issue-8-clean-up-readme-short-overview-and-goal-move-details-into-separate]], with [[SRC-004-guide-for-ai-coding-agents]]. Grill gate: the maintainer chose in chat to capture the issue as a constraint rather than leave the source orphaned.
 - Created: [[CON-012-the-readme-is-a-short-overview-and-the-details-live-in-docs]] (organizational). Updated: `ingested-pages` of SRC-024 and SRC-004, index.
+
+## [2026-11-27] clarify | ISS-001 to ISS-004: architecture file and check
+- Decided by the maintainer, each the recommended option: `check` finds `architecture.json` without `--rules` ([[ISS-001-should-check-find-architecture-json-on-its-own]]), plain JSON, no comments ([[ISS-002-does-the-json-reader-need-comment-support]]), layers ignore ungrouped code ([[ISS-003-how-does-ungrouped-code-relate-to-a-layers-rule]]), name-based violations fail like exact ones ([[ISS-004-should-name-based-violations-fail-the-build-by-default]]).
+- Updated: [[FR-026-read-the-architecture-file]], [[FR-030-enforce-a-layer-order]], [[FR-036-provide-the-check-command-and-its-exit-codes]] (with new criteria), [[CON-004-the-architecture-file-is-json-and-a-superset-of-the-views-format]], [[BB-005-json-reader]]. None has a delivery record, so no drift.
+- Still open: 9 issues. [[ISS-010-name-based-kotlin-can-miss-or-misplace-violations]] stays open as a risk.

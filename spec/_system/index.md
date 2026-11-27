@@ -220,10 +220,10 @@ every capture (`_system/workflows/capture.md`, step 7).
 
 ## Issues
 
-- [[ISS-001-should-check-find-architecture-json-on-its-own]] Should check find architecture.json on its own? (ambiguity, minor, open)
-- [[ISS-002-does-the-json-reader-need-comment-support]] Does the JSON reader need comment support? (question, minor, open)
-- [[ISS-003-how-does-ungrouped-code-relate-to-a-layers-rule]] How does ungrouped code relate to a layers rule? (ambiguity, major, open)
-- [[ISS-004-should-name-based-violations-fail-the-build-by-default]] Should name-based violations fail the build by default? (question, major, open)
+- [[ISS-001-should-check-find-architecture-json-on-its-own]] Should check find architecture.json on its own? (ambiguity, minor, resolved)
+- [[ISS-002-does-the-json-reader-need-comment-support]] Does the JSON reader need comment support? (question, minor, resolved)
+- [[ISS-003-how-does-ungrouped-code-relate-to-a-layers-rule]] How does ungrouped code relate to a layers rule? (ambiguity, major, resolved)
+- [[ISS-004-should-name-based-violations-fail-the-build-by-default]] Should name-based violations fail the build by default? (question, major, resolved)
 - [[ISS-005-is-the-extractor-request-sent-on-stdin-or-in-a-file]] Is the extractor request sent on stdin or in a file? (question, minor, open)
 - [[ISS-006-how-is-the-projects-kotlin-version-read-without-running-gradle]] How is the project's Kotlin version read without running Gradle? (question, minor, open)
 - [[ISS-007-should-the-provenance-record-the-extractors-own-version]] Should the provenance record the extractor's own version? (question, minor, open)

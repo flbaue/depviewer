@@ -2,7 +2,7 @@
 id: ISS-002
 type: issue
 title: "Does the JSON reader need comment support?"
-status: open
+status: resolved
 created: 2026-11-27
 updated: 2026-11-27
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
@@ -13,7 +13,7 @@ kind: question
 category: architecture
 raised-by: agent
 owner: "[[STK-004-maintainer]]"
-resolved: null
+resolved: 2026-11-27
 ---
 
 # Does the JSON reader need comment support?
@@ -28,4 +28,4 @@ resolved: null
 1. Accept `//` comments (JSONC) in the reader. Comments are lost when the viewer exports.
 2. Plain JSON only, use `description`. Nothing to lose on export.
 
-**Resolution.**
+**Resolution.** Option 2, decided by the maintainer on 2026-11-27: plain JSON only, rules explain themselves in `description`, so nothing is lost on export. Applied in [[FR-026-read-the-architecture-file]], [[CON-004-the-architecture-file-is-json-and-a-superset-of-the-views-format]] and [[BB-005-json-reader]].

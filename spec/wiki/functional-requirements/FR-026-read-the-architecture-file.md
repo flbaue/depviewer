@@ -29,7 +29,7 @@ The file must stay compatible with every export that exists today ([[CON-004-the
 
 ## Requirement
 
-The default file is `architecture.json` in the project root, any other is passed with `--rules`. `version` is optional (missing means 1) and a file with an unknown major version is rejected with a clear message. `groups`, `parent`, `assign` and `""` keep their meaning. `match` and `rules` are new and optional. Unknown fields are ignored and kept on export.
+The default file is `architecture.json` in the project root, any other is passed with `--rules`. `version` is optional (missing means 1) and a file with an unknown major version is rejected with a clear message. `groups`, `parent`, `assign` and `""` keep their meaning. `match` and `rules` are new and optional. Unknown fields are ignored and kept on export. The file is plain JSON without comments, and a rule explains itself in its `description` ([[ISS-002-does-the-json-reader-need-comment-support]]).
 
 ## Acceptance criteria
 

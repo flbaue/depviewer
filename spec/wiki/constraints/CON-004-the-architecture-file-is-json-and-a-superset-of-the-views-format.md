@@ -17,4 +17,4 @@ category: technical
 
 **Rationale / origin.** Follows from [[CON-001-the-scanner-core-needs-only-a-jdk-17]]: no YAML or custom DSL without a library. Existing exports must stay valid.
 
-**Impact.** People edit JSON by hand, so comment support is an open question ([[ISS-002-does-the-json-reader-need-comment-support]]). Unknown fields are ignored and preserved ([[FR-026-read-the-architecture-file]]).
+**Impact.** People edit JSON by hand, but comments are not supported: they would be lost on every export. Rules carry a `description` instead ([[ISS-002-does-the-json-reader-need-comment-support]]). Unknown fields are ignored and preserved ([[FR-026-read-the-architecture-file]]).

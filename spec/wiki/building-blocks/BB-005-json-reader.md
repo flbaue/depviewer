@@ -32,4 +32,4 @@ superseded-by:
 
 ## Open issues
 
-[[ISS-002-does-the-json-reader-need-comment-support]]: comment support.
+None. Comments stay unsupported ([[ISS-002-does-the-json-reader-need-comment-support]]).
