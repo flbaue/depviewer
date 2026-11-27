@@ -230,9 +230,9 @@ every capture (`_system/workflows/capture.md`, step 7).
 - [[ISS-008-moving-java-and-kotlin-into-the-jvm-extractor-can-change-the-output]] Moving Java and Kotlin into the jvm extractor can change the output (risk, major, open)
 - [[ISS-009-results-can-differ-between-machines]] Results can differ between machines (risk, minor, open)
 - [[ISS-010-name-based-kotlin-can-miss-or-misplace-violations]] Name-based Kotlin can miss or misplace violations (risk, major, open)
-- [[ISS-011-how-long-may-the-check-take]] How long may the check take? (gap, minor, open)
-- [[ISS-012-what-makes-the-viewer-readable-on-a-narrow-screen]] What makes the viewer readable on a narrow screen? (gap, minor, open)
-- [[ISS-013-how-is-structure-at-a-glance-measured]] How is "structure at a glance" measured? (gap, minor, open)
+- [[ISS-011-how-long-may-the-check-take]] How long may the check take? (gap, minor, resolved)
+- [[ISS-012-what-makes-the-viewer-readable-on-a-narrow-screen]] What makes the viewer readable on a narrow screen? (gap, minor, resolved)
+- [[ISS-013-how-is-structure-at-a-glance-measured]] How is "structure at a glance" measured? (gap, minor, resolved)
 - [[ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr]] Does this wiki replace docs/specs and docs/adr? (question, major, resolved)
 - [[ISS-015-the-vision-and-the-architecture-rules-spec-are-not-in-the-repository]] The vision and the architecture-rules spec are not in the repository (gap, minor, resolved)
 

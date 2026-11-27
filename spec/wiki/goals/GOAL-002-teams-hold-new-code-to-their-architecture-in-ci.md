@@ -13,7 +13,7 @@ parent: ["[[GOAL-001-architecture-as-code-checked-against-the-real-dependencies]
 beneficiary: ["[[STK-001-software-architects]]", "[[STK-002-developers]]"]
 metric: check duration on a real project with tens of thousands of dependencies
 baseline: no check exists (2026-11-27)
-target: about the duration of a scan
+target: at most 1.2 times the duration of a scan
 horizon: "release m1-rules-and-check"
 short_title: New violations fail CI
 tile_claim:
@@ -27,7 +27,7 @@ tile_claim:
   fails only on new violations, on a real project with tens of thousands of dependencies.
 - **Advantage.** [[STK-001-software-architects|Architects]] and [[STK-002-developers|developers]] can adopt rules on legacy code
   without fixing every old violation first, and ratchet the baseline down later.
-- **Metric.** Duration of the check on a real project, compared with a scan of the same project.
+- **Metric.** Duration of the check on a real project, compared with a scan of the same project. Measured by [[QR-003-the-check-takes-about-as-long-as-a-scan]].
 
 **Parent.** see `parent:`.
 
@@ -35,6 +35,3 @@ tile_claim:
 
 - **Addressed stakeholders:** see `beneficiary:`.
 - **Served by:** projected from the FR backlinks.
-
-> [!note] Open points
-> "About the time of a scan" is not a number yet, see [[ISS-011-how-long-may-the-check-take]].
