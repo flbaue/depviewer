@@ -14,6 +14,7 @@ check, node, edge, nodes = c.check, c.node, c.edge, c.nodes
 P, C, M = "src/model/product.ts#", "src/model/cart.ts#", "src/util/money.ts#"
 K, L = "src/services/checkout.ts#", "src/services/logger.ts#"
 T = "src/__tests__/cart.test.ts"
+R = "src/features/payments/refund.ts#"
 
 # --- structure ---------------------------------------------------------------
 check(c.data.get("edgeKinds") == ["uses", "extends", "implements", "call", "new", "access"], "edgeKinds changed")
@@ -57,6 +58,8 @@ node(K + "Checkout", "namespace")
 node(K + "Checkout.receipt(Cart)", "method")
 node(K + "pay(Cart)", "method")
 node("src/features/payments/refund.ts#refund(Cart)", "method")
+check(nodes[node(R + "refundNote(Cart)", "method")]["p"] == node("src/features/payments/refund.ts"),
+      "unexported top-level function must sit under its file")
 node(T + "#cart", "field")
 node("@acme/events.Emitter", "ext-type")
 check(nodes[node("@acme/events.Emitter")]["p"] == node("@acme/events", "ext-package"), "external type not in its package")
@@ -88,6 +91,8 @@ edge(K + "Checkout.receipt(Cart)", "@acme/events.Emitter", "call")              
 edge(K + "events", "@acme/events.Emitter", "new")
 edge(K + "pay(Cart)", "(builtin).Promise", "uses")
 edge("src/features/payments/refund.ts#refund(Cart)", K + "pay(Cart)", "call")
+edge(R + "refundNote(Cart)", M + "formatMoney(number)", "call")                    # via tsconfig path alias
+check(not any(n["k"].startswith("ext") and n["n"].startswith("@util") for n in nodes), "path alias must not become an external")
 edge(T + "#cart", C + "Cart", "new")
 edge(T, T + "#cart", "access")                                                       # top-level statements count for the file
 edge(T, C + "Cart.add(Product)", "call")
