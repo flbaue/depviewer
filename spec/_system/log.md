@@ -54,3 +54,8 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 - `delivery.py` now runs: all 70 FRs skipped, none has `delivery` set, so 30 FRs on release `delivered` have no delivery baseline to check drift against.
 - Orphan: [[SRC-024-github-issue-8-clean-up-readme-short-overview-and-goal-move-details-into-separate]] (README cleanup) produced no pages.
 - Still open: QR-003 and QR-008 untestable (tracked in ISS-011, ISS-012); 42 of 70 FRs `Must`. No fixes, no new issues; 13 issues open.
+
+## [2026-11-27] implement | Delivery baselines for the delivered requirements
+- Check only, no code changed. Evidence: `scripts/check.sh` locally (TypeScript skipped, no Node), CI run 46066060043 on `d9309bd` (all languages), throwaway scans for criteria the fixtures miss, and the viewer criteria tried by hand in a browser. Confirmed by the maintainer.
+- `delivery: implemented`: FR-002, FR-003, FR-004, FR-006, FR-007, FR-008, FR-009, FR-014, FR-015, FR-016, FR-017, FR-019, FR-022, FR-023, FR-024, FR-060, FR-061, FR-062, FR-064, FR-065, FR-066.
+- Not recorded: [[FR-067-choose-dart-source-folders-and-skip-files-that-cannot-be-analysed]] fails (one exclude note per scan, not per module); [[FR-018-find-elements-by-name]] stops at the file, the criterion says type; [[FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler]] (path alias), [[FR-063-map-typescript-and-javascript-declarations-to-model-elements]] (unexported function), [[FR-068-show-the-kind-and-language-of-every-row]] (TypeScript rows) and [[FR-020-open-a-model-in-the-viewer]] (drop) not verified.
