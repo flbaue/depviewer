@@ -6,7 +6,7 @@ status: draft
 created: 2026-11-27
 updated: 2026-11-27
 sources: ["[[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]]"]
-related: []
+related: ["[[DR-002-the-scanner-core-is-a-static-go-binary]]"]
 tags: [building-block]
 parent: "[[CTX-001-depviewer-context]]"
 drivers: ["[[QR-009-a-project-scans-with-the-depviewer-binary-and-its-own-toolchain]]", "[[CON-013-the-scanner-core-is-go-with-the-standard-library-only]]", "[[QR-006-internal-refactors-do-not-change-the-output]]"]

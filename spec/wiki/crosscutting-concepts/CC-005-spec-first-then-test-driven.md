@@ -27,7 +27,7 @@ Every feature and behaviour change runs in this order (AGENTS.md):
 
 1. Write or update the requirement in this wiki (`spec/`): goal, constraints, behaviour as checkable statements, out of scope.
 2. Turn the statements into checks: fixture code plus assertions in `test/checks/<fixture>.py`, viewer checks in `scripts/check.sh`. Watch them fail.
-3. Implement until green, then run the whole `scripts/check.sh` (javac `-Xlint:all -Werror`, model checks, HTML checks, headless Chrome smoke test, UI scenarios).
+3. Implement until green, then run the whole `scripts/check.sh` (javac `-Xlint:all -Werror`, model checks, HTML checks, headless Chrome smoke test).
 4. Rescan a larger project with the previous and the new version and compare the JSON, ignoring `generated` ([[QR-006-internal-refactors-do-not-change-the-output]]).
 5. Update the page status and the user docs in `docs/`.
 
