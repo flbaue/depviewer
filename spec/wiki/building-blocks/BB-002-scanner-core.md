@@ -5,16 +5,16 @@ title: Scanner core
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-011-spec-multi-language-architecture]]", "[[SRC-003-adr-0001-architecture-for-language-support]]"]
+sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-011-spec-multi-language-architecture]]", "[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]]"]
 related: []
 tags: [building-block]
 parent: "[[CTX-001-depviewer-context]]"
 drivers: ["[[FR-001-scan-a-code-base-into-one-model]]", "[[CON-001-the-scanner-core-needs-only-a-jdk-17]]", "[[GOAL-004-one-answer-in-every-interface]]"]
-decisions: ["[[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]"]
+decisions: ["[[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]", "[[DR-002-the-scanner-core-is-a-static-go-binary]]"]
 uses: ["[[BB-009-typescript-extractor]]", "[[BB-010-dart-extractor]]", "[[BB-011-jvm-extractor]]", "[[BB-013-viewer]]", "[[EIF-001-scanned-code-base]]", "[[EIF-002-jdk]]"]
 location: src/depviewer/
 state: current
-superseded-by:
+superseded-by: "[[BB-016-go-scanner-core]]"
 ---
 
 # Scanner core
@@ -23,7 +23,7 @@ superseded-by:
 
 ## Purpose / Responsibility
 
-The Java program behind every command: discovers modules, runs the language analysis, merges the results into one model and writes the viewer or the JSON. Target: no language-specific analysis left in it ([[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]).
+The Java program behind every command: discovers modules, runs the language analysis, merges the results into one model and writes the viewer or the JSON. Target: no language-specific analysis left in it ([[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]), then replaced by the [[BB-016-go-scanner-core]] ([[DR-002-the-scanner-core-is-a-static-go-binary]]).
 
 ## Interfaces
 

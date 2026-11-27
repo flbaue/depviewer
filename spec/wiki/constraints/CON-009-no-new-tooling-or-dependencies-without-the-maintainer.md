@@ -5,7 +5,7 @@ title: No new tooling or dependencies without the maintainer
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-006-contributing-guide]]"]
+sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-006-contributing-guide]]", "[[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]]"]
 related: []
 tags: [constraint]
 category: organizational
@@ -17,4 +17,4 @@ category: organizational
 
 **Rationale / origin.** Keeps the project small and inspectable (AGENTS.md, CONTRIBUTING.md).
 
-**Impact.** Extractors may use their language's official tooling with pinned versions ([[CON-010-extractors-pin-their-dependencies]]). Everything else is discussed first.
+**Impact.** Extractors may use their language's official tooling with pinned versions ([[CON-010-extractors-pin-their-dependencies]]). Everything else is discussed first. Approved: Playwright Test for the viewer's UI scenarios, pinned in `test/ui/` ([[CC-005-spec-first-then-test-driven]]).
