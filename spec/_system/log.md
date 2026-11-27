@@ -79,3 +79,8 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 
 ## [2026-11-27] implement | FR-020 Open a model in the viewer
 - Check only, no code changed. In a browser, a `deps.json` of `test/fixture` dropped on an empty `viewer.html` showed the same tree as the HTML of the same scan: 23 rows, 27 arcs, same header and rows. The drop was a scripted drop event carrying a real `File`, not a drag from the operating system. `delivery: implemented`, confirmed by the maintainer.
+
+## [2026-11-27] inspect | Whole wiki, after the delivery baselines
+- Clean: broken links, `related:` reciprocity, concept clusters, index coverage, empty sources, source hashes, metamodel lint. `delivery.py`: 27 FRs with no drift, the rest have no delivery record (not delivered yet, or features).
+- Parents FR-004, FR-005, FR-006 and all their children are `implemented`.
+- Unchanged from the previous inspect: orphan [[SRC-024-github-issue-8-clean-up-readme-short-overview-and-goal-move-details-into-separate]]; QR-003 and QR-008 untestable (ISS-011, ISS-012); 42 of 70 FRs `Must`; 13 issues open. No fixes, no new issues.
