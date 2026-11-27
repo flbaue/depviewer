@@ -159,6 +159,7 @@ every capture (`_system/workflows/capture.md`, step 7).
 - [[CON-009-no-new-tooling-or-dependencies-without-the-maintainer]] No new tooling or dependencies without the maintainer (draft)
 - [[CON-010-extractors-pin-their-dependencies]] Extractors pin their dependencies (draft)
 - [[CON-011-scanned-data-of-other-projects-is-never-committed]] Scanned data of other projects is never committed (draft)
+- [[CON-012-the-readme-is-a-short-overview-and-the-details-live-in-docs]] The README is a short overview and the details live in docs (draft)
 
 ## Solution strategy
 

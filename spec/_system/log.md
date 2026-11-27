@@ -84,3 +84,7 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 - Clean: broken links, `related:` reciprocity, concept clusters, index coverage, empty sources, source hashes, metamodel lint. `delivery.py`: 27 FRs with no drift, the rest have no delivery record (not delivered yet, or features).
 - Parents FR-004, FR-005, FR-006 and all their children are `implemented`.
 - Unchanged from the previous inspect: orphan [[SRC-024-github-issue-8-clean-up-readme-short-overview-and-goal-move-details-into-separate]]; QR-003 and QR-008 untestable (ISS-011, ISS-012); 42 of 70 FRs `Must`; 13 issues open. No fixes, no new issues.
+
+## [2026-11-27] capture | SRC-024 README cleanup as a standing rule
+- Source: [[SRC-024-github-issue-8-clean-up-readme-short-overview-and-goal-move-details-into-separate]], with [[SRC-004-guide-for-ai-coding-agents]]. Grill gate: the maintainer chose in chat to capture the issue as a constraint rather than leave the source orphaned.
+- Created: [[CON-012-the-readme-is-a-short-overview-and-the-details-live-in-docs]] (organizational). Updated: `ingested-pages` of SRC-024 and SRC-004, index.

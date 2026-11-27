@@ -10,7 +10,7 @@ source-type: ticket
 origin: "raw/ingested/github-issues/issue-08.md"
 captured: "2026-11-27"
 sha256: b62ef0229893b8dd936153c1826633fe8f7610dde80a15f5c013e8d0fdd67770
-ingested-pages: []
+ingested-pages: ["[[CON-012-the-readme-is-a-short-overview-and-the-details-live-in-docs]]"]
 ---
 
 # GitHub issue 8: Clean up README: short overview and goal, move details into separate docs
