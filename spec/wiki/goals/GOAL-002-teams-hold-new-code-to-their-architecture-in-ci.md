@@ -12,9 +12,9 @@ stereotype: objective
 parent: ["[[GOAL-001-architecture-as-code-checked-against-the-real-dependencies]]"]
 beneficiary: ["[[STK-001-software-architects]]", "[[STK-002-developers]]"]
 metric: check duration on a real project with tens of thousands of dependencies
-baseline:
+baseline: no check exists (2026-11-27)
 target: about the duration of a scan
-horizon:
+horizon: "release m1-rules-and-check"
 short_title: New violations fail CI
 tile_claim:
 ---

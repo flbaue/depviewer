@@ -12,7 +12,7 @@ notation: prose
 level: feature
 parent: []
 building-blocks: ["[[BB-013-viewer]]", "[[BB-012-architecture-checker]]"]
-priority: Must
+priority: Should
 release: m1-rules-and-check
 lane: backbone
 order: 7

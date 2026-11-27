@@ -12,9 +12,9 @@ stereotype: objective
 parent: ["[[GOAL-001-architecture-as-code-checked-against-the-real-dependencies]]"]
 beneficiary: ["[[STK-003-ai-coding-agents]]", "[[STK-001-software-architects]]"]
 metric: agent finds and explains a violation using only the CLI and its docs
-baseline:
+baseline: no check exists (2026-11-27)
 target: "yes"
-horizon:
+horizon: "release m3-agent-interface"
 short_title: Agents check their changes
 tile_claim:
 ---

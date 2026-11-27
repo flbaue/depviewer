@@ -12,7 +12,7 @@ notation: prose
 level: requirement
 parent: ["[[FR-040-show-rule-violations-in-the-viewer]]"]
 building-blocks: ["[[BB-013-viewer]]"]
-priority: Must
+priority: Should
 release: m1-rules-and-check
 lane: backbone
 order: 2
