@@ -119,3 +119,8 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 - Source drift: [[SRC-004-guide-for-ai-coding-agents]] no longer matches `AGENTS.md`. The QR-008 commit added one sentence naming `viewer_contrast.py`; no new requirement. Hash updated, confirmed by the maintainer.
 - [[QR-008-the-viewer-reads-well-in-light-dark-and-on-a-narrow-screen]]: contrast is now checked by `check.sh`; the 320-pixel width is checked by hand only.
 - Unchanged: 42 of 70 FRs `Must`, 25 of them delivered. No fixes, no new issues.
+
+## [2026-11-27] implement | FR-026 Read the architecture file
+- New `src/depviewer/Architecture.java` loads and validates the architecture file. A bare `depviewer check [--rules <file>] (<project-dir>... | --model <file>)` finds `architecture.json` in the first project directory, prints `no rules` and exits 0 for a file without rules, and exits 2 for a missing or invalid file, an unknown major `version`, or a file with rules (rule checking is not built yet). `--views` uses the same loader.
+- Evidence: new checks in `scripts/check.sh` (failed before the change on the unknown `--rules`), all passing with every language locally. Both criteria of [[FR-026-read-the-architecture-file]] pass. Scans of a Java project and of the fixture with `--views` are byte-identical to the previous scanner. `delivery: implemented`, pending the maintainer's review in the PR.
+- Updated: [[BB-012-architecture-checker]] (`location`, `state: current`), `docs/usage.md`, `AGENTS.md`. Not in scope: viewer export of unknown top-level fields ([[FR-043-keep-rules-and-patterns-on-export]]), rule evaluation and the full `check` options ([[FR-029-check-the-code-against-architecture-rules]], [[FR-036-provide-the-check-command-and-its-exit-codes]]).
