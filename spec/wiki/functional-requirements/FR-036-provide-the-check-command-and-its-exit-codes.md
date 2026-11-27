@@ -42,6 +42,3 @@ CI and agents decide by exit code.
 
 - **Parent:** [[FR-035-run-the-check-from-the-command-line-and-in-ci]]
 - **Children:** none.
-
-> [!note] Open points
-> Whether name-based violations fail by default, see [[ISS-004-should-name-based-violations-fail-the-build-by-default]].

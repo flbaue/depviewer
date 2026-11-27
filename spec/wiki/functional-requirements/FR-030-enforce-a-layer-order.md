@@ -40,6 +40,3 @@ A `layers` rule lists groups top to bottom in `order`. A dependency from a lower
 
 - **Parent:** [[FR-029-check-the-code-against-architecture-rules]]
 - **Children:** none.
-
-> [!note] Open points
-> How ungrouped code relates to layers, see [[ISS-003-how-does-ungrouped-code-relate-to-a-layers-rule]].

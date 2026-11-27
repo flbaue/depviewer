@@ -40,6 +40,3 @@ The default file is `architecture.json` in the project root, any other is passed
 
 - **Parent:** [[FR-025-declare-the-architecture-in-a-file]]
 - **Children:** none.
-
-> [!note] Open points
-> Automatic discovery of the file, see [[ISS-001-should-check-find-architecture-json-on-its-own]]. Comments in JSON, see [[ISS-002-does-the-json-reader-need-comment-support]].
