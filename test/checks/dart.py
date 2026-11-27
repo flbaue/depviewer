@@ -64,6 +64,7 @@ check(nodes[node("dart:async.Future")]["p"] == node("dart:async", "ext-package")
 
 # Files excluded by analysis_options.yaml are skipped; the rest of the module is still scanned.
 check(c.by_q.get("lib/src/generated/api.g.dart#GeneratedApi") is None, "analyzer-excluded file must be skipped")
+check(c.by_q.get("lib/rates.g.dart#GeneratedRates") is None, "analyzer-excluded file of the second package must be skipped")
 
 # Workspace: the second package is its own module, and the app's references into it link to its
 # real declarations (not to an external package).

@@ -52,8 +52,13 @@ step "Dart (spec/wiki/functional-requirements/FR-006-analyse-dart-with-the-dart-
 DART_BIN=${DEPVIEWER_DART:-dart}
 if command -v "$DART_BIN" >/dev/null 2>&1; then
   (cd test/fixture-dart && "$DART_BIN" pub get --offline >/dev/null)   # no dependencies: works offline
-  ./depviewer -o "$OUT/fixture-dart.json" test/fixture-dart
+  ./depviewer -o "$OUT/fixture-dart.json" test/fixture-dart 2> "$OUT/fixture-dart.log" || { cat "$OUT/fixture-dart.log"; fail "Dart scan failed"; }
+  cat "$OUT/fixture-dart.log"
   python3 -I test/checks/dart.py "$OUT/fixture-dart.json"
+  # FR-067: one note per module for the files analysis_options.yaml excludes.
+  for m in shop_app shop_core; do
+    [ "$(grep -c "^dart: $m: 1 file(s) skipped - excluded" "$OUT/fixture-dart.log")" = 1 ] || fail "no exclude note for module $m"
+  done
   ./depviewer -o "$OUT/fixture-dart.html" test/fixture-dart 2>/dev/null
   HAVE_DART=1
 else

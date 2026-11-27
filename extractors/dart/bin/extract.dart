@@ -52,7 +52,7 @@ Future<void> main(List<String> args) async {
   final collection = AnalysisContextCollection(includedPaths: included);
   final root = included.length == 1 ? included.first : defaultRoot;
   final units = <String, ResolvedUnitResult>{};
-  var excluded = 0;
+  final excluded = <String, int>{}; // module -> files analysis_options.yaml excludes
   for (final path in files.keys) {
     try {
       final result = await collection.contextFor(path).currentSession.getResolvedUnit(path);
@@ -63,13 +63,14 @@ Future<void> main(List<String> args) async {
         stderr.writeln('dart: could not resolve ${p.relative(path, from: root)}, skipped');
       }
     } on StateError {
-      excluded++; // excluded by analysis_options.yaml: the analyzer has no context for it
+      // excluded by analysis_options.yaml: the analyzer has no context for it
+      excluded.update(files[path]!.module, (n) => n + 1, ifAbsent: () => 1);
     } catch (e) {
       stderr.writeln('dart: ${p.relative(path, from: root)} failed to analyse ($e), skipped');
     }
   }
-  if (excluded > 0) {
-    stderr.writeln('dart: $excluded file(s) skipped - excluded from analysis by analysis_options.yaml');
+  for (final e in excluded.entries) {
+    stderr.writeln('dart: ${e.key}: ${e.value} file(s) skipped - excluded from analysis by analysis_options.yaml');
   }
   // Declarations of all files first (references may point to any of them), then references.
   for (final e in units.entries) {
