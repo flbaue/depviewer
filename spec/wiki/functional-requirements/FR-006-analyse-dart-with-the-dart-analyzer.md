@@ -1,0 +1,42 @@
+---
+id: FR-006
+type: functional-requirement
+title: Analyse Dart with the Dart analyzer
+status: draft
+created: 2026-11-27
+updated: 2026-11-27
+sources: ["[[SRC-014-spec-dart-support]]", "[[SRC-009-supported-languages]]"]
+related: []
+tags: [functional-requirement]
+notation: prose
+level: requirement
+parent: ["[[FR-001-scan-a-code-base-into-one-model]]"]
+building-blocks: ["[[BB-010-dart-extractor]]"]
+priority: Must
+release: delivered
+lane: backbone
+order: 5
+goal: []
+delivery:
+delivery-checked:
+---
+
+# Analyse Dart with the Dart analyzer
+
+## Rationale
+
+Dart and Flutter apps should be as exact as Java.
+
+## Requirement
+
+Dart packages are analysed with the official analyzer, all packages of a scan in one run, so references between them (pub workspaces, `path:` dependencies) link to the real declarations. Without `.dart_tool/package_config.json` the scan still runs, imports of other packages count as errors and a hint is printed.
+
+## Acceptance criteria
+
+- [ ] `test/checks/dart.py` passes on `test/fixture-dart/`.
+- [ ] A reference from the app to `packages/shop_core` links to its declaration, not to an external.
+
+## Hierarchy
+
+- **Parent:** [[FR-001-scan-a-code-base-into-one-model]]
+- **Children:** none.

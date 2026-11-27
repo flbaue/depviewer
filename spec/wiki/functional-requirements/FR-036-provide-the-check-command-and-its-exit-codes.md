@@ -1,0 +1,45 @@
+---
+id: FR-036
+type: functional-requirement
+title: Provide the check command and its exit codes
+status: draft
+created: 2026-11-27
+updated: 2026-11-27
+sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
+related: ["[[ISS-001-should-check-find-architecture-json-on-its-own]]", "[[ISS-004-should-name-based-violations-fail-the-build-by-default]]"]
+tags: [functional-requirement]
+notation: prose
+level: requirement
+parent: ["[[FR-035-run-the-check-from-the-command-line-and-in-ci]]"]
+building-blocks: ["[[BB-003-cli-and-orchestration]]", "[[BB-012-architecture-checker]]"]
+priority: Must
+release: m1-rules-and-check
+lane: backbone
+order: 1
+goal: []
+delivery:
+delivery-checked:
+---
+
+# Provide the check command and its exit codes
+
+## Rationale
+
+CI and agents decide by exit code.
+
+## Requirement
+
+`./depviewer check --rules <file> [--view <id>] (<project-dir>... | --model deps.json) [--format text|json] [--out <file>] [--baseline <file>] [--update-baseline] [--fail-on error|warning|never]`. Without `--model` it scans first with the normal scan options. Without `--view` all views with rules are checked. Exit codes: 0 no failing violations, 1 failing violations, 2 invalid arguments, rules file or model. `--fail-on` (default `error`) decides which severities fail. `--out` also writes the viewer with the resolved view and violations embedded.
+
+## Acceptance criteria
+
+- [ ] `check` on the fixture with `test/fixture-architecture.json` exits 1.
+- [ ] `check --model build/fixture.json` gives the same JSON, except `generated`, as checking the project directory.
+
+## Hierarchy
+
+- **Parent:** [[FR-035-run-the-check-from-the-command-line-and-in-ci]]
+- **Children:** none.
+
+> [!note] Open points
+> Whether name-based violations fail by default, see [[ISS-004-should-name-based-violations-fail-the-build-by-default]].

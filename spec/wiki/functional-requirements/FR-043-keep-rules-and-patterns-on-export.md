@@ -1,0 +1,41 @@
+---
+id: FR-043
+type: functional-requirement
+title: Keep rules and patterns on export
+status: draft
+created: 2026-11-27
+updated: 2026-11-27
+sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
+related: []
+tags: [functional-requirement]
+notation: prose
+level: requirement
+parent: ["[[FR-040-show-rule-violations-in-the-viewer]]"]
+building-blocks: ["[[BB-013-viewer]]"]
+priority: Must
+release: m1-rules-and-check
+lane: backbone
+order: 3
+goal: []
+delivery:
+delivery-checked:
+---
+
+# Keep rules and patterns on export
+
+## Rationale
+
+The viewer may edit only manual assignments, but must not lose what it cannot edit.
+
+## Requirement
+
+*Export views* writes `match`, `rules` and `version` back unchanged and leaves out the resolved `"from": "match"` assignments.
+
+## Acceptance criteria
+
+- [ ] Exporting the fixture's architecture file without changes gives the same `match` and `rules`.
+
+## Hierarchy
+
+- **Parent:** [[FR-040-show-rule-violations-in-the-viewer]]
+- **Children:** none.
