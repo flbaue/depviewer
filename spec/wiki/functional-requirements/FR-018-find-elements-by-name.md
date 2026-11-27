@@ -33,7 +33,7 @@ Large trees need search.
 
 ## Acceptance criteria
 
-- [ ] Typing `Repository` and Enter expands the tree to the first matching type and scrolls to it.
+- [ ] Typing `Repository` and Enter expands the tree to the first row whose name matches and scrolls to it: `InMemoryOrderRepository.java` when the fixture is open at Packages.
 
 ## Hierarchy
 

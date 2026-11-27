@@ -63,3 +63,6 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 ## [2026-11-27] implement | FR-067 Choose Dart source folders and skip files that cannot be analysed
 - The Dart extractor now prints the exclude note once per module, naming it. `check.sh` asserts it on the fixture's two packages; the model of the fixture is identical to the previous extractor's.
 - Both criteria pass: excluded files are missing with one note per module (`check.sh`), `integration_test/` files carry the test flag (throwaway scan). `delivery: implemented`.
+
+## [2026-11-27] clarify | FR-018 acceptance criterion
+- The maintainer chose to fix the wording, not the viewer: *Find…* jumps to the first matching row (a file at Packages level), not to a type. [[FR-018-find-elements-by-name]] criterion reworded; behaviour unchanged.
