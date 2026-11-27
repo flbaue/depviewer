@@ -17,8 +17,8 @@ release: delivered
 lane: backbone
 order: 7
 goal: []
-delivery:
-delivery-checked:
+delivery: implemented
+delivery-checked: "2026-11-27T22:11:43+01:00"
 ---
 
 # Open a model in the viewer

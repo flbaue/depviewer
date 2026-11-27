@@ -76,3 +76,6 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 ## [2026-11-27] implement | FR-005, FR-063 and FR-068 delivery
 - Check only, no scanner or viewer code changed. [PR 19](https://github.com/flbaue/depviewer/pull/19) added a tsconfig path alias and an unexported top-level function to `test/fixture-ts/` with checks; the alias check fails without the `paths` entry.
 - Evidence: `scripts/check.sh` with Node 26 locally and CI on PR 19, all passing. [[FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler]] (`typescript.py`, path alias), [[FR-063-map-typescript-and-javascript-declarations-to-model-elements]] (kinds, unexported function), [[FR-068-show-the-kind-and-language-of-every-row]] (`K` and `TS` icons, `features/payments` row). `delivery: implemented`, confirmed by the maintainer.
+
+## [2026-11-27] implement | FR-020 Open a model in the viewer
+- Check only, no code changed. In a browser, a `deps.json` of `test/fixture` dropped on an empty `viewer.html` showed the same tree as the HTML of the same scan: 23 rows, 27 arcs, same header and rows. The drop was a scripted drop event carrying a real `File`, not a drag from the operating system. `delivery: implemented`, confirmed by the maintainer.
