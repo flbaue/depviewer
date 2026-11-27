@@ -1,5 +1,5 @@
 name: depviewer_dart_extractor
-description: Reads Dart sources with the Dart analyzer and prints a depviewer fragment (docs/specs/dart-support.md).
+description: Reads Dart sources with the Dart analyzer and prints a depviewer fragment (spec/wiki/functional-requirements/FR-006-analyse-dart-with-the-dart-analyzer.md).
 publish_to: none
 environment:
   sdk: ">=3.5.0 <4.0.0"

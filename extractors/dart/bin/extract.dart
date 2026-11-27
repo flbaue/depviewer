@@ -1,8 +1,8 @@
-// depviewer extractor for Dart (docs/specs/dart-support.md).
+// depviewer extractor for Dart (spec/wiki/functional-requirements/FR-006-analyse-dart-with-the-dart-analyzer.md).
 //
 // Usage: dart --packages=<extractor>/.dart_tool/package_config.json extract.dart <input.json>
 //   input: { "root": "/abs/package", "module": "name", "files": [{ "path": "lib/a.dart", "test": false }] }
-// Prints a depviewer fragment (docs/specs/multi-language.md) to stdout; diagnostics go to stderr.
+// Prints a depviewer fragment (spec/wiki/crosscutting-concepts/CC-009-fragment-format.md) to stdout; diagnostics go to stderr.
 //
 // Uses the Dart analyzer (resolved ASTs and the element model), so references are resolved exactly.
 

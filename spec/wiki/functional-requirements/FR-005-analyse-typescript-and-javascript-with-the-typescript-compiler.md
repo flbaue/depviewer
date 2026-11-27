@@ -39,4 +39,4 @@ Files `.ts .tsx .mts .cts .js .jsx .mjs .cjs` below each `package.json` are anal
 ## Hierarchy
 
 - **Parent:** [[FR-001-scan-a-code-base-into-one-model]]
-- **Children:** none.
+- **Children:** [[FR-063-map-typescript-and-javascript-declarations-to-model-elements]], [[FR-064-derive-typescript-and-javascript-dependencies-from-the-type-checker]].

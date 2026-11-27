@@ -5,7 +5,7 @@ title: Analyse Swift
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-001-vision-and-goal-of-depviewer]]"]
+sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-033-github-issue-17-language-swift]]"]
 related: []
 tags: [functional-requirement]
 notation: prose
@@ -25,7 +25,7 @@ delivery-checked:
 
 ## Rationale
 
-Requested in issue #17.
+Requested in [[SRC-033-github-issue-17-language-swift|issue #17]].
 
 ## Requirement
 

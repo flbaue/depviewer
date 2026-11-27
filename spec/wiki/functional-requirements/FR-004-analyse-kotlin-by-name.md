@@ -39,7 +39,7 @@ Kotlin projects must be scannable with only a JDK ([[CON-001-the-scanner-core-ne
 ## Hierarchy
 
 - **Parent:** [[FR-001-scan-a-code-base-into-one-model]]
-- **Children:** none.
+- **Children:** [[FR-060-map-kotlin-declarations-to-model-elements]], [[FR-061-resolve-kotlin-names-in-a-fixed-order]], [[FR-062-link-java-references-to-kotlin-declarations]].
 
 > [!note] Open points
 > Results are approximate until [[FR-052-analyse-kotlin-with-the-kotlin-compiler]], see [[ISS-010-name-based-kotlin-can-miss-or-misplace-violations]].

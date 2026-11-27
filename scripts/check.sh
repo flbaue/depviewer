@@ -36,7 +36,7 @@ step "scan fixture"
 step "model"
 python3 -I test/checks/jvm.py "$OUT/fixture.json"
 
-step "TypeScript/JavaScript (docs/specs/typescript-support.md)"
+step "TypeScript/JavaScript (spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md)"
 NODE_BIN=${DEPVIEWER_NODE:-node}
 if command -v "$NODE_BIN" >/dev/null 2>&1; then
   ./depviewer -o "$OUT/fixture-ts.json" test/fixture-ts
@@ -48,7 +48,7 @@ else
   HAVE_TS=
 fi
 
-step "Dart (docs/specs/dart-support.md)"
+step "Dart (spec/wiki/functional-requirements/FR-006-analyse-dart-with-the-dart-analyzer.md)"
 DART_BIN=${DEPVIEWER_DART:-dart}
 if command -v "$DART_BIN" >/dev/null 2>&1; then
   (cd test/fixture-dart && "$DART_BIN" pub get --offline >/dev/null)   # no dependencies: works offline
@@ -103,16 +103,16 @@ if [ -n "$CHROME" ]; then
   for g in Service:2a9d8f Domain:8e5cd9; do
     grep -q "padding-left:22px;--gc:#${g#*:}\"" "$OUT/fixture.dom.html" || fail "group '${g%%:*}' is not nested under Core"
   done
-  # Kotlin in the viewer (docs/specs/kotlin-support.md): "K" file icon, object kind; ?level=4 expands to members.
+  # Kotlin in the viewer (spec/wiki/functional-requirements/FR-004-analyse-kotlin-by-name.md): "K" file icon, object kind; ?level=4 expands to members.
   "$CHROME" --headless=new --disable-gpu --no-sandbox --no-first-run --user-data-dir="$OUT/chrome-profile" \
     --window-size=1400,1000 --virtual-time-budget=5000 --dump-dom "$url?level=4" > "$OUT/fixture-members.dom.html" 2>/dev/null
   grep -q 'class="ic k-file kt"' "$OUT/fixture-members.dom.html" || fail "Kotlin file icon missing"
   grep -q 'class="ic k-object"' "$OUT/fixture-members.dom.html" || fail "Kotlin object row missing (or ?level=4 not applied)"
   grep -Eq '<span class="nm[^"]*">Companion</span>' "$OUT/fixture-members.dom.html" || fail "companion object row missing"
-  # Arcs stay out of the label area (docs/specs/viewer-arcs.md); members give the longest arcs.
+  # Arcs stay out of the label area (spec/wiki/quality-requirements/QR-002-arcs-never-cover-the-labels.md); members give the longest arcs.
   python3 -I test/checks/viewer_arcs.py "$OUT/fixture-members.dom.html"
   echo "ok ($rows rows, $arcs arcs, view '$view'; Kotlin rows render)"
-  # Performance on a large synthetic model (docs/specs/viewer-performance.md); real time, no virtual time.
+  # Performance on a large synthetic model (spec/wiki/crosscutting-concepts/CC-007-virtualised-rendering-of-rows-and-arcs.md); real time, no virtual time.
   python3 -I test/gen_large.py viewer.html "$OUT/large.html"
   "$CHROME" --headless=new --disable-gpu --no-sandbox --no-first-run --user-data-dir="$OUT/chrome-profile" \
     --window-size=1400,1000 --dump-dom "file://$(pwd)/$OUT/large.html?bench" > "$OUT/large.dom.html" 2>/dev/null

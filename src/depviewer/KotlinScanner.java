@@ -22,7 +22,7 @@ import static depviewer.DepScan.*;
 import static depviewer.JavaScanner.*;
 import static depviewer.Model.*;
 
-/** Kotlin: built-in lexer and declaration parser, references resolved by name (docs/specs/kotlin-support.md). */
+/** Kotlin: built-in lexer and declaration parser, references resolved by name (spec/wiki/functional-requirements/FR-004-analyse-kotlin-by-name.md). */
 final class KotlinScanner {
 
     //

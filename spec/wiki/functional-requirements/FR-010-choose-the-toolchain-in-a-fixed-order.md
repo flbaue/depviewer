@@ -5,7 +5,7 @@ title: Choose the toolchain in a fixed order
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]"]
+sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-028-github-issue-12-toolchain-selection-user-s-first-pinned-fallback-and-analysis-prov]]"]
 related: ["[[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]", "[[ISS-006-how-is-the-projects-kotlin-version-read-without-running-gradle]]", "[[ISS-009-results-can-differ-between-machines]]"]
 tags: [functional-requirement]
 notation: prose

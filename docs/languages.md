@@ -1,7 +1,7 @@
 # Supported languages
 
 One scan can cover a mixed repository. Each language is analysed as exactly as its available
-tooling allows; the specs in [specs/](specs/) have the details and known limitations.
+tooling allows; the [requirements wiki](../spec/) has the details and known limitations.
 
 | Language | How it is analysed | Exactness | Needs |
 |---|---|---|---|
@@ -26,7 +26,7 @@ Not resolved: overloads (an overloaded name links to the first match), generics,
 other type inference; `.kts` files and Kotlin Multiplatform source sets are not scanned. Exact
 resolution with the Kotlin compiler is planned in
 [#7](https://github.com/flbaue/depviewer/issues/7).
-Details: [specs/kotlin-support.md](specs/kotlin-support.md).
+Details: [spec](../spec/wiki/functional-requirements/FR-004-analyse-kotlin-by-name.md).
 
 ## TypeScript / JavaScript
 
@@ -34,7 +34,7 @@ Files `.ts .tsx .mts .cts .js .jsx .mjs .cjs` below each `package.json`, analyse
 TypeScript compiler API, respecting the project's `tsconfig.json`. Uses the project's own
 `typescript` package if installed, else a pinned copy that `npm ci` installs into
 `extractors/typescript/` on first use. Node is found as `node` on the `PATH`, or set
-`DEPVIEWER_NODE`. Details: [specs/typescript-support.md](specs/typescript-support.md).
+`DEPVIEWER_NODE`. Details: [spec](../spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md).
 
 ## Dart
 
@@ -42,10 +42,10 @@ Analysed with the official Dart analyzer; all packages of a scan are analysed to
 references between them link to the real declarations. Needs `dart` on the `PATH` (Flutter's
 bundled `dart` works), or set `DEPVIEWER_DART`. The extractor's dependencies are installed with
 `dart pub get` on first use. Run `dart pub get` / `flutter pub get` in your project first so imports
-of other packages resolve. Details: [specs/dart-support.md](specs/dart-support.md).
+of other packages resolve. Details: [spec](../spec/wiki/functional-requirements/FR-006-analyse-dart-with-the-dart-analyzer.md).
 
 ## How the languages fit together
 
 All languages produce the same model (module › package › file › type › member, plus dependencies),
 so the viewer, views and groups work the same for every language.
-Architecture: [specs/multi-language.md](specs/multi-language.md).
+Architecture: [spec](../spec/wiki/decisions/DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract.md).

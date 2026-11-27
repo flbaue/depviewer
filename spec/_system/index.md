@@ -123,6 +123,17 @@ every capture (`_system/workflows/capture.md`, step 7).
 - [[FR-057-measure-and-compare-structure-over-time]] Measure and compare structure over time (feature, Could, unscheduled, draft)
 - [[FR-058-compute-structure-metrics-and-trends]] Compute structure metrics and trends (requirement, Could, unscheduled, draft)
 - [[FR-059-diff-two-scans-or-branches]] Diff two scans or branches (requirement, Could, unscheduled, draft)
+- [[FR-060-map-kotlin-declarations-to-model-elements]] Map Kotlin declarations to model elements (requirement, Must, delivered, draft)
+- [[FR-061-resolve-kotlin-names-in-a-fixed-order]] Resolve Kotlin names in a fixed order (requirement, Must, delivered, draft)
+- [[FR-062-link-java-references-to-kotlin-declarations]] Link Java references to Kotlin declarations (requirement, Must, delivered, draft)
+- [[FR-063-map-typescript-and-javascript-declarations-to-model-elements]] Map TypeScript and JavaScript declarations to model elements (requirement, Must, delivered, draft)
+- [[FR-064-derive-typescript-and-javascript-dependencies-from-the-type-checker]] Derive TypeScript and JavaScript dependencies from the type checker (requirement, Must, delivered, draft)
+- [[FR-065-map-dart-declarations-to-model-elements]] Map Dart declarations to model elements (requirement, Must, delivered, draft)
+- [[FR-066-derive-dart-dependencies-from-the-analyzer]] Derive Dart dependencies from the analyzer (requirement, Must, delivered, draft)
+- [[FR-067-choose-dart-source-folders-and-skip-files-that-cannot-be-analysed]] Choose Dart source folders and skip files that cannot be analysed (requirement, Must, delivered, draft)
+- [[FR-068-show-the-kind-and-language-of-every-row]] Show the kind and language of every row (requirement, Should, delivered, draft)
+- [[FR-069-give-native-platform-modules-of-flutter-apps-useful-names]] Give native platform modules of Flutter apps useful names (requirement, Could, unscheduled, draft)
+- [[FR-070-read-dependencies-from-compiled-classes]] Read dependencies from compiled classes (requirement, Could, unscheduled, draft)
 
 ## Quality requirements
 
@@ -200,6 +211,7 @@ every capture (`_system/workflows/capture.md`, step 7).
 - [[CC-006-exactness-before-completeness]] Exactness before completeness (current, draft)
 - [[CC-007-virtualised-rendering-of-rows-and-arcs]] Virtualised rendering of rows and arcs (current, draft)
 - [[CC-008-themes-and-browser-storage-in-the-viewer]] Themes and browser storage in the viewer (current, draft)
+- [[CC-009-fragment-format]] Fragment format (current, superseded by CC-002, draft)
 
 ## Decisions
 
@@ -220,8 +232,8 @@ every capture (`_system/workflows/capture.md`, step 7).
 - [[ISS-011-how-long-may-the-check-take]] How long may the check take? (gap, minor, open)
 - [[ISS-012-what-makes-the-viewer-readable-on-a-narrow-screen]] What makes the viewer readable on a narrow screen? (gap, minor, open)
 - [[ISS-013-how-is-structure-at-a-glance-measured]] How is "structure at a glance" measured? (gap, minor, open)
-- [[ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr]] Does this wiki replace docs/specs and docs/adr? (question, major, open)
-- [[ISS-015-the-vision-and-the-architecture-rules-spec-are-not-in-the-repository]] The vision and the architecture-rules spec are not in the repository (gap, minor, open)
+- [[ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr]] Does this wiki replace docs/specs and docs/adr? (question, major, resolved)
+- [[ISS-015-the-vision-and-the-architecture-rules-spec-are-not-in-the-repository]] The vision and the architecture-rules spec are not in the repository (gap, minor, resolved)
 
 ## Sources
 
@@ -241,3 +253,22 @@ every capture (`_system/workflows/capture.md`, step 7).
 - [[SRC-014-spec-dart-support]] Spec Dart support (ingested)
 - [[SRC-015-spec-viewer-arc-geometry]] Spec viewer arc geometry (ingested)
 - [[SRC-016-spec-viewer-performance-on-large-projects]] Spec viewer performance on large projects (ingested)
+- [[SRC-017-github-issue-1-viewer-arcs-cover-the-tree-labels-on-large-projects]] GitHub issue 1: Viewer: arcs cover the tree labels on large projects (ingested)
+- [[SRC-018-github-issue-2-viewer-slow-to-expand-and-re-sort-with-tens-of-thousands-of-arcs]] GitHub issue 2: Viewer: slow to expand and re-sort with tens of thousands of arcs (ingested)
+- [[SRC-019-github-issue-3-flutter-projects-native-platform-code-shows-up-as-an-unhelpful-app]] GitHub issue 3: Flutter projects: native platform code shows up as an unhelpful 'app' module (ingested)
+- [[SRC-020-github-issue-4-typescript-link-references-between-packages-of-a-monorepo]] GitHub issue 4: TypeScript: link references between packages of a monorepo (ingested)
+- [[SRC-021-github-issue-5-idea-exact-mode-from-compiled-classes-classes-for-java-and-kotlin]] GitHub issue 5: Idea: exact mode from compiled classes (--classes) for Java and Kotlin (ingested)
+- [[SRC-022-github-issue-6-architecture-checks-for-ai-agents-rules-for-forbidden-layer-module]] GitHub issue 6: Architecture checks for AI agents: rules for forbidden layer, module, pattern and group dependencies (ingested)
+- [[SRC-023-github-issue-7-kotlin-exact-resolution-with-the-kotlin-compiler-or-a-language-serv]] GitHub issue 7: Kotlin: exact resolution with the Kotlin compiler (or a language server) (ingested)
+- [[SRC-024-github-issue-8-clean-up-readme-short-overview-and-goal-move-details-into-separate]] GitHub issue 8: Clean up README: short overview and goal, move details into separate docs (ingested)
+- [[SRC-025-github-issue-9-evaluate-the-architecture-for-adding-new-languages]] GitHub issue 9: Evaluate the architecture for adding new languages (ingested)
+- [[SRC-026-github-issue-10-extractor-contract-v1-versioned-spec-describe-handshake-and-confor]] GitHub issue 10: Extractor contract v1: versioned spec, --describe handshake and conformance test (ingested)
+- [[SRC-027-github-issue-11-run-extractors-once-per-scan-typescript-monorepo-links]] GitHub issue 11: Run extractors once per scan; TypeScript monorepo links (ingested)
+- [[SRC-028-github-issue-12-toolchain-selection-user-s-first-pinned-fallback-and-analysis-prov]] GitHub issue 12: Toolchain selection (user's first, pinned fallback) and analysis provenance (ingested)
+- [[SRC-029-github-issue-13-move-java-and-kotlin-into-a-jvm-extractor-behind-the-contract]] GitHub issue 13: Move Java and Kotlin into a jvm extractor behind the contract (ingested)
+- [[SRC-030-github-issue-14-language-go]] GitHub issue 14: Language: Go (ingested)
+- [[SRC-031-github-issue-15-language-c-sharp]] GitHub issue 15: Language: C# (ingested)
+- [[SRC-032-github-issue-16-language-python]] GitHub issue 16: Language: Python (ingested)
+- [[SRC-033-github-issue-17-language-swift]] GitHub issue 17: Language: Swift (ingested)
+- [[SRC-034-quick-start-guide]] Quick-start guide (ingested)
+- [[SRC-035-how-depviewer-was-built]] How depviewer was built (ingested)

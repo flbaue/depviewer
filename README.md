@@ -43,7 +43,7 @@ finding cycles and drawing your architecture as groups.
 - [Usage](docs/usage.md): command line, what gets scanned, classpath, output files.
 - [Supported languages](docs/languages.md): how each language is analysed, toolchains and limits.
 - [The viewer](docs/viewer.md): every feature of the viewer, views and groups.
-- [Specs](docs/specs/): detailed behaviour, for contributors.
+- [Requirements and architecture](spec/): the spec and the backlog, for contributors.
 
 ## AI notice
 

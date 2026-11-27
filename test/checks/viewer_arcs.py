@@ -1,4 +1,4 @@
-"""Viewer arc geometry (docs/specs/viewer-arcs.md), checked on a DOM dumped by headless Chrome.
+"""Viewer arc geometry (spec/wiki/quality-requirements/QR-002-arcs-never-cover-the-labels.md), checked on a DOM dumped by headless Chrome.
 
 Usage: python3 -I test/checks/viewer_arcs.py build/fixture-members.dom.html
 

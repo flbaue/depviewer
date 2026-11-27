@@ -264,7 +264,7 @@ let D = null;   // loaded data (original structure)
 let M = null;   // display tree for the current view
 let V = { views: [], current: null };
 let gen = 0, rows = [], arcs = [], active = [], rowArcs = new Map();
-let win = { lo: 0, hi: 0 }, geo = null;   // rows in the DOM (docs/specs/viewer-performance.md), arc geometry
+let win = { lo: 0, hi: 0 }, geo = null;   // rows in the DOM (spec/wiki/crosscutting-concepts/CC-007-virtualised-rendering-of-rows-and-arcs.md), arc geometry
 const st = { sort: 'levelize', tests: false, ext: true, nest: false, only: false, level: 2, expanded: new Set(),
   sel: null, selArc: null, hover: null, hoverArc: null, query: '', findPos: -1, editing: null };
 
@@ -660,7 +660,7 @@ function draw() {
   for (const n of rows) maxLabel = Math.max(maxLabel, 6 + n.depth * IND + 19 + 22 + textWidth(n.n) + metric);
   const ax = Math.round(Math.min(Math.max(maxLabel + 36, W * 0.5), Math.max(maxLabel + 36, W - 110)));
   const width = Math.max(W, ax + 110);
-  // Left (downward) arcs stay between the widest label and the anchor column (docs/specs/viewer-arcs.md).
+  // Left (downward) arcs stay between the widest label and the anchor column (spec/wiki/quality-requirements/QR-002-arcs-never-cover-the-labels.md).
   geo = { ax, maxL: Math.max(5, ax - maxLabel - 12), maxR: Math.max(24, width - ax - 14) };
   arcs = computeArcs();
   rowArcs = new Map();
@@ -1096,7 +1096,7 @@ new ResizeObserver(() => { if (view.clientWidth === lastW) return renderWindow(f
 view.addEventListener('scroll', () => renderWindow(false), { passive: true });
 
 // ?bench: click through the expensive actions once and publish their times in ms, including
-// style and layout (read by scripts/check.sh, docs/specs/viewer-performance.md).
+// style and layout (read by scripts/check.sh, spec/wiki/crosscutting-concepts/CC-007-virtualised-rendering-of-rows-and-arcs.md).
 function bench() {
   const time = f => { const t0 = performance.now(); f(); void view.scrollHeight; rowsEl.getBoundingClientRect(); return Math.round(performance.now() - t0); };
   const click = s => () => $(s).click();

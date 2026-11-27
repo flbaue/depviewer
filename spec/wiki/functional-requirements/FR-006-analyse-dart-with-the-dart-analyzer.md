@@ -39,4 +39,4 @@ Dart packages are analysed with the official analyzer, all packages of a scan in
 ## Hierarchy
 
 - **Parent:** [[FR-001-scan-a-code-base-into-one-model]]
-- **Children:** none.
+- **Children:** [[FR-065-map-dart-declarations-to-model-elements]], [[FR-066-derive-dart-dependencies-from-the-analyzer]], [[FR-067-choose-dart-source-folders-and-skip-files-that-cannot-be-analysed]].

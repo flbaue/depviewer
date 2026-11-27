@@ -1,4 +1,4 @@
-"""Model checks for test/fixture-ts (docs/specs/typescript-support.md).
+"""Model checks for test/fixture-ts (spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md).
 
 Usage: python3 -I test/checks/typescript.py <deps.json>
 """

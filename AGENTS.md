@@ -12,9 +12,8 @@ no frameworks** — a JDK 17+ and a browser are all a user needs.
 
 | File | Role |
 |---|---|
-| `src/depviewer/` | Scanner (Java 17, JDK only, package `depviewer`). `DepScan` = CLI, source discovery, orchestration, output; `Model` = nodes/edges/packages/externals/JSON writer shared by all languages; `JavaScanner` = javac Trees API (parses *and attributes*, exact); `KotlinScanner` = built-in lexer/parser, name-based resolution (`docs/specs/kotlin-support.md`); `Toolchain` = runs a language extractor and merges its JSON fragment; `Json` = minimal JSON reader. The `depviewer` wrapper compiles it into `build/depviewer-classes` on first use. Without the wrapper: `javac -d out src/depviewer/*.java && java -cp out depviewer.DepScan …`. |
-| `docs/specs/` | Feature specs (behaviour, constraints, out of scope). Start here for any change. |
-| `spec/` | Requirements and architecture as a [systems42](https://systems42.org) wiki (req42 + arc42), captured from `docs/` and still `draft`. Read `spec/AGENTS.md` before you work there; its rules apply only inside `spec/`. Skills: `capture`, `grill-requirements`, `implement`, `recover`, `requirements-wiki` (linked in `.claude/skills/`). Until [ISS-014](spec/wiki/issues/ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr.md) is decided, `docs/specs/` stays authoritative: a behaviour change updates both. |
+| `src/depviewer/` | Scanner (Java 17, JDK only, package `depviewer`). `DepScan` = CLI, source discovery, orchestration, output; `Model` = nodes/edges/packages/externals/JSON writer shared by all languages; `JavaScanner` = javac Trees API (parses *and attributes*, exact); `KotlinScanner` = built-in lexer/parser, name-based resolution ([FR-004](spec/wiki/functional-requirements/FR-004-analyse-kotlin-by-name.md)); `Toolchain` = runs a language extractor and merges its JSON fragment; `Json` = minimal JSON reader. The `depviewer` wrapper compiles it into `build/depviewer-classes` on first use. Without the wrapper: `javac -d out src/depviewer/*.java && java -cp out depviewer.DepScan …`. |
+| `spec/` | **The spec and the backlog.** Requirements and architecture as a [systems42](https://systems42.org) wiki (req42 + arc42): goals, functional and quality requirements, constraints, building blocks, decisions (ADR 0001 is [DR-001](spec/wiki/decisions/DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract.md)) and open issues. Start here for any change. Read `spec/AGENTS.md` before you work there; its rules apply only inside `spec/`. Skills: `capture`, `grill-requirements`, `implement`, `recover`, `requirements-wiki` (linked in `.claude/skills/`). The old `docs/specs/`, `docs/adr/` and GitHub issues are archived in `spec/raw/ingested/` ([ISS-014](spec/wiki/issues/ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr.md)). |
 | `viewer.html` | Viewer template. One self-contained HTML file with inline CSS and vanilla JS. The scanner replaces `/*DEPS_DATA*/null` with the model and `/*DEPS_VIEWS*/null` with exported views. |
 | `depviewer` | POSIX shell wrapper that passes `--template` and runs the scanner. |
 | `extractors/typescript/` | TypeScript/JavaScript extractor: `extract.mjs` on the TypeScript compiler API (Node). Pinned in `package-lock.json`. |
@@ -22,7 +21,7 @@ no frameworks** — a JDK 17+ and a browser are all a user needs.
 | `scripts/check.sh` | **The** check. Run it before you say you are done. |
 | `test/fixture/`, `test/fixture-ts/`, `test/fixture-dart/` | Small projects with known dependencies per language (Java + Kotlin, TypeScript/JavaScript, Dart), each with a deliberate cycle and some unresolvable or external references. |
 | `test/checks/` | Model assertions: `jvm.py`, `typescript.py`, `dart.py` (one per fixture) on top of `common.py`. Viewer assertions on DOMs dumped by headless Chrome: `viewer_arcs.py` (arc geometry), `viewer_perf.py` (timings on the large model). |
-| `test/gen_large.py` | Generates a large synthetic model (~10,000 rows, ~38,000 arcs at member level) embedded in the viewer, for the performance check (`docs/specs/viewer-performance.md`). |
+| `test/gen_large.py` | Generates a large synthetic model (~10,000 rows, ~38,000 arcs at member level) embedded in the viewer, for the performance check ([QR-001](spec/wiki/quality-requirements/QR-001-the-viewer-stays-responsive-on-large-projects.md)). |
 | `test/fixture-views.json` | A "Layers" view used by the headless browser smoke test and the screenshots. |
 | `scripts/screenshots.sh` | Regenerates `docs/screenshot-{light,dark}.png` for the README. Run it after visible UI changes and look at the result. |
 
@@ -30,10 +29,11 @@ no frameworks** — a JDK 17+ and a browser are all a user needs.
 
 The maintainer wants every feature and behaviour change done this way:
 
-1. **Spec first.** Write or update a spec in `docs/specs/<feature>.md` before writing code: goal,
-   constraints, the expected behaviour as checkable statements, and what is out of scope.
-   Small bug fixes can skip the spec but not the test.
-2. **Tests next, and watch them fail.** Turn the spec's statements into checks — fixture code
+1. **Spec first.** Write or update the requirements in the wiki under `spec/` before writing code
+   (a new idea goes into `spec/raw/` and is captured with the `capture` skill): goal, constraints,
+   the expected behaviour as checkable acceptance criteria, and what is out of scope. Small bug
+   fixes can skip the spec but not the test.
+2. **Tests next, and watch them fail.** Turn the acceptance criteria into checks — fixture code
    plus assertions in `test/checks/<fixture>.py` for the scanner, `scripts/check.sh` (headless
    smoke test) for the viewer. Run them and confirm they fail for the right reason.
 3. **Implement until green**, then run the whole `scripts/check.sh`.
@@ -41,7 +41,7 @@ The maintainer wants every feature and behaviour change done this way:
    version (`git archive HEAD src | tar -x -C <tmp>`, compile it there) and the new one and compare
    the JSON (ignoring `generated`); differences must
    be intended.
-5. Update the spec's status, the user docs (`docs/usage.md`, `languages.md`, `viewer.md`,
+5. Update the wiki pages (`delivery`, `release`, child requirements), the user docs (`docs/usage.md`, `languages.md`, `viewer.md`,
    `quick-start.md`; the README only for the overview) and this file if behaviour or invariants
    changed.
 
@@ -93,12 +93,14 @@ When you fix a scanner bug, add the case to the fixture and a check that fails w
 
 ## Adding a language
 
-Read `docs/specs/multi-language.md` and the accepted decision in
-`docs/adr/0001-language-support.md` first (every language becomes an extractor run once per scan,
+Read the accepted decision [DR-001](spec/wiki/decisions/DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract.md),
+[CC-009](spec/wiki/crosscutting-concepts/CC-009-fragment-format.md) (fragment format) and
+[CC-002](spec/wiki/crosscutting-concepts/CC-002-extractor-contract.md) (contract) first (every language becomes an extractor run once per scan,
 using the user's toolchain first; its migration plan is in progress), then follow the workflow above:
 
-1. Spec `docs/specs/<language>-support.md` (toolchain, sources, model mapping, dependency rules,
-   fixture expectations, out of scope).
+1. Requirements in `spec/`: refine the language's FR (e.g. [FR-053](spec/wiki/functional-requirements/FR-053-analyse-go.md))
+   into child requirements for toolchain, sources, model mapping, dependency rules and fixture
+   expectations, as [FR-006](spec/wiki/functional-requirements/FR-006-analyse-dart-with-the-dart-analyzer.md) does for Dart.
 2. Fixture `test/fixture-<language>/` and `test/checks/<language>.py`; add both to
    `scripts/check.sh` (skip with a note when the toolchain is missing) and the toolchain to the CI
    workflow. Watch the checks fail.
@@ -128,7 +130,7 @@ changes between major versions.
   data cannot close the `<script>` element.
 - `document.body.dataset.rows/arcs/view/labels` (and `bench` with `?bench`) are read by the smoke
   test; keep them. `rows`/`arcs` count the whole tree, not what is in the DOM.
-- Rows and arcs are virtualised (`docs/specs/viewer-performance.md`): only rows `win.lo..win.hi`
+- Rows and arcs are virtualised ([CC-007](spec/wiki/crosscutting-concepts/CC-007-virtualised-rendering-of-rows-and-arcs.md)): only rows `win.lo..win.hi`
   are in `#rows`. Never map DOM children to `rows` by index; use `data-r` / `rowEl(r)`, and expect
   `rowEl` to return `null` for rows outside the window.
 

@@ -5,7 +5,7 @@ title: Link the modules of a monorepo
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]"]
+sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-020-github-issue-4-typescript-link-references-between-packages-of-a-monorepo]]", "[[SRC-027-github-issue-11-run-extractors-once-per-scan-typescript-monorepo-links]]"]
 related: ["[[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]"]
 tags: [functional-requirement]
 notation: prose
@@ -25,7 +25,7 @@ delivery-checked:
 
 ## Rationale
 
-TypeScript runs once per module today, so references between packages of a monorepo point to `node_modules` or externals (#4).
+TypeScript runs once per module today, so references between packages of a monorepo point to `node_modules` or externals ([[SRC-020-github-issue-4-typescript-link-references-between-packages-of-a-monorepo|issue #4]]).
 
 ## Requirement
 

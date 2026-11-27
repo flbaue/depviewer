@@ -5,7 +5,7 @@ title: Every language is analysed by an extractor behind one versioned contract
 status: accepted
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]"]
+sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-025-github-issue-9-evaluate-the-architecture-for-adding-new-languages]]"]
 related: ["[[CC-002-extractor-contract]]", "[[FR-010-choose-the-toolchain-in-a-fixed-order]]", "[[FR-011-record-the-provenance-of-every-language-and-module]]", "[[FR-012-link-the-modules-of-a-monorepo]]", "[[FR-051-analyse-more-languages]]", "[[ISS-005-is-the-extractor-request-sent-on-stdin-or-in-a-file]]", "[[ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr]]", "[[SOL-002-each-language-is-analysed-by-its-own-toolchain]]"]
 tags: [decision-record]
 aliases: [ADR-0001]
@@ -25,7 +25,7 @@ superseded-by: []
 
 ## Context and Problem Statement
 
-depviewer supports four languages in three ways: Java with javac and Kotlin with a built-in parser inside the scanner, TypeScript with a Node extractor run per module, Dart with an extractor run once per scan. Swift, Python, Go, C# and exact Kotlin are wanted next. Problems: two integration paths, broken links inside TypeScript monorepos (#4), no common toolchain policy, no record of how exact the model is, and no versioned or tested fragment format. How should a language be added from now on?
+depviewer supports four languages in three ways: Java with javac and Kotlin with a built-in parser inside the scanner, TypeScript with a Node extractor run per module, Dart with an extractor run once per scan. Swift, Python, Go, C# and exact Kotlin are wanted next. Problems: two integration paths, broken links inside TypeScript monorepos ([[SRC-020-github-issue-4-typescript-link-references-between-packages-of-a-monorepo|issue #4]]), no common toolchain policy, no record of how exact the model is, and no versioned or tested fragment format. How should a language be added from now on?
 
 ## Decision Drivers
 
@@ -73,4 +73,4 @@ Java- and Kotlin-only scans give identical JSON before and after the move, excep
 
 ## More Information
 
-Migration, one issue each: contract spec and conformance test (#10), once-per-scan TypeScript (#11), toolchain selection and provenance (#12), `jvm` extractor (#13), exact Kotlin (#7), new languages (#14 to #17). Open questions: [[ISS-005-is-the-extractor-request-sent-on-stdin-or-in-a-file]], [[ISS-006-how-is-the-projects-kotlin-version-read-without-running-gradle]], [[ISS-007-should-the-provenance-record-the-extractors-own-version]]. Original: `docs/adr/0001-language-support.md`.
+Migration, one issue each: contract spec and conformance test ([[SRC-026-github-issue-10-extractor-contract-v1-versioned-spec-describe-handshake-and-confor|issue #10]]), once-per-scan TypeScript ([[SRC-027-github-issue-11-run-extractors-once-per-scan-typescript-monorepo-links|issue #11]]), toolchain selection and provenance ([[SRC-028-github-issue-12-toolchain-selection-user-s-first-pinned-fallback-and-analysis-prov|issue #12]]), `jvm` extractor ([[SRC-029-github-issue-13-move-java-and-kotlin-into-a-jvm-extractor-behind-the-contract|issue #13]]), exact Kotlin ([[SRC-023-github-issue-7-kotlin-exact-resolution-with-the-kotlin-compiler-or-a-language-serv|issue #7]]), new languages ([[SRC-030-github-issue-14-language-go|issue #14]] to [[SRC-033-github-issue-17-language-swift|issue #17]]). Open questions: [[ISS-005-is-the-extractor-request-sent-on-stdin-or-in-a-file]], [[ISS-006-how-is-the-projects-kotlin-version-read-without-running-gradle]], [[ISS-007-should-the-provenance-record-the-extractors-own-version]]. Original: `raw/ingested/docs-adr/0001-language-support.md`.

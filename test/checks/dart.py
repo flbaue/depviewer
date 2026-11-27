@@ -1,4 +1,4 @@
-"""Model checks for test/fixture-dart (docs/specs/dart-support.md).
+"""Model checks for test/fixture-dart (spec/wiki/functional-requirements/FR-006-analyse-dart-with-the-dart-analyzer.md).
 
 Usage: python3 -I test/checks/dart.py <deps.json>
 """

@@ -5,7 +5,7 @@ title: Share views as a file
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-010-viewer-reference]]", "[[SRC-008-usage-reference]]"]
+sources: ["[[SRC-034-quick-start-guide]]", "[[SRC-010-viewer-reference]]", "[[SRC-008-usage-reference]]"]
 related: []
 tags: [functional-requirement]
 notation: prose

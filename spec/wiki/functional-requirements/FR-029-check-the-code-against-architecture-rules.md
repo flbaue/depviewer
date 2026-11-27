@@ -5,7 +5,7 @@ title: Check the code against architecture rules
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
+sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]", "[[SRC-022-github-issue-6-architecture-checks-for-ai-agents-rules-for-forbidden-layer-module]]"]
 related: ["[[ISS-003-how-does-ungrouped-code-relate-to-a-layers-rule]]", "[[ISS-010-name-based-kotlin-can-miss-or-misplace-violations]]"]
 tags: [functional-requirement]
 notation: prose

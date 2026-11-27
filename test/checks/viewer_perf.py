@@ -1,4 +1,4 @@
-"""Viewer performance on a large model (docs/specs/viewer-performance.md).
+"""Viewer performance on a large model (spec/wiki/quality-requirements/QR-001-the-viewer-stays-responsive-on-large-projects.md).
 
 Usage: python3 -I test/checks/viewer_perf.py build/large.dom.html
 

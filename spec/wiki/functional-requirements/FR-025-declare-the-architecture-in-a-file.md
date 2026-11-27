@@ -5,7 +5,7 @@ title: Declare the architecture in a file
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]", "[[SRC-001-vision-and-goal-of-depviewer]]"]
+sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]", "[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-022-github-issue-6-architecture-checks-for-ai-agents-rules-for-forbidden-layer-module]]"]
 related: ["[[ISS-015-the-vision-and-the-architecture-rules-spec-are-not-in-the-repository]]"]
 tags: [functional-requirement]
 notation: prose

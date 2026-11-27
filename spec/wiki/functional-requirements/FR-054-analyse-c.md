@@ -5,7 +5,7 @@ title: "Analyse C#"
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-001-vision-and-goal-of-depviewer]]"]
+sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-031-github-issue-15-language-c-sharp]]"]
 related: []
 tags: [functional-requirement]
 notation: prose
@@ -25,7 +25,7 @@ delivery-checked:
 
 ## Rationale
 
-Requested in issue #15.
+Requested in [[SRC-031-github-issue-15-language-c-sharp|issue #15]].
 
 ## Requirement
 

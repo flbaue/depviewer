@@ -16,7 +16,7 @@ import static depviewer.Model.*;
 
 /**
  * Languages analysed by their official toolchain: an extractor in extractors/&lt;language&gt;/ runs as a
- * separate process and prints a JSON fragment (docs/specs/multi-language.md), which is merged here.
+ * separate process and prints a JSON fragment (spec/wiki/crosscutting-concepts/CC-009-fragment-format.md), which is merged here.
  */
 final class Toolchain {
 

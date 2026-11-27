@@ -5,7 +5,7 @@ title: Open a model in the viewer
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-008-usage-reference]]"]
+sources: ["[[SRC-034-quick-start-guide]]", "[[SRC-008-usage-reference]]"]
 related: []
 tags: [functional-requirement]
 notation: prose

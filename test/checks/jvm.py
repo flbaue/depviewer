@@ -54,7 +54,7 @@ edge("com.example.domain.Order.lines", "java.util.ArrayList", "new")
 check(all(f != t for f, t, _ in edges), "self-dependency found")
 check("java.lang.Object" not in by_q, "dependency on java.lang.Object (explicit super() call?)")
 
-# --- Kotlin (docs/specs/kotlin-support.md) -----------------------------------
+# --- Kotlin (spec/wiki/functional-requirements/FR-004-analyse-kotlin-by-name.md) -----------------------------------
 KT = "src/main/kotlin/com/example/notify/"
 N = "com.example.notify."
 

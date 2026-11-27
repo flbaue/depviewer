@@ -1,4 +1,4 @@
-"""Generate a large synthetic model and embed it into the viewer (docs/specs/viewer-performance.md).
+"""Generate a large synthetic model and embed it into the viewer (spec/wiki/quality-requirements/QR-001-the-viewer-stays-responsive-on-large-projects.md).
 
 Usage: python3 -I test/gen_large.py viewer.html build/large.html
 

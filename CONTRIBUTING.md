@@ -9,12 +9,16 @@ Open an issue. For scanner problems, the most useful thing is a **minimal Java s
 shows the wrong or missing dependency (please don't paste code you are not allowed to share).
 For viewer problems: browser, what you did, what you expected, and a screenshot if it helps.
 
+Issues are the inbox. Accepted work is captured into the [requirements wiki](spec/), which is
+the backlog, and the issue is closed with a link to its requirement.
+
 ## Making changes
 
 1. Fork and branch from `main`.
 2. Read [AGENTS.md](AGENTS.md) — it is the technical guide for humans and AI agents alike
    (structure, data model, invariants, conventions).
-3. For a feature or behaviour change, write or update a spec in `docs/specs/` first, then add
+3. For a feature or behaviour change, write or update the requirements in the
+   [wiki under `spec/`](spec/) first, then add
    tests that fail, then implement (see "Workflow" in AGENTS.md). Make a focused change; no new
    dependencies or build tooling without discussing it first.
 4. Run `scripts/check.sh` (needs JDK 17+ and python3; Node.js, the Dart SDK and Chrome enable the

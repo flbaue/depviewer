@@ -5,7 +5,7 @@ title: Show rule violations in the viewer
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
+sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]", "[[SRC-022-github-issue-6-architecture-checks-for-ai-agents-rules-for-forbidden-layer-module]]"]
 related: []
 tags: [functional-requirement]
 notation: prose

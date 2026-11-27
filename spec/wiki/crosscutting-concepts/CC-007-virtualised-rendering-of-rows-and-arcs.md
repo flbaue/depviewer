@@ -5,7 +5,7 @@ title: Virtualised rendering of rows and arcs
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-016-spec-viewer-performance-on-large-projects]]", "[[SRC-004-guide-for-ai-coding-agents]]"]
+sources: ["[[SRC-016-spec-viewer-performance-on-large-projects]]", "[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-017-github-issue-1-viewer-arcs-cover-the-tree-labels-on-large-projects]]", "[[SRC-018-github-issue-2-viewer-slow-to-expand-and-re-sort-with-tens-of-thousands-of-arcs]]"]
 related: []
 tags: [crosscutting-concept]
 category: under-the-hood

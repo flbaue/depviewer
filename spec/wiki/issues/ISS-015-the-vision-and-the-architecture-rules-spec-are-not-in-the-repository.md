@@ -2,7 +2,7 @@
 id: ISS-015
 type: issue
 title: The vision and the architecture-rules spec are not in the repository
-status: open
+status: resolved
 created: 2026-11-27
 updated: 2026-11-27
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-002-spec-architecture-file-and-rule-checks]]"]
@@ -13,7 +13,7 @@ kind: gap
 category: content
 raised-by: agent
 owner: "[[STK-004-maintainer]]"
-resolved: null
+resolved: 2026-11-27
 ---
 
 # The vision and the architecture-rules spec are not in the repository
@@ -28,4 +28,4 @@ resolved: null
 1. Commit them to `docs/vision.md` and `docs/specs/architecture-rules.md`.
 2. Keep them only here, if [[ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr]] makes the wiki the spec.
 
-**Resolution.**
+**Resolution.** The [[STK-004-maintainer]] added both files on 2026-11-27. They are archived as `raw/ingested/claude-project-vision.md` and `raw/ingested/claude-project-architecture-rules.md`, with hashes in [[SRC-001-vision-and-goal-of-depviewer]] and [[SRC-002-spec-architecture-file-and-rule-checks]].

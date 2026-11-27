@@ -2,7 +2,7 @@
 id: ISS-014
 type: issue
 title: "Does this wiki replace docs/specs and docs/adr?"
-status: open
+status: resolved
 created: 2026-11-27
 updated: 2026-11-27
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]"]
@@ -13,7 +13,7 @@ kind: question
 category: method
 raised-by: agent
 owner: "[[STK-004-maintainer]]"
-resolved: null
+resolved: 2026-11-27
 ---
 
 # Does this wiki replace docs/specs and docs/adr?
@@ -29,4 +29,4 @@ resolved: null
 2. Both: the wiki holds requirements and architecture, `docs/specs/` keeps detailed behaviour, each linking the other.
 3. The wiki stays a read-only summary of `docs/`.
 
-**Resolution.**
+**Resolution.** Option 1, decided by the [[STK-004-maintainer]] on 2026-11-27. The wiki is the spec. `docs/specs/` and `docs/adr/` were moved to `raw/ingested/docs-specs/` and `raw/ingested/docs-adr/`, and their details became child requirements (e.g. [[FR-060-map-kotlin-declarations-to-model-elements]]) and [[CC-009-fragment-format]]. The user docs stay in `docs/`. The GitHub issues were captured as [[SRC-017-github-issue-1-viewer-arcs-cover-the-tree-labels-on-large-projects|sources]] and closed, so the wiki is also the backlog.

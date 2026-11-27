@@ -5,7 +5,7 @@ title: Run the check from the command line and in CI
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]", "[[SRC-001-vision-and-goal-of-depviewer]]"]
+sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]", "[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-022-github-issue-6-architecture-checks-for-ai-agents-rules-for-forbidden-layer-module]]"]
 related: []
 tags: [functional-requirement]
 notation: prose

@@ -1,7 +1,7 @@
 {
   "name": "depviewer-typescript-extractor",
   "private": true,
-  "description": "Reads TypeScript/JavaScript sources with the TypeScript compiler API and prints a depviewer fragment (docs/specs/typescript-support.md).",
+  "description": "Reads TypeScript/JavaScript sources with the TypeScript compiler API and prints a depviewer fragment (spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md).",
   "type": "module",
   "engines": {
     "node": ">=18"

@@ -5,7 +5,7 @@ title: The viewer stays responsive on large projects
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-016-spec-viewer-performance-on-large-projects]]"]
+sources: ["[[SRC-016-spec-viewer-performance-on-large-projects]]", "[[SRC-018-github-issue-2-viewer-slow-to-expand-and-re-sort-with-tens-of-thousands-of-arcs]]"]
 related: []
 tags: [quality-requirement]
 dimensions: [efficient, usable]

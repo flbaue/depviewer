@@ -122,5 +122,5 @@ copy, rename or delete views; keep several, e.g. one for layers and one for feat
 
 - Add `?level=1` … `?level=4` to the HTML's URL to open it at Packages, Files, Types or Members.
 - Kotlin references are resolved by name, so a few can be missing; Java, TypeScript and Dart are
-  resolved by their compilers. Details are in [docs/specs/](specs/).
+  resolved by their compilers. Details are in the [requirements wiki](../spec/).
 - Something looks wrong? Please open an issue with a small snippet that reproduces it.

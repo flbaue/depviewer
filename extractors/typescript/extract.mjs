@@ -1,8 +1,8 @@
-// depviewer extractor for TypeScript and JavaScript (docs/specs/typescript-support.md).
+// depviewer extractor for TypeScript and JavaScript (spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md).
 //
 // Usage: node extract.mjs <input.json>
 //   input: { "root": "/abs/project", "module": "name", "files": [{ "path": "src/a.ts", "test": false }] }
-// Prints a depviewer fragment (docs/specs/multi-language.md) to stdout; diagnostics go to stderr.
+// Prints a depviewer fragment (spec/wiki/crosscutting-concepts/CC-009-fragment-format.md) to stdout; diagnostics go to stderr.
 //
 // Uses the TypeScript compiler API and its type checker, so references are resolved exactly:
 // imports, re-exports and default exports are followed to the original declaration.

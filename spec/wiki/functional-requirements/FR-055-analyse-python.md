@@ -5,7 +5,7 @@ title: Analyse Python
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-001-vision-and-goal-of-depviewer]]"]
+sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-032-github-issue-16-language-python]]"]
 related: []
 tags: [functional-requirement]
 notation: prose
@@ -25,7 +25,7 @@ delivery-checked:
 
 ## Rationale
 
-Requested in issue #16.
+Requested in [[SRC-032-github-issue-16-language-python|issue #16]].
 
 ## Requirement
 

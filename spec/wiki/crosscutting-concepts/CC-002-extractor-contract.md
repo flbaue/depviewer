@@ -5,7 +5,7 @@ title: Extractor contract
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-011-spec-multi-language-architecture]]"]
+sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-011-spec-multi-language-architecture]]", "[[SRC-026-github-issue-10-extractor-contract-v1-versioned-spec-describe-handshake-and-confor]]"]
 related: ["[[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]", "[[ISS-005-is-the-extractor-request-sent-on-stdin-or-in-a-file]]"]
 tags: [crosscutting-concept]
 category: patterns
@@ -23,7 +23,7 @@ superseded-by:
 ## Concept
 
 
-Every extractor follows one versioned contract, to be written as `docs/specs/extractor-contract.md` ([[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]], issue #10):
+Every extractor follows one versioned contract, extending today's [[CC-009-fragment-format]], to be specified on this page ([[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]], [[SRC-026-github-issue-10-extractor-contract-v1-versioned-spec-describe-handshake-and-confor|issue #10]]):
 
 - **Input:** one run per scan with a JSON request: modules (name, folder), files per module with test flags, options, and the contract version of the core.
 - **Handshake:** `--describe` prints name, contract version, languages and the detected toolchain with version, source and whether it is supported.

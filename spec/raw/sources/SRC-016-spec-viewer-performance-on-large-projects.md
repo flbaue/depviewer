@@ -7,7 +7,7 @@ created: 2026-11-27
 updated: 2026-11-27
 tags: [source]
 source-type: spec
-origin: "../docs/specs/viewer-performance.md"
+origin: "raw/ingested/docs-specs/viewer-performance.md"
 captured: "2026-11-27"
 sha256: 6c18db125dbf3f7ffe7184078200d632841dbc3cbe90450304fc740404438769
 ingested-pages: ["[[BB-013-viewer]]", "[[CC-007-virtualised-rendering-of-rows-and-arcs]]", "[[CON-002-the-viewer-is-one-self-contained-html-file]]", "[[QR-001-the-viewer-stays-responsive-on-large-projects]]"]

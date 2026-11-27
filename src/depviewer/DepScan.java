@@ -28,7 +28,7 @@ import static depviewer.Model.*;
  * Java is parsed and attributed by the JDK compiler (exact symbol resolution). Kotlin has no
  * compiler in the JDK, so Kotlin files are read by a small built-in parser and references are
  * resolved by name (KotlinScanner). TypeScript/JavaScript and Dart are analysed by external
- * extractors on their official toolchains (Toolchain, docs/specs/multi-language.md).
+ * extractors on their official toolchains (Toolchain, spec/wiki/crosscutting-concepts/CC-009-fragment-format.md).
  *
  * Usage: java DepScan.java [options] <project-or-source-dir>...
  */

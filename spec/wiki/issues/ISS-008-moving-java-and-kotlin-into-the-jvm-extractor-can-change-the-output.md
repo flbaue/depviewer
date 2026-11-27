@@ -5,7 +5,7 @@ title: Moving Java and Kotlin into the jvm extractor can change the output
 status: open
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]"]
+sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-029-github-issue-13-move-java-and-kotlin-into-a-jvm-extractor-behind-the-contract]]"]
 related: ["[[BB-007-java-scanner]]", "[[BB-008-kotlin-scanner]]", "[[BB-011-jvm-extractor]]", "[[QR-006-internal-refactors-do-not-change-the-output]]"]
 tags: [issue]
 severity: major

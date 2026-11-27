@@ -58,4 +58,4 @@ so a team can share one agreed architecture next to the code.
 
 Only the rows around the visible part of the tree, and the arcs that touch them, are drawn, so
 expanding, sorting and scrolling stay fast with tens of thousands of dependencies
-([spec](specs/viewer-performance.md)).
+([spec](../spec/wiki/quality-requirements/QR-001-the-viewer-stays-responsive-on-large-projects.md)).
