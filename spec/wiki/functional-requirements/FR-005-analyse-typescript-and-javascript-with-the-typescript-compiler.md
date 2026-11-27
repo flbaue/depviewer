@@ -17,8 +17,8 @@ release: delivered
 lane: backbone
 order: 4
 goal: []
-delivery:
-delivery-checked:
+delivery: implemented
+delivery-checked: "2026-11-27T22:09:29+01:00"
 ---
 
 # Analyse TypeScript and JavaScript with the TypeScript compiler
