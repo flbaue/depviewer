@@ -5,7 +5,7 @@ title: JVM process
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-004-guide-for-ai-coding-agents]]"]
+sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]]"]
 related: []
 tags: [deployment-node]
 stereotype: container
@@ -17,7 +17,7 @@ connects:
   - {to: "[[EIF-006-package-registries]]", protocol: HTTPS, note: "npm ci, dart pub get on first use"}
 technology: JDK 17+
 drivers: ["[[CON-001-the-scanner-core-needs-only-a-jdk-17]]"]
-decisions: []
+decisions: ["[[DR-002-the-scanner-core-is-a-static-go-binary]]"]
 state: current
 superseded-by:
 ---
@@ -28,4 +28,4 @@ superseded-by:
 
 ## Purpose
 
-Runs the scanner core and all in-process language analysis.
+Runs the scanner core and all in-process language analysis. Target: runs only the [[BB-011-jvm-extractor]], started by [[DN-007-depviewer-process]].

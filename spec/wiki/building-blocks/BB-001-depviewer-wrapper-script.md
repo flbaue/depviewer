@@ -5,7 +5,7 @@ title: depviewer wrapper script
 status: draft
 created: 2026-11-27
 updated: 2026-11-27
-sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-008-usage-reference]]"]
+sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-008-usage-reference]]", "[[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]]"]
 related: []
 tags: [building-block]
 parent: "[[CTX-001-depviewer-context]]"
@@ -14,7 +14,7 @@ decisions: []
 uses: ["[[BB-002-scanner-core]]", "[[EIF-002-jdk]]"]
 location: depviewer
 state: current
-superseded-by:
+superseded-by: "[[BB-016-go-scanner-core]]"
 ---
 
 # depviewer wrapper script

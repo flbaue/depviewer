@@ -145,6 +145,8 @@ every capture (`_system/workflows/capture.md`, step 7).
 - [[QR-006-internal-refactors-do-not-change-the-output]] Internal refactors do not change the output (must, draft)
 - [[QR-007-names-from-scanned-code-cannot-inject-markup]] Names from scanned code cannot inject markup (must, draft)
 - [[QR-008-the-viewer-reads-well-in-light-dark-and-on-a-narrow-screen]] The viewer reads well in light, dark and on a narrow screen (should, draft)
+- [[QR-009-a-project-scans-with-the-depviewer-binary-and-its-own-toolchain]] A project scans with the depviewer binary and its own toolchain (must, draft)
+- [[QR-010-every-delivered-viewer-requirement-has-an-automated-ui-scenario]] Every delivered viewer requirement has an automated UI scenario (should, draft)
 
 ## Constraints
 
@@ -160,6 +162,7 @@ every capture (`_system/workflows/capture.md`, step 7).
 - [[CON-010-extractors-pin-their-dependencies]] Extractors pin their dependencies (draft)
 - [[CON-011-scanned-data-of-other-projects-is-never-committed]] Scanned data of other projects is never committed (draft)
 - [[CON-012-the-readme-is-a-short-overview-and-the-details-live-in-docs]] The README is a short overview and the details live in docs (draft)
+- [[CON-013-the-scanner-core-is-go-with-the-standard-library-only]] The scanner core is Go with the standard library only (draft)
 
 ## Solution strategy
 
@@ -170,8 +173,8 @@ every capture (`_system/workflows/capture.md`, step 7).
 
 ## Building blocks
 
-- [[BB-001-depviewer-wrapper-script]] depviewer wrapper script (current, draft)
-- [[BB-002-scanner-core]] Scanner core (current, draft)
+- [[BB-001-depviewer-wrapper-script]] depviewer wrapper script (current, superseded by BB-016, draft)
+- [[BB-002-scanner-core]] Scanner core (current, superseded by BB-016, draft)
 - [[BB-003-cli-and-orchestration]] CLI and orchestration (current, draft)
 - [[BB-004-model-and-json-writer]] Model and JSON writer (current, draft)
 - [[BB-005-json-reader]] JSON reader (current, draft)
@@ -185,6 +188,7 @@ every capture (`_system/workflows/capture.md`, step 7).
 - [[BB-013-viewer]] Viewer (current, draft)
 - [[BB-014-query-commands]] Query commands (planned, draft)
 - [[BB-015-mcp-server]] MCP server (planned, draft)
+- [[BB-016-go-scanner-core]] Go scanner core (target, draft)
 
 ## Runtime scenarios
 
@@ -201,6 +205,7 @@ every capture (`_system/workflows/capture.md`, step 7).
 - [[DN-004-dart-process]] Dart process (current, draft)
 - [[DN-005-web-browser]] Web browser (current, draft)
 - [[DN-006-ci-runner]] CI runner (current, draft)
+- [[DN-007-depviewer-process]] depviewer process (target, draft)
 
 ## Crosscutting concepts
 
@@ -217,6 +222,7 @@ every capture (`_system/workflows/capture.md`, step 7).
 ## Decisions
 
 - [[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]] Every language is analysed by an extractor behind one versioned contract (accepted)
+- [[DR-002-the-scanner-core-is-a-static-go-binary]] The scanner core is a static Go binary (draft)
 
 ## Issues
 
@@ -273,3 +279,4 @@ every capture (`_system/workflows/capture.md`, step 7).
 - [[SRC-033-github-issue-17-language-swift]] GitHub issue 17: Language: Swift (ingested)
 - [[SRC-034-quick-start-guide]] Quick-start guide (ingested)
 - [[SRC-035-how-depviewer-was-built]] How depviewer was built (ingested)
+- [[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]] Chat: a Go scanner core and Playwright UI tests for the viewer (ingested)
