@@ -9,7 +9,7 @@ tags: [source]
 source-type: document
 origin: "../docs/quick-start.md"
 captured: "2026-11-27"
-sha256: 1c3f4a5ab1623cc213920702880e54f690bb6668e64dba0ce37db07d1eed77db
+sha256: 211f033c446f36378bc03f5acbd95473745e6a88b59b8c42d34179fc3c8fdda0
 ingested-pages: ["[[FR-020-open-a-model-in-the-viewer]]", "[[FR-024-share-views-as-a-file]]"]
 ---
 

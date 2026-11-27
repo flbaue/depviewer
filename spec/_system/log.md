@@ -37,3 +37,8 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 - [[FR-069-give-native-platform-modules-of-flutter-apps-useful-names]]: the maintainer chose `android (<app>)` as module name and skipping `GeneratedPluginRegistrant.java`, no `--no-native`. Requirement and acceptance criteria updated.
 - [[FR-070-read-dependencies-from-compiled-classes]]: stays its own requirement, not an option of [[FR-052-analyse-kotlin-with-the-kotlin-compiler]].
 - No issues raised.
+
+## [2026-11-27] inspect | Whole wiki
+- Clean: broken links, orphans, index coverage, empty sources, FR children lists, architecture state fields, notation blocks, metamodel lint, concept clusters.
+- Auto-fixed: 6 source hashes (SRC-004, SRC-005, SRC-006, SRC-009, SRC-010, SRC-034) that changed only by the link edits of the previous capture; 3 missing reciprocal `related:` links (ISS-010 to FR-061, FR-052 to FR-070, DT-020 to CC-009).
+- For the human: `delivery.py` cannot run because the vault is not the Git root; 46 of 70 FRs are `Must`; no objective has a baseline or horizon; 8 FRs have no building block. QR-003, QR-008 and GOAL-005 lack numbers, already tracked in ISS-011, ISS-012, ISS-013. 13 issues stay open.

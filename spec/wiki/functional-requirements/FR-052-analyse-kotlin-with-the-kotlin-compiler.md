@@ -6,7 +6,7 @@ status: draft
 created: 2026-11-27
 updated: 2026-11-27
 sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-023-github-issue-7-kotlin-exact-resolution-with-the-kotlin-compiler-or-a-language-serv]]"]
-related: ["[[ISS-006-how-is-the-projects-kotlin-version-read-without-running-gradle]]", "[[ISS-010-name-based-kotlin-can-miss-or-misplace-violations]]"]
+related: ["[[ISS-006-how-is-the-projects-kotlin-version-read-without-running-gradle]]", "[[ISS-010-name-based-kotlin-can-miss-or-misplace-violations]]", "[[FR-070-read-dependencies-from-compiled-classes]]"]
 tags: [functional-requirement]
 notation: prose
 level: requirement

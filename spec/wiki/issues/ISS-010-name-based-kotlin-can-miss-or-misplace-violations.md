@@ -6,7 +6,7 @@ status: open
 created: 2026-11-27
 updated: 2026-11-27
 sources: ["[[SRC-012-spec-kotlin-support]]", "[[SRC-009-supported-languages]]"]
-related: ["[[FR-004-analyse-kotlin-by-name]]", "[[FR-029-check-the-code-against-architecture-rules]]", "[[FR-052-analyse-kotlin-with-the-kotlin-compiler]]", "[[ISS-004-should-name-based-violations-fail-the-build-by-default]]"]
+related: ["[[FR-004-analyse-kotlin-by-name]]", "[[FR-029-check-the-code-against-architecture-rules]]", "[[FR-052-analyse-kotlin-with-the-kotlin-compiler]]", "[[ISS-004-should-name-based-violations-fail-the-build-by-default]]", "[[FR-061-resolve-kotlin-names-in-a-fixed-order]]"]
 tags: [issue]
 severity: major
 kind: risk
