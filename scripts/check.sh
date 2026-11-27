@@ -29,6 +29,9 @@ for m in '/\*DEPS_DATA\*/null' '/\*DEPS_VIEWS\*/null'; do
 done
 echo ok
 
+step "viewer contrast (spec/wiki/quality-requirements/QR-008-the-viewer-reads-well-in-light-dark-and-on-a-narrow-screen.md)"
+python3 -I test/checks/viewer_contrast.py viewer.html
+
 step "scan fixture"
 ./depviewer -o "$OUT/fixture.json" test/fixture
 ./depviewer -o "$OUT/fixture.html" --views test/fixture-views.json test/fixture 2>/dev/null

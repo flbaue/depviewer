@@ -109,3 +109,7 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 - Auto-fixed: removed the stale "Open points" notes on [[FR-026-read-the-architecture-file]], [[FR-030-enforce-a-layer-order]] and [[FR-036-provide-the-check-command-and-its-exit-codes]], which pointed at the resolved ISS-001 to ISS-004.
 - Priorities: 42 of 70 FRs are `Must`, but 25 of them are delivered. Of the 40 undelivered FRs, 17 are `Must`, all in `m1-rules-and-check` and `m2-extractor-contract`.
 - For the human: [[QR-008-the-viewer-reads-well-in-light-dark-and-on-a-narrow-screen]] now has a measure, but nothing checks it yet. [[FR-004-analyse-kotlin-by-name]] keeps its note on ISS-010, which is still true and unchanged to avoid delivery drift.
+
+## [2026-11-27] implement | QR-008 The viewer reads well in light, dark and on a narrow screen
+- Fixed in `viewer.html`: the view menu opens leftwards, so it fits at 320 CSS pixels, and colours were adjusted so all text reaches 4.5:1 in light and dark (darker badges and muted text in light, dark letters on badges and on the selected button in dark).
+- New check `test/checks/viewer_contrast.py` in `check.sh` (48 colour pairs per theme). It failed before the fix. Width checked by hand at 320 pixels in a browser, screenshots regenerated.
