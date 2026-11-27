@@ -69,3 +69,6 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 
 ## [2026-11-27] implement | FR-018 Find elements by name
 - Check only, no code changed. The reworded criterion passes: in `build/fixture.html` at Packages, `Repository` and Enter expanded `infra` and selected `InMemoryOrderRepository.java` (tried by hand in a browser). `delivery: implemented`, confirmed by the maintainer.
+
+## [2026-11-27] clarify | FR-068 acceptance criterion
+- The maintainer chose to reword, not restructure the fixture: the folder-chain criterion of [[FR-068-show-the-kind-and-language-of-every-row]] now names `features/payments` from `test/fixture-ts/`, which `check.sh` already checks. Behaviour unchanged.

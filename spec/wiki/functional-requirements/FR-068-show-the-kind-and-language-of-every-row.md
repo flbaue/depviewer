@@ -34,7 +34,7 @@ Each row shows an icon for its kind, and file rows show their language: "J" Java
 ## Acceptance criteria
 
 - [ ] A Kotlin file row in `build/fixture.html` shows `K` and a TypeScript file `TS`.
-- [ ] A collapsed chain of folder packages reads `src/app/services`.
+- [ ] A collapsed chain of folder packages reads `features/payments` in the viewer of `test/fixture-ts/`.
 
 ## Hierarchy
 
