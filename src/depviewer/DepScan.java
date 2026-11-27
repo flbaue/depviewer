@@ -62,6 +62,7 @@ public class DepScan {
     static void usage() {
         System.out.println(String.join("\n",
                 "Usage: depviewer [options] <project-or-source-dir>...",
+                "       depviewer check [--rules <file>] (<project-dir>... | --model <deps.json>)",
                 "",
                 "  Finds the modules below each directory: src/{main,test}/{java,kotlin} folders (Java,",
                 "  Kotlin), package.json (TypeScript/JavaScript, needs Node.js) and pubspec.yaml (Dart,",
@@ -77,6 +78,10 @@ public class DepScan {
                 "  --views <file>       embed group views exported from the viewer (⋯ > Export views)",
                 "  --template <file>    viewer template (default: viewer.html next to the script)",
                 "",
+                "check: checks the code against the rules of an architecture file (default:",
+                "  architecture.json in the first project directory). Exit 0: no failing violations,",
+                "  1: failing violations, 2: invalid arguments, architecture file or model.",
+                "",
                 "Docs: docs/quick-start.md, docs/usage.md, docs/languages.md"));
     }
 
@@ -85,7 +90,54 @@ public class DepScan {
         System.exit(1);
     }
 
+    /** {@code depviewer check}: exit 0 no failing violations, 1 failing violations, 2 invalid input. */
+    static int check(String[] args) {
+        Path rules = null, model = null;
+        List<Path> inputs = new ArrayList<>();
+        for (int i = 1; i < args.length; i++) {
+            String a = args[i];
+            boolean hasValue = i + 1 < args.length;
+            switch (a) {
+                case "--rules": if (!hasValue) return invalid("--rules needs a file"); rules = Paths.get(args[++i]); break;
+                case "--model": if (!hasValue) return invalid("--model needs a file"); model = Paths.get(args[++i]); break;
+                case "-h": case "--help": usage(); return 0;
+                default:
+                    if (a.startsWith("-")) return invalid("unknown option " + a);
+                    inputs.add(Paths.get(a));
+            }
+        }
+        if (model != null && !inputs.isEmpty()) return invalid("check takes either project directories or --model, not both");
+        if (rules == null) {
+            if (model != null) return invalid("check --model needs --rules");
+            Path dir = inputs.isEmpty() ? Paths.get(".") : inputs.get(0);
+            rules = dir.resolve("architecture.json");
+            if (!Files.exists(rules)) return invalid("no architecture.json in " + dir + " (pass --rules <file>)");
+        }
+        Architecture arch;
+        try {
+            arch = Architecture.load(rules);
+        } catch (Architecture.Invalid e) {
+            return invalid(e.getMessage());
+        }
+        if (!arch.hasRules()) {
+            System.out.println("no rules in " + rules);
+            return 0;
+        }
+        return invalid(rules + ": rule checking is not implemented yet");
+    }
+
+    static int invalid(String msg) {
+        System.err.println("depviewer check: " + msg);
+        return 2;
+    }
+
     void run(String[] args) throws Exception {
+        // The wrapper puts --template before the command.
+        int cmd = args.length > 1 && args[0].equals("--template") ? 2 : 0;
+        if (args.length > cmd && args[cmd].equals("check")) {
+            System.exit(check(Arrays.copyOfRange(args, cmd, args.length)));
+            return;
+        }
         List<Path> inputs = new ArrayList<>();
         Path out = null, template = null, views = null;
         String cp = null, title = null;
@@ -194,8 +246,13 @@ public class DepScan {
             if (!html.contains(marker)) die("template has no data marker: " + template);
             html = html.replace(marker, json);
             if (views != null) {
-                String v = Files.readString(views).trim();
-                if (!v.startsWith("{") && !v.startsWith("[")) die("--views file is not JSON: " + views);
+                String v;
+                try {
+                    v = Architecture.load(views).text.trim();
+                } catch (Architecture.Invalid e) {
+                    die("--views " + e.getMessage());
+                    return;
+                }
                 html = html.replace("/*DEPS_VIEWS*/null", v.replace("</", "<\\/"));
             }
             Files.writeString(out, html);
