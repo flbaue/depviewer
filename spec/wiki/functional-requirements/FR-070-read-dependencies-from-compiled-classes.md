@@ -41,4 +41,4 @@ An optional mode (working name `--classes`) reads compiled output (`target/class
 - **Children:** none.
 
 > [!note] Open points
-> What bytecode loses (inlined constants, some annotations) is not worked out. It competes with [[FR-052-analyse-kotlin-with-the-kotlin-compiler]] as a way to exact Kotlin; language servers were rejected as too slow for bulk use.
+> What bytecode loses (inlined constants, some annotations) is not worked out. It stays a requirement of its own, not an option of [[FR-052-analyse-kotlin-with-the-kotlin-compiler]], because it covers Java too and needs a build (decided by the [[STK-004-maintainer]] on 2026-11-27); language servers were rejected as too slow for bulk use.

@@ -29,12 +29,12 @@ In a Flutter app the Android code under `android/` is found as a JVM module name
 
 ## Requirement
 
-Native platform code of a Flutter app is shown under a name that names its platform and app, and generated registrant code does not inflate the error count. References between Dart and native code are not guessed ([[CTX-001-depviewer-context]]).
+A JVM module inside the `android/` folder of a Flutter app is named `android (<app>)`, where `<app>` is the `name` from the app's `pubspec.yaml`. `GeneratedPluginRegistrant.java` is not scanned. There is no option to leave native code out. References between Dart and native code are not guessed ([[CTX-001-depviewer-context]]).
 
 ## Acceptance criteria
 
-- [ ] Scanning a Flutter app with an `android/` folder gives no module named only `app`.
-- [ ] `GeneratedPluginRegistrant.java` adds no unresolved references to the error count.
+- [ ] Scanning a Flutter app `my_app` with an `android/` folder gives a module `android (my_app)` and none named only `app`.
+- [ ] `GeneratedPluginRegistrant.java` is not in the model and adds nothing to the error count.
 
 ## Hierarchy
 
@@ -42,4 +42,4 @@ Native platform code of a Flutter app is shown under a name that names its platf
 - **Children:** none.
 
 > [!note] Open points
-> The issue lists three options, not yet chosen: name the module `android (my_app)`, skip known generated files, or an option such as `--no-native` to leave native code out. `ios/` (Swift, Objective-C) is not scanned today, and the behaviour there should be documented.
+> Chosen by the [[STK-004-maintainer]] on 2026-11-27: rename and skip, no `--no-native` option. `ios/` (Swift, Objective-C) is not scanned today, and the behaviour there should be documented.

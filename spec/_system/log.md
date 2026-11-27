@@ -32,3 +32,8 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 - Resolved: [[ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr]] (option 1), [[ISS-015-the-vision-and-the-architecture-rules-spec-are-not-in-the-repository]].
 - Outside `spec/`: root AGENTS.md, CONTRIBUTING.md, README and code comments point to wiki pages instead of `docs/specs/`.
 - Grill gate: the maintainer answered the scope questions in chat; the closing round for FR-069 and FR-070 is pending.
+
+## [2026-11-27] capture | Closing round for GitHub issues 3 and 5
+- [[FR-069-give-native-platform-modules-of-flutter-apps-useful-names]]: the maintainer chose `android (<app>)` as module name and skipping `GeneratedPluginRegistrant.java`, no `--no-native`. Requirement and acceptance criteria updated.
+- [[FR-070-read-dependencies-from-compiled-classes]]: stays its own requirement, not an option of [[FR-052-analyse-kotlin-with-the-kotlin-compiler]].
+- No issues raised.
