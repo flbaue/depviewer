@@ -29,7 +29,7 @@ Requested in [[SRC-023-github-issue-7-kotlin-exact-resolution-with-the-kotlin-co
 
 ## Requirement
 
-Kotlin with the Kotlin compiler is analysed by an extractor inside the `jvm` extractor, using the project's Kotlin version, so Kotlin becomes exact, following the checklist "Adding a language" in AGENTS.md.
+Kotlin with the Kotlin compiler is analysed by an extractor inside the `jvm` extractor, using the project's Kotlin version, so Kotlin becomes exact, following the checklist "Adding a language" in AGENTS.md. The project's version is read from the Kotlin plugin in the `plugins` block or from `gradle/libs.versions.toml`, never by running Gradle. If neither declares it, the next step of [[FR-010-choose-the-toolchain-in-a-fixed-order]] applies ([[ISS-006-how-is-the-projects-kotlin-version-read-without-running-gradle]]).
 
 ## Acceptance criteria
 

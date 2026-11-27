@@ -2,7 +2,7 @@
 id: ISS-010
 type: issue
 title: Name-based Kotlin can miss or misplace violations
-status: open
+status: resolved
 created: 2026-11-27
 updated: 2026-11-27
 sources: ["[[SRC-012-spec-kotlin-support]]", "[[SRC-009-supported-languages]]"]
@@ -13,7 +13,7 @@ kind: risk
 category: requirements
 raised-by: agent
 owner: "[[STK-004-maintainer]]"
-resolved: null
+resolved: 2026-11-27
 ---
 
 # Name-based Kotlin can miss or misplace violations
@@ -28,4 +28,4 @@ resolved: null
 1. Mark them `exact: false` and decide their default in [[ISS-004-should-name-based-violations-fail-the-build-by-default]].
 2. Prioritise [[FR-052-analyse-kotlin-with-the-kotlin-compiler]] before the rules ship.
 
-**Resolution.**
+**Resolution.** Option 1, decided by the maintainer on 2026-11-27: accepted. Rules ship in `m1-rules-and-check` with `exact: false` on Kotlin violations, which fail like exact ones ([[ISS-004-should-name-based-violations-fail-the-build-by-default]]), and wrong ones go into the baseline. [[FR-052-analyse-kotlin-with-the-kotlin-compiler]] stays in `m4-more-languages`. Noted in [[BB-008-kotlin-scanner]].

@@ -29,7 +29,7 @@ Architecture checks and the viewer must be able to tell the user how far a resul
 
 ## Requirement
 
-The model carries an `analysis` list with one entry per language and set of modules: tool, version, source (`override`, `project`, `path`, `pinned`) and `exact`. The viewer shows it in the header or details. Violations report `exact` from it ([[FR-038-report-violations-as-versioned-json]]).
+The model carries an `analysis` list with one entry per language and set of modules: tool, version, source (`override`, `project`, `path`, `pinned`), `exact`, and the extractor's name and version ([[ISS-007-should-the-provenance-record-the-extractors-own-version]]). The viewer shows it in the header or details. Violations report `exact` from it ([[FR-038-report-violations-as-versioned-json]]).
 
 ## Acceptance criteria
 

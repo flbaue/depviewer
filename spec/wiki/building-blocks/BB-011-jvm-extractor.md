@@ -36,4 +36,4 @@ Java- and Kotlin-only scans produce identical JSON before and after the move ([[
 
 ## Open issues
 
-[[ISS-008-moving-java-and-kotlin-into-the-jvm-extractor-can-change-the-output]], [[ISS-006-how-is-the-projects-kotlin-version-read-without-running-gradle]].
+None. The move is guarded by [[QR-006-internal-refactors-do-not-change-the-output]] ([[ISS-008-moving-java-and-kotlin-into-the-jvm-extractor-can-change-the-output]]), and the Kotlin version is read as [[FR-052-analyse-kotlin-with-the-kotlin-compiler]] says ([[ISS-006-how-is-the-projects-kotlin-version-read-without-running-gradle]]).

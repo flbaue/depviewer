@@ -25,8 +25,8 @@ superseded-by:
 
 Every extractor follows one versioned contract, extending today's [[CC-009-fragment-format]], to be specified on this page ([[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]], [[SRC-026-github-issue-10-extractor-contract-v1-versioned-spec-describe-handshake-and-confor|issue #10]]):
 
-- **Input:** one run per scan with a JSON request: modules (name, folder), files per module with test flags, options, and the contract version of the core.
-- **Handshake:** `--describe` prints name, contract version, languages and the detected toolchain with version, source and whether it is supported.
+- **Input:** one run per scan with a JSON request in a file whose path is the extractor's argument, as `Toolchain` passes it today ([[ISS-005-is-the-extractor-request-sent-on-stdin-or-in-a-file]]). The request holds modules (name, folder), files per module with test flags, options, and the contract version of the core.
+- **Handshake:** `--describe` prints name, own version, contract version, languages and the detected toolchain with version, source and whether it is supported.
 - **Output:** the fragment (nodes, externals, edges, errors, module per file) plus `contract`. The core rejects an unknown major version and ignores unknown fields. A missing parent or edge endpoint drops that node or edge with a warning.
 - **Diagnostics** go to stderr with a common prefix, the error count goes into the fragment.
 - **Conformance test:** a language-neutral checker on each extractor's fixture output: valid shape, parents before children, every edge endpoint exists, unique ids, allowed kinds, lines inside the file, module of every file known.

@@ -2,7 +2,7 @@
 id: ISS-006
 type: issue
 title: "How is the project's Kotlin version read without running Gradle?"
-status: open
+status: resolved
 created: 2026-11-27
 updated: 2026-11-27
 sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]"]
@@ -13,7 +13,7 @@ kind: question
 category: architecture
 raised-by: agent
 owner: "[[STK-004-maintainer]]"
-resolved: null
+resolved: 2026-11-27
 ---
 
 # How is the project's Kotlin version read without running Gradle?
@@ -28,4 +28,4 @@ resolved: null
 1. Parse the common declarations (plugins block, version catalog) and fall back to the `PATH`.
 2. Run Gradle. Exact but slow, and needs the build to work.
 
-**Resolution.**
+**Resolution.** Option 1, decided by the maintainer on 2026-11-27: read the Kotlin plugin version from the `plugins` block or `gradle/libs.versions.toml`, never run Gradle, and fall back to the next step of the toolchain order. Applied in [[FR-052-analyse-kotlin-with-the-kotlin-compiler]] and [[BB-011-jvm-extractor]].

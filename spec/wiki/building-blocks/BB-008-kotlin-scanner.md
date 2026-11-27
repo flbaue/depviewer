@@ -32,4 +32,4 @@ superseded-by:
 
 ## Open issues
 
-[[ISS-010-name-based-kotlin-can-miss-or-misplace-violations]]: approximate results.
+None. Results are approximate until [[FR-052-analyse-kotlin-with-the-kotlin-compiler]], an accepted risk ([[ISS-010-name-based-kotlin-can-miss-or-misplace-violations]]).

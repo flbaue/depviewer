@@ -20,7 +20,7 @@ relationships: []
 
 # Provenance
 
-**Definition.** The record, per language and module, of the tool, its version, its source and whether resolution was exact.
+**Definition.** The record, per language and module, of the tool, its version, its source, the extractor and its version, and whether resolution was exact.
 
 **In context.** Written as `analysis` in the model, shown in the viewer and reported with violations.
 
