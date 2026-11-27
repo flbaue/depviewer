@@ -113,3 +113,9 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 ## [2026-11-27] implement | QR-008 The viewer reads well in light, dark and on a narrow screen
 - Fixed in `viewer.html`: the view menu opens leftwards, so it fits at 320 CSS pixels, and colours were adjusted so all text reaches 4.5:1 in light and dark (darker badges and muted text in light, dark letters on badges and on the selected button in dark).
 - New check `test/checks/viewer_contrast.py` in `check.sh` (48 colour pairs per theme). It failed before the fix. Width checked by hand at 320 pixels in a browser, screenshots regenerated.
+
+## [2026-11-27] inspect | Whole wiki, after QR-008 was met
+- Clean: broken links, orphans, `related:` reciprocity, concept clusters, index coverage, sources, metamodel lint. `delivery.py`: 27 FRs, no drift. No issue is open. No wiki page changed since the previous inspect.
+- Source drift: [[SRC-004-guide-for-ai-coding-agents]] no longer matches `AGENTS.md`. The QR-008 commit added one sentence naming `viewer_contrast.py`; no new requirement. Hash updated, confirmed by the maintainer.
+- [[QR-008-the-viewer-reads-well-in-light-dark-and-on-a-narrow-screen]]: contrast is now checked by `check.sh`; the 320-pixel width is checked by hand only.
+- Unchanged: 42 of 70 FRs `Must`, 25 of them delivered. No fixes, no new issues.
