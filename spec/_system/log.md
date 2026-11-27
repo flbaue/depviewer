@@ -48,3 +48,9 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 - Goals: [[GOAL-002-teams-hold-new-code-to-their-architecture-in-ci]] and [[GOAL-004-one-answer-in-every-interface]] get horizon `m1-rules-and-check`, [[GOAL-003-ai-agents-check-and-explain-their-own-changes]] `m3-agent-interface`; all three the baseline "no check exists".
 - FRs without a building block stay as they are.
 - `delivery.py`: fix proposed in a pull request (it changes `_system/`).
+
+## [2026-11-27] inspect | Whole wiki, after delivery.py fix
+- Clean: broken links, `related:` reciprocity, concept clusters, index coverage, empty sources, ID/filename match, source hashes (all 35 match), metamodel lint.
+- `delivery.py` now runs: all 70 FRs skipped, none has `delivery` set, so 30 FRs on release `delivered` have no delivery baseline to check drift against.
+- Orphan: [[SRC-024-github-issue-8-clean-up-readme-short-overview-and-goal-move-details-into-separate]] (README cleanup) produced no pages.
+- Still open: QR-003 and QR-008 untestable (tracked in ISS-011, ISS-012); 42 of 70 FRs `Must`. No fixes, no new issues; 13 issues open.
