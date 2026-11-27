@@ -46,6 +46,32 @@ checking.
 | 1 | Failing violations. |
 | 2 | Invalid arguments, architecture file or model, for example a missing file or an unknown `version`. |
 
+### Selectors
+
+A group can select its elements by pattern instead of by hand. `match` lists selectors
+`<kind>:<pattern>`:
+
+```json
+{ "id": "dom", "name": "Domain",
+  "match": ["package:com.example.domain.**", "type:**Repository@interface", "!type:**Test"] }
+```
+
+| Kind | Selects | Separator |
+|---|---|---|
+| `module:` | modules by name | — |
+| `package:` | packages by full name | `.`, or `/` for folder-based packages (TypeScript, Dart) |
+| `path:` | files by path inside their module | `/` |
+| `type:` | types by qualified name; `@<kind>` (e.g. `@interface`) also checks the kind | `.` |
+| `ext:` | external packages and types | `.` |
+
+`*` matches within one segment, `**` across any number of segments, including none:
+`package:com.example.domain.**` selects `com.example.domain` and every package below it. A leading
+`!` removes what an earlier selector of the same group selected; selectors apply in order. A
+TypeScript or Dart type is named `<path>#<Name>`, so select it with `type:**Name`. An unknown kind,
+an unknown `@<kind>` or `@` on any other kind than `type:` is rejected with exit code 2.
+
+Selectors are read and validated, but they do not assign anything yet.
+
 ## What gets scanned
 
 Each directory is searched for language markers, skipping `node_modules`, `.dart_tool`, build
