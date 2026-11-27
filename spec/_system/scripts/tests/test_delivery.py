@@ -71,6 +71,22 @@ def test_page_added_with_delivery_is_its_own_baseline():
     _vault(run)
 
 
+def test_vault_in_a_subfolder_of_the_repository():
+    """The vault may live in a folder such as `spec/` of a code repository."""
+    with tempfile.TemporaryDirectory() as tmp:
+        repo = Path(tmp)
+        subprocess.run(["git", "-C", str(repo), "init", "-q"], check=True, env=ENV)
+        v = Vault.__new__(Vault)
+        v.root = repo / "spec"
+        v.wiki = v.root / "wiki" / "functional-requirements"
+        v.wiki.mkdir(parents=True)
+        page = v.wiki / "FR-001-ship-orders.md"
+        page.write_text(PAGE, encoding="utf-8")
+        v.commit("add")
+        assert v.check("--dry-run").startswith("OK FR-001")
+        page.write_text(PAGE.replace("shipped", "shipped fast"), encoding="utf-8")
+        assert v.check("--dry-run").startswith("DRIFT FR-001")
+
 def test_body_lines_that_look_like_delivery_fields_are_content():
     def run(v):
         page = v.wiki / "FR-001-ship-orders.md"

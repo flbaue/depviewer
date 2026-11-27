@@ -238,13 +238,17 @@ def use_cases_to_recheck(pages: dict[str, dict], drifted: set[str],
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("requirements", nargs="*", help="FR IDs; default checks all delivered pages")
-    parser.add_argument("--root", type=Path, default=ROOT, help="vault Git root (default: repo root)")
+    parser.add_argument("--root", type=Path, default=ROOT, help="vault folder (default: the folder above _system/)")
     parser.add_argument("--dry-run", action="store_true", help="report drift without changing pages")
     args = parser.parse_args()
     root = args.root.resolve()
     wiki = root / "wiki" / "functional-requirements"
-    if not (root / ".git").exists():
-        print(f"ERROR: {root} is not a Git worktree", file=sys.stderr)
+    # The vault may be a subfolder of a larger repository; Git paths are
+    # relative to the repository's top level, not to the vault.
+    try:
+        top = Path(git("rev-parse", "--show-toplevel", root=root).strip()).resolve()
+    except RuntimeError:
+        print(f"ERROR: {root} is not inside a Git worktree", file=sys.stderr)
         return 2
     if args.requirements:
         paths = []
@@ -267,7 +271,7 @@ def main() -> int:
     drifted: set[str] = set()
     for path in paths:
         try:
-            finding, output = inspect_page(path, args.dry_run, root)
+            finding, output = inspect_page(path.resolve(), args.dry_run, top)
         except (OSError, ValueError, yaml.YAMLError, RuntimeError) as exc:
             finding, output = True, f"ERROR {path.name}: {exc}"
         print(output)
