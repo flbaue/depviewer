@@ -23,7 +23,7 @@ superseded-by:
 
 ## Purpose / Responsibility
 
-Part of the core that loads the architecture file ([[FR-026-read-the-architecture-file]], built) and, planned, resolves selectors into assignments, evaluates the rules on the model, applies the baseline and formats violations as text or JSON.
+Part of the core that loads the architecture file ([[FR-026-read-the-architecture-file]], built), matches selectors against the model ([[FR-027-select-code-by-patterns]], built) and, planned, turns them into assignments, evaluates the rules on the model, applies the baseline and formats violations as text or JSON.
 
 ## Interfaces
 

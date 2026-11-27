@@ -101,6 +101,18 @@ set +e; ./depviewer -o "$A/v2.html" --views "$A/v2.json" test/fixture > "$OUT/ch
 [ "$got" = 1 ] && grep -q 'version 2 is not supported' "$OUT/check.log" || { cat "$OUT/check.log"; fail "--views accepted version 2"; }
 echo ok
 
+step "selectors (spec/wiki/functional-requirements/FR-027-select-code-by-patterns.md)"
+javac -Xlint:all -Werror -cp "$OUT/classes" -d "$OUT/test-classes" test/checks/SelectorCheck.java
+java -cp "$OUT/classes:$OUT/test-classes" depviewer.SelectorCheck "$OUT/fixture.json" ${HAVE_TS:+"$OUT/fixture-ts.json"}
+[ -n "$HAVE_TS" ] || echo "folder-based packages skipped: node not installed"
+printf '{"views": [{"id": "a", "groups": [{"id": "g", "match": ["package:com.**", "klass:Foo"]}]}]}' > "$A/badsel.json"
+expect 2 'group "g": unknown selector kind "klass"' --rules "$A/badsel.json" test/fixture
+printf '{"views": [{"id": "a", "groups": [{"id": "g", "match": "package:com.**"}]}]}' > "$A/badmatch.json"
+expect 2 '"match" must be an array of strings' --rules "$A/badmatch.json" test/fixture
+printf '{"views": [{"id": "a", "groups": [{"id": "g", "match": ["package:com.**", "!type:**Test"]}]}]}' > "$A/goodsel.json"
+expect 0 'no rules' --rules "$A/goodsel.json" test/fixture
+echo ok
+
 step "viewer script syntax"
 if command -v node >/dev/null 2>&1; then
   python3 -I -c 'import sys; s=open(sys.argv[1]).read(); a=s.index("<script>")+8; print(s[a:s.index("</script>")])' viewer.html > "$OUT/viewer.js"
