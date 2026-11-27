@@ -59,3 +59,7 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 - Check only, no code changed. Evidence: `scripts/check.sh` locally (TypeScript skipped, no Node), CI run 46066060043 on `d9309bd` (all languages), throwaway scans for criteria the fixtures miss, and the viewer criteria tried by hand in a browser. Confirmed by the maintainer.
 - `delivery: implemented`: FR-002, FR-003, FR-004, FR-006, FR-007, FR-008, FR-009, FR-014, FR-015, FR-016, FR-017, FR-019, FR-022, FR-023, FR-024, FR-060, FR-061, FR-062, FR-064, FR-065, FR-066.
 - Not recorded: [[FR-067-choose-dart-source-folders-and-skip-files-that-cannot-be-analysed]] fails (one exclude note per scan, not per module); [[FR-018-find-elements-by-name]] stops at the file, the criterion says type; [[FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler]] (path alias), [[FR-063-map-typescript-and-javascript-declarations-to-model-elements]] (unexported function), [[FR-068-show-the-kind-and-language-of-every-row]] (TypeScript rows) and [[FR-020-open-a-model-in-the-viewer]] (drop) not verified.
+
+## [2026-11-27] implement | FR-067 Choose Dart source folders and skip files that cannot be analysed
+- The Dart extractor now prints the exclude note once per module, naming it. `check.sh` asserts it on the fixture's two packages; the model of the fixture is identical to the previous extractor's.
+- Both criteria pass: excluded files are missing with one note per module (`check.sh`), `integration_test/` files carry the test flag (throwaway scan). `delivery: implemented`.
