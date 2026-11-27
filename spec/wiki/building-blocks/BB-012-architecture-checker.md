@@ -12,8 +12,8 @@ parent: "[[BB-002-scanner-core]]"
 drivers: ["[[FR-025-declare-the-architecture-in-a-file]]", "[[FR-029-check-the-code-against-architecture-rules]]", "[[FR-035-run-the-check-from-the-command-line-and-in-ci]]", "[[FR-040-show-rule-violations-in-the-viewer]]", "[[CON-005-selectors-are-resolved-only-in-the-scanner-core]]", "[[QR-003-the-check-takes-about-as-long-as-a-scan]]"]
 decisions: []
 uses: ["[[BB-004-model-and-json-writer]]", "[[BB-005-json-reader]]"]
-location:
-state: planned
+location: src/depviewer/Architecture.java
+state: current
 superseded-by:
 ---
 
@@ -23,7 +23,7 @@ superseded-by:
 
 ## Purpose / Responsibility
 
-Planned part of the core that loads the architecture file, resolves selectors into assignments, evaluates the rules on the model, applies the baseline and formats violations as text or JSON.
+Part of the core that loads the architecture file ([[FR-026-read-the-architecture-file]], built) and, planned, resolves selectors into assignments, evaluates the rules on the model, applies the baseline and formats violations as text or JSON.
 
 ## Interfaces
 

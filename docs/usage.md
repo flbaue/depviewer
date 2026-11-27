@@ -25,6 +25,27 @@ sources change. It needs a JDK 17+; TypeScript and Dart additionally need their 
 
 Without the wrapper: `javac -d out src/depviewer/*.java && java -cp out depviewer.DepScan …`.
 
+## Checking the architecture
+
+```
+./depviewer check [--rules <file>] (<project-dir>... | --model deps.json)
+```
+
+`check` reads an architecture file: the views file the viewer exports, optionally with rules. Without
+`--rules` it reads `architecture.json` from the first project directory; with `--model` you must
+pass `--rules`. The file is plain JSON, without comments. `version` is optional (missing means 1).
+Fields depviewer does not know are ignored.
+
+Rule checking itself is not built yet. Today `check` validates the file: a file without rules
+prints `no rules` and exits 0, and a file with rules exits 2 so that a CI job never passes without
+checking.
+
+| Exit code | Meaning |
+|---|---|
+| 0 | No failing violations. |
+| 1 | Failing violations. |
+| 2 | Invalid arguments, architecture file or model, for example a missing file or an unknown `version`. |
+
 ## What gets scanned
 
 Each directory is searched for language markers, skipping `node_modules`, `.dart_tool`, build

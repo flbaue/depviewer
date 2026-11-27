@@ -75,6 +75,32 @@ grep -q '/\*DEPS_VIEWS\*/null' "$OUT/fixture.html" && fail "views were not embed
 grep -q '"name": "Layers"' "$OUT/fixture.html" || fail "views file content missing"
 echo ok
 
+step "architecture file (spec/wiki/functional-requirements/FR-026-read-the-architecture-file.md)"
+# expect <exit code> <text in output> <check arguments...>
+expect() {
+  want=$1 text=$2; shift 2
+  set +e; ./depviewer check "$@" > "$OUT/check.log" 2>&1; got=$?; set -e
+  [ "$got" = "$want" ] || { cat "$OUT/check.log"; fail "check $*: exit $got, expected $want"; }
+  grep -q "$text" "$OUT/check.log" || { cat "$OUT/check.log"; fail "check $*: output lacks '$text'"; }
+}
+A="$OUT/arch"; rm -rf "$A"; mkdir -p "$A/project"
+expect 0 'no rules' --rules test/fixture-views.json test/fixture
+cp test/fixture-views.json "$A/project/architecture.json"
+expect 0 'no rules' "$A/project"
+expect 2 'architecture.json' "$A"
+expect 2 'needs --rules' --model "$OUT/fixture.json"
+printf '{"version": 2, "views": []}' > "$A/v2.json"
+expect 2 'version 2 is not supported' --rules "$A/v2.json" test/fixture
+printf '{"version": 1, "future": {"x": 1}, "views": [{"id": "a", "name": "A", "groups": [], "assign": {}, "match": [], "rules": [], "later": true}]}' > "$A/unknown.json"
+expect 0 'no rules' --rules "$A/unknown.json" test/fixture
+printf '{"views": [{"id": "a", "rules": [{"kind": "layers"}]}]}' > "$A/rules.json"
+expect 2 'not implemented yet' --rules "$A/rules.json" test/fixture
+printf '{"views": ' > "$A/broken.json"
+expect 2 'invalid JSON' --rules "$A/broken.json" test/fixture
+set +e; ./depviewer -o "$A/v2.html" --views "$A/v2.json" test/fixture > "$OUT/check.log" 2>&1; got=$?; set -e
+[ "$got" = 1 ] && grep -q 'version 2 is not supported' "$OUT/check.log" || { cat "$OUT/check.log"; fail "--views accepted version 2"; }
+echo ok
+
 step "viewer script syntax"
 if command -v node >/dev/null 2>&1; then
   python3 -I -c 'import sys; s=open(sys.argv[1]).read(); a=s.index("<script>")+8; print(s[a:s.index("</script>")])' viewer.html > "$OUT/viewer.js"
