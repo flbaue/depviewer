@@ -87,7 +87,7 @@ never block or silently rewrite. The human decides.
   recommended answer, so the questions the writing threw up are answered before
   any of them become Issues. See `_system/workflows/capture.md`, step 6.
 - **IDs**: `TYPE-NNN`, e.g. `DT-001`, `STK-003`, `FR-024`, `QR-004`, `ISS-009`.
-  IDs are stable and never reused. Filenames: `TYPE-NNN-kebab-title.md`.
+  IDs are stable and never reused once merged to `main`. Filenames: `TYPE-NNN-kebab-title.md`.
 - **Links**: use Obsidian wikilinks `[[FEAT-002-checkout]]`. Every cross-reference
   is a real link so the graph view works. No bare prose references.
 - **Link every reference in what you write to the human.** In chat replies,
@@ -147,23 +147,34 @@ never block or silently rewrite. The human decides.
 
 ## Commit policy
 
-The `status` field carries a page's maturity, so a commit to `main` does not mean
-"agreed". Delivery follows the status the content is entering. Keep one commit per
-capture or inspect run, with a message naming it, so `git revert` stays clean; the
-`_system/log.md` entry is the review trail.
+Every change goes on a feature branch and into a PR, wiki changes included. The
+human merges. You never merge your own PR. The `status` field still carries a
+page's maturity, so a merge to `main` does not mean "agreed". Keep one commit
+per capture or inspect run, with a message naming it, plus any commits that fix
+review findings, so `git revert` stays clean. The `_system/log.md` entry is the review trail.
+
+Two open PRs can claim the same ID. When you assign one (`capture.md` step 5),
+the highest ID ever used includes every remote branch: run `git fetch origin`
+and check the page files and the retirements in `_system/log.md` on `main` and
+on each `origin/*` branch (`git ls-tree -r --name-only <branch> -- wiki` and
+`git show <branch>:_system/log.md`). When you ask for merge, and whenever the
+human asks you to update the PR, update it from `main` and renumber any ID taken
+in the meantime: the filename, the `id:` field, every link to it, its
+`_system/index.md` entry, the source's `ingested-pages:` and your log entry.
+The repository's `scripts/check.sh` fails on a duplicate ID or an `id:` that
+does not match its filename. CI runs it on every PR and again on `main` after
+each merge, which is where a duplicate from two parallel PRs shows up.
 
 | Change | Delivery |
 |--------|----------|
-| New or edited `wiki/` pages at `draft` or `review` | Commit to `main` |
-| Raising an Issue | Commit to `main` |
-| Resolving an Issue (`resolved`, `wontfix`) | Commit to `main`; PR only if it also promotes content to `accepted` or changes the schema |
-| Promoting a page to `accepted`, or demoting to `deprecated` | **PR** — only the human promotes; you never merge your own promotion |
-| Substantive edit to an `accepted` page | Set it back to `review` and commit to `main`, or open a PR |
-| `AGENTS.md`, `CLAUDE.md`, `.agents/skills/`, `_templates/`, `_system/` (workflows, anchors, scripts, apps) | **PR** |
-| `raw/` | Outside this policy — human-owned |
+| New or edited `wiki/` pages at `draft` or `review`, raising or resolving an Issue | PR |
+| Promoting a page to `accepted`, or demoting to `deprecated` | PR, and only the human promotes |
+| Substantive edit to an `accepted` page | Set it back to `review`, in a PR |
+| `AGENTS.md`, `CLAUDE.md`, `.agents/skills/`, `_templates/`, `_system/` (workflows, anchors, scripts, apps) | PR |
+| `raw/` | Human-owned. The human adds sources, and a capture PR may carry the source it captures |
 
-Review of `draft` content happens in the grilling passes and by status promotion,
-not in a PR. Anything that reads `main` (reports, exports) must filter on `status`.
+Review of `draft` content happens in the grilling passes, by status promotion
+and in the PR. Anything that reads `main` (reports, exports) must filter on `status`.
 
 ## Harnesses and skills
 

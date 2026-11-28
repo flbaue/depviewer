@@ -13,40 +13,74 @@ no frameworks** — a JDK 17+ and a browser are all a user needs.
 | File | Role |
 |---|---|
 | `src/depviewer/` | Scanner (Java 17, JDK only, package `depviewer`). `DepScan` = CLI, source discovery, orchestration, output; `Model` = nodes/edges/packages/externals/JSON writer shared by all languages; `JavaScanner` = javac Trees API (parses *and attributes*, exact); `KotlinScanner` = built-in lexer/parser, name-based resolution ([FR-004](spec/wiki/functional-requirements/FR-004-analyse-kotlin-by-name.md)); `Toolchain` = runs a language extractor and merges its JSON fragment; `Json` = minimal JSON reader; `Architecture` = loads and validates the architecture file for `check` and `--views` ([FR-026](spec/wiki/functional-requirements/FR-026-read-the-architecture-file.md)) matches `match` selectors against the model's nodes ([FR-027](spec/wiki/functional-requirements/FR-027-select-code-by-patterns.md)) and decides each element's group, with overlap warnings ([FR-028](spec/wiki/functional-requirements/FR-028-decide-each-elements-group-by-precedence.md)). The `depviewer` wrapper compiles it into `build/depviewer-classes` on first use. Without the wrapper: `javac -d out src/depviewer/*.java && java -cp out depviewer.DepScan …`. |
-| `spec/` | **The spec and the backlog.** Requirements and architecture as a [systems42](https://systems42.org) wiki (req42 + arc42): goals, functional and quality requirements, constraints, building blocks, decisions (ADR 0001 is [DR-001](spec/wiki/decisions/DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract.md)) and open issues. Start here for any change. Read `spec/AGENTS.md` before you work there; its rules apply only inside `spec/`. Skills: `capture`, `grill-requirements`, `implement`, `recover`, `requirements-wiki` (linked in `.claude/skills/`). The old `docs/specs/`, `docs/adr/` and GitHub issues are archived in `spec/raw/ingested/` ([ISS-014](spec/wiki/issues/ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr.md)). |
+| `spec/` | **The spec and the backlog.** Requirements and architecture as a [systems42](https://systems42.org) wiki (req42 + arc42): goals, functional and quality requirements, constraints, building blocks, decisions (ADR 0001 is [DR-001](spec/wiki/decisions/DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract.md)) and open issues. Start here for any change. Read `spec/AGENTS.md` before you work there. Its content and commit rules apply inside `spec/`, its `capture` and `implement` workflows govern every change (see Workflow), and its [writing style](spec/_system/writing-style.md) binds all text in the repository, including code comments, UI text and PR descriptions. Its source and Issue rules apply to the wiki only. Skills: `capture`, `grill-requirements`, `implement`, `recover`, `requirements-wiki` (linked in `.claude/skills/`). The old `docs/specs/`, `docs/adr/` and GitHub issues are archived in `spec/raw/ingested/` ([ISS-014](spec/wiki/issues/ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr.md)). |
 | `viewer.html` | Viewer template. One self-contained HTML file with inline CSS and vanilla JS. The scanner replaces `/*DEPS_DATA*/null` with the model and `/*DEPS_VIEWS*/null` with exported views. |
 | `depviewer` | POSIX shell wrapper that passes `--template` and runs the scanner. |
 | `extractors/typescript/` | TypeScript/JavaScript extractor: `extract.mjs` on the TypeScript compiler API (Node). Pinned in `package-lock.json`. |
 | `extractors/dart/` | Dart extractor: `bin/extract.dart` on `package:analyzer`. Pinned in `pubspec.yaml`/`pubspec.lock`. |
 | `scripts/check.sh` | **The** check. Run it before you say you are done. |
 | `test/fixture/`, `test/fixture-ts/`, `test/fixture-dart/` | Small projects with known dependencies per language (Java + Kotlin, TypeScript/JavaScript, Dart), each with a deliberate cycle and some unresolvable or external references. |
-| `test/checks/` | Model assertions: `jvm.py`, `typescript.py`, `dart.py` (one per fixture) on top of `common.py`. Viewer assertions on DOMs dumped by headless Chrome: `viewer_arcs.py` (arc geometry), `viewer_perf.py` (timings on the large model). `SelectorCheck.java` checks selectors on the scanned fixture models ([FR-027](spec/wiki/functional-requirements/FR-027-select-code-by-patterns.md)); `AssignCheck.java` checks assignment precedence and overlaps on the fixture with `test/fixture-architecture.json` ([FR-028](spec/wiki/functional-requirements/FR-028-decide-each-elements-group-by-precedence.md)). Both are compiled by `check.sh` only. `viewer_contrast.py` checks the text contrast of `viewer.html` in light and dark ([QR-008](spec/wiki/quality-requirements/QR-008-the-viewer-reads-well-in-light-dark-and-on-a-narrow-screen.md)). |
+| `test/checks/` | Model assertions: `jvm.py`, `typescript.py`, `dart.py` (one per fixture) on top of `common.py`. Viewer assertions on DOMs dumped by headless Chrome: `viewer_arcs.py` (arc geometry), `viewer_perf.py` (timings on the large model). `SelectorCheck.java` checks selectors on the scanned fixture models ([FR-027](spec/wiki/functional-requirements/FR-027-select-code-by-patterns.md)); `AssignCheck.java` checks assignment precedence and overlaps on the fixture with `test/fixture-architecture.json` ([FR-028](spec/wiki/functional-requirements/FR-028-decide-each-elements-group-by-precedence.md)). Both are compiled by `check.sh` only. `viewer_contrast.py` checks the text contrast of `viewer.html` in light and dark ([QR-008](spec/wiki/quality-requirements/QR-008-the-viewer-reads-well-in-light-dark-and-on-a-narrow-screen.md)). `wiki_ids.py` checks that every wiki page and source record has a unique ID that matches its filename. |
 | `test/gen_large.py` | Generates a large synthetic model (~10,000 rows, ~38,000 arcs at member level) embedded in the viewer, for the performance check ([QR-001](spec/wiki/quality-requirements/QR-001-the-viewer-stays-responsive-on-large-projects.md)). |
 | `test/fixture-views.json` | A "Layers" view used by the headless browser smoke test and the screenshots. |
 | `scripts/screenshots.sh` | Regenerates `docs/screenshot-{light,dark}.png` for the README. Run it after visible UI changes and look at the result. |
 
 ## Workflow: spec first, then test-driven
 
-The maintainer wants every feature and behaviour change done this way:
+The spec in `spec/` drives every change, and its workflows are the process. Do not restate them
+here or work around them. Paths in `spec/AGENTS.md`, its workflows and its skills are relative to
+`spec/`, so run their scripts from there.
 
-1. **Spec first.** Write or update the requirements in the wiki under `spec/` before writing code
-   (a new idea goes into `spec/raw/` and is captured with the `capture` skill): goal, constraints,
-   the expected behaviour as checkable acceptance criteria, and what is out of scope. Small bug
-   fixes can skip the spec but not the test.
-2. **Tests next, and watch them fail.** Turn the acceptance criteria into checks — fixture code
-   plus assertions in `test/checks/<fixture>.py` for the scanner, `scripts/check.sh` (headless
-   smoke test) for the viewer. Run them and confirm they fail for the right reason.
-3. **Implement until green**, then run the whole `scripts/check.sh`.
-4. **Check for regressions on real code**: rescan a larger project with the previous scanner
+Every change goes on a feature branch and into a PR that the maintainer merges, wiki changes
+included ([commit policy](spec/AGENTS.md#commit-policy)). A branch name your harness requires
+replaces `implement/<id>-<slug>`. For a feature or behaviour change, outside contributors open a
+GitHub issue first (see [CONTRIBUTING.md](CONTRIBUTING.md)). The maintainer approves their plan
+there, and that comment, linked in the PR, is the approval `implement.md` asks for.
+
+- **A new idea or changed behaviour** becomes requirements with the `capture` skill
+  ([capture.md](spec/_system/workflows/capture.md), grill-gated, see
+  [spec/AGENTS.md](spec/AGENTS.md)). Its source goes into `spec/raw/`, which the human owns. Write
+  no code for it until the maintainer selects the requirement.
+- **Building a requirement** runs the `implement` skill
+  ([implement.md](spec/_system/workflows/implement.md)): readiness, a plan the maintainer approves,
+  the `Implements:` trailer, a criterion-by-criterion evidence table, the `delivery` fields, the
+  log entry and one PR the maintainer merges. Implement only requirements merged to `main`. If
+  the maintainer names one whose capture PR is still open, say so and wait for the merge. If an
+  open PR changes the selected page, ask the maintainer which version to build.
+- **A small bug fix** that changes no specified behaviour skips both, but not the rules below.
+- **A change with no user-visible behaviour** (refactor, docs, CI, tooling, this file) skips both
+  as well. Rule 1 does not apply: the existing checks must stay green instead.
+- **A wiki-only PR** (capture, inspect) needs none of rules 1 to 4, but rule 5 applies.
+
+Inside that loop, depviewer adds these rules:
+
+1. **Tests first, and watch them fail.** Turn each criterion (for a bug fix: the bug) into a
+   check: fixture code plus assertions in `test/checks/<fixture>.py` for the scanner,
+   `scripts/check.sh` (headless smoke test) for the viewer. Run them and confirm they fail for the
+   right reason. If a test fails because the test itself was wrong, fix the test and say so in the
+   commit. Do not weaken a test to make an implementation pass.
+2. **Implement until green**, then run the whole `scripts/check.sh`.
+3. **Check for regressions on real code**: rescan a larger project with the previous scanner
    version (`git archive HEAD src | tar -x -C <tmp>`, compile it there) and the new one and compare
    the JSON (ignoring `generated`); differences must
    be intended.
-5. Update the wiki pages (`delivery`, `release`, child requirements), the user docs (`docs/usage.md`, `languages.md`, `viewer.md`,
-   `quick-start.md`; the README only for the overview) and this file if behaviour or invariants
-   changed.
-
-If a test fails because the test itself was wrong, fix the test and say so in the commit — do
-not weaken a test to make an implementation pass.
+4. **Update the docs and the wiki**: `docs/usage.md`, `languages.md`, `viewer.md`,
+   `quick-start.md` (the README only for the overview), this file if behaviour or invariants
+   changed, and on the requirement pages `release` (e.g. `delivered`) and affected child
+   requirements, which `implement.md` does not cover.
+5. **Review in a fresh agent session** (for AI-assisted changes) after rules 1 to 4 (in an
+   `implement` run, after its criterion check in step 5) and before the PR. Commit everything
+   first, so the diff below holds the whole change. Start a new session, or a subagent that does
+   not inherit your conversation (not a fork). Point it at the repository, the diff against the
+   freshly fetched base (`git fetch origin main && git diff origin/main...HEAD`, because a local
+   `main` may be stale), the requirement pages if any, and this file. Do not hand it your reasoning
+   or your evidence table. Ask it for correctness bugs, broken invariants (below), criteria the
+   change does not meet, missing or weakened tests, and stale docs, not style. Fix every finding
+   (with a test where it is a bug) or note why not, run `scripts/check.sh` again, and review again
+   in a new fresh session if the fixes changed behaviour. In an `implement` run, if a fix changes
+   the approved outcome, ask for renewed approval and update the criterion table first
+   (`implement.md` step 4). Without a way to start a fresh session, say so in the PR instead of
+   calling your own review independent.
 
 ## How to verify your change
 
@@ -98,7 +132,8 @@ Read the accepted decision [DR-001](spec/wiki/decisions/DR-001-every-language-is
 [CC-002](spec/wiki/crosscutting-concepts/CC-002-extractor-contract.md) (contract) first (every language becomes an extractor run once per scan,
 using the user's toolchain first; its migration plan is in progress), then follow the workflow above:
 
-1. Requirements in `spec/`: refine the language's FR (e.g. [FR-053](spec/wiki/functional-requirements/FR-053-analyse-go.md))
+1. Requirements in `spec/` (from a source in `spec/raw/`, with `capture`, then `implement` once
+   the maintainer selects a child): refine the language's FR (e.g. [FR-053](spec/wiki/functional-requirements/FR-053-analyse-go.md))
    into child requirements for toolchain, sources, model mapping, dependency rules and fixture
    expectations, as [FR-006](spec/wiki/functional-requirements/FR-006-analyse-dart-with-the-dart-analyzer.md) does for Dart.
 2. Fixture `test/fixture-<language>/` and `test/checks/<language>.py`; add both to
@@ -153,4 +188,6 @@ changes between major versions.
 - Disclose AI assistance with a trailer, e.g. `Co-Authored-By: <Model name> <noreply@…>` or
   `Assisted-by: <tool>` — see CONTRIBUTING.md.
 - PR description: what changed, why, how it was verified (paste the `check.sh` result; say what you
-  tried by hand in the browser and what you did not).
+  tried by hand in the browser and what you did not), and the fresh-session review: each finding
+  and whether it was fixed or why not. For a requirement, it also holds what `implement.md`
+  asks for (the approved plan and the criterion table).

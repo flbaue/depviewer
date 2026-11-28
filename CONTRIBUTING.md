@@ -14,13 +14,15 @@ the backlog, and the issue is closed with a link to its requirement.
 
 ## Making changes
 
-1. Fork and branch from `main`.
-2. Read [AGENTS.md](AGENTS.md) — it is the technical guide for humans and AI agents alike
-   (structure, data model, invariants, conventions).
-3. For a feature or behaviour change, write or update the requirements in the
-   [wiki under `spec/`](spec/) first, then add
-   tests that fail, then implement (see "Workflow" in AGENTS.md). Make a focused change; no new
-   dependencies or build tooling without discussing it first.
+1. For a feature or behaviour change, open a GitHub issue first. The maintainer turns it into
+   requirements in the [wiki under `spec/`](spec/), selects which requirement gets built and
+   approves your plan in the issue. Link that approval in your PR.
+2. Fork and branch from `main`.
+3. Read [AGENTS.md](AGENTS.md) — it is the technical guide for humans and AI agents alike
+   (structure, data model, invariants, conventions). Add tests that fail, then implement (see
+   "Workflow" in AGENTS.md). AI-assisted changes also get a review in a fresh agent session before the PR.
+   Make a focused change, and add no new dependencies or build tooling without discussing it
+   first.
 4. Run `scripts/check.sh` (needs JDK 17+ and python3; Node.js, the Dart SDK and Chrome enable the
    TypeScript, Dart and browser checks - CI runs all of them).
    For scanner fixes, add a case to the matching fixture (`test/fixture*/`) and a check to
