@@ -153,6 +153,11 @@ page's maturity, so a merge to `main` does not mean "agreed". Keep one commit
 per capture or inspect run, with a message naming it, plus any commits that fix
 review findings, so `git revert` stays clean. The `_system/log.md` entry is the review trail.
 
+IDs are final only once merged. Before you assign one, run `git fetch origin`
+and take the next ID above the highest on `main` and on every remote branch.
+Before merge, update the branch from `main` and renumber any ID that was taken
+in the meantime, with the filename and every link to it.
+
 | Change | Delivery |
 |--------|----------|
 | New or edited `wiki/` pages at `draft` or `review`, raising or resolving an Issue | PR |

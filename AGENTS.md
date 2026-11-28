@@ -44,7 +44,8 @@ there, and that comment, linked in the PR, is the approval `implement.md` asks f
 - **Building a requirement** runs the `implement` skill
   ([implement.md](spec/_system/workflows/implement.md)): readiness, a plan the maintainer approves,
   the `Implements:` trailer, a criterion-by-criterion evidence table, the `delivery` fields, the
-  log entry and one PR the maintainer merges.
+  log entry and one PR the maintainer merges. Implement only requirements already merged to
+  `main`. Until its capture PR is merged, a requirement is not selected.
 - **A small bug fix** that changes no specified behaviour skips both, but not the rules below.
 - **A change with no user-visible behaviour** (refactor, docs, CI, tooling, this file) skips both
   as well. Rule 1 does not apply: the existing checks must stay green instead.
