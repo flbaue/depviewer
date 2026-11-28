@@ -49,13 +49,23 @@ source of intent; the implementation PR records the plan and evidence.
    `outdated` transition does not replace that baseline. A human-confirmed
    recheck that keeps the same active state updates the timestamp and creates a
    new baseline commit.
-7. **Log and prepare one PR.** Append
+7. **Review in a fresh session.** Before the PR, have an agent session that
+   does not share this conversation (a new session, or a subagent that does
+   not inherit context; not a fork) review the branch. Give it only the diff
+   against `main`, the selected requirement pages and the repository's
+   `AGENTS.md`, not your plan's reasoning or your evidence table. Ask for
+   correctness bugs, broken invariants, criteria the diff does not meet,
+   missing or weakened tests, and stale docs. Fix each finding or record why
+   not; rerun the checks, and rerun the review in a new fresh session if a fix
+   changed behaviour. If no fresh session can be started, say so in the PR.
+8. **Log and prepare one PR.** Append
    `## [YYYY-MM-DD] implement | FR-NNN <title>` to `_system/log.md`. The PR title
    names the requirement. Its description contains the approved plan and a
    criterion-by-criterion table with result and evidence, including anything
-   not verified. Keep the human's review and merge as the final gate; this repo
-   does not have branch protection enforcing that gate.
-8. **Recheck before merge.** Update the branch from `main`, run
+   not verified, and the fresh-session review's findings with their outcome.
+   Keep the human's review and merge as the final gate; this repo does not
+   have branch protection enforcing that gate.
+9. **Recheck before merge.** Update the branch from `main`, run
    `python3 _system/scripts/delivery.py FR-NNN` for every selected requirement,
    and recheck affected criteria if a requirement page changed on `main`.
    Resolve drift before asking for merge.
@@ -82,4 +92,6 @@ source of intent; the implementation PR records the plan and evidence.
 - Do not edit deliverables before the plan is approved.
 - Do not implement around a blocking Issue.
 - Do not claim a criterion passed without evidence; report `not verified`.
+- Do not open the PR before the fresh-session review, and do not present a
+  review you ran in your own session as that review.
 - Do not let the agent merge its own PR.

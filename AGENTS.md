@@ -44,6 +44,16 @@ The maintainer wants every feature and behaviour change done this way:
 5. Update the wiki pages (`delivery`, `release`, child requirements), the user docs (`docs/usage.md`, `languages.md`, `viewer.md`,
    `quick-start.md`; the README only for the overview) and this file if behaviour or invariants
    changed.
+6. **Review in a fresh agent session** before you open the PR or say you are done. Start a new
+   session, or a subagent that does not inherit your conversation (not a fork), and give it only
+   the diff against `main` (`git diff main...HEAD`), the requirement pages it implements and this
+   file. Ask it for correctness bugs, broken invariants (below), spec criteria the change does not
+   meet, missing or weakened tests, and docs left out of date — not for style. The reviewer reads
+   the code itself; do not hand it your reasoning or your conclusions. Then deal with every finding:
+   fix it (with a test where it is a bug) or note why not. Run `scripts/check.sh` again after
+   fixes, and review again in a new fresh session if the fixes changed behaviour. Without a way to
+   start a fresh session, say so in the PR instead of reviewing your own work and calling it
+   independent.
 
 If a test fails because the test itself was wrong, fix the test and say so in the commit — do
 not weaken a test to make an implementation pass.
@@ -153,4 +163,5 @@ changes between major versions.
 - Disclose AI assistance with a trailer, e.g. `Co-Authored-By: <Model name> <noreply@…>` or
   `Assisted-by: <tool>` — see CONTRIBUTING.md.
 - PR description: what changed, why, how it was verified (paste the `check.sh` result; say what you
-  tried by hand in the browser and what you did not).
+  tried by hand in the browser and what you did not), and the fresh-session review: each finding
+  and whether it was fixed or why not.
