@@ -505,7 +505,8 @@ function build() {
   const compact = n => {
     while (n.k === 'package' && n.children.length === 1 && n.children[0].k === 'package') {
       const c = n.children[0];
-      n.n += (c.origin.sep || '.') + c.n; n.q = c.q;   // folder packages (TS, Dart) join with '/' n.origin = c.origin; n.origins.push(c.origin);
+      n.n += (c.origin.sep || '.') + c.n; n.q = c.q;   // folder packages (TS, Dart) join with '/'
+      n.origin = c.origin; n.origins.push(c.origin);
       n.children = c.children; n.children.forEach(g => g.parent = n);
     }
     if (n.clone || n.k === 'group') n.children.forEach(compact);

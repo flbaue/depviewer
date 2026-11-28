@@ -127,3 +127,10 @@ test('FR-040: an element in no group shows its no-ungrouped violation', async ({
   await pick(page, 'com.example.notify');
   await expect(page.locator('#pbody .viol').filter({ hasText: 'all-grouped' })).toContainText('error');
 });
+
+test('FR-023: a merged package row stands for its innermost package', async ({ page }) => {
+  // com.example.notify is one row for the chain com › example › notify; picking a group assigns notify only.
+  await page.goto(page_('fixture-arch.html'));
+  await pick(page, 'com.example.notify');
+  await expect(page.locator('#pbody select[data-assign]')).toHaveAttribute('data-assign', 'P:fixture:com.example.notify');
+});
