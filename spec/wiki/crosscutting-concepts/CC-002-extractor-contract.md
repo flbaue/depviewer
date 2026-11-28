@@ -2,7 +2,7 @@
 id: CC-002
 type: crosscutting-concept
 title: Extractor contract
-status: review
+status: accepted
 created: 2026-11-27
 updated: 2026-11-28
 sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-011-spec-multi-language-architecture]]", "[[SRC-026-github-issue-10-extractor-contract-v1-versioned-spec-describe-handshake-and-confor]]"]

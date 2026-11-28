@@ -2,7 +2,7 @@
 id: FR-006
 type: functional-requirement
 title: Analyse Dart with the Dart analyzer
-status: review
+status: accepted
 created: 2026-11-27
 updated: 2026-11-28
 sources: ["[[SRC-014-spec-dart-support]]", "[[SRC-009-supported-languages]]"]
@@ -17,8 +17,8 @@ release: delivered
 lane: backbone
 order: 5
 goal: []
-delivery: outdated
-delivery-checked: "2026-11-28T08:27:38Z"
+delivery: implemented
+delivery-checked: "2026-11-28T19:36:14Z"
 ---
 
 # Analyse Dart with the Dart analyzer

@@ -2,7 +2,7 @@
 id: FR-012
 type: functional-requirement
 title: Link the modules of a monorepo
-status: review
+status: accepted
 created: 2026-11-27
 updated: 2026-11-28
 sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-020-github-issue-4-typescript-link-references-between-packages-of-a-monorepo]]", "[[SRC-027-github-issue-11-run-extractors-once-per-scan-typescript-monorepo-links]]"]
@@ -17,8 +17,8 @@ release: m2-extractor-contract
 lane: backbone
 order: 11
 goal: []
-delivery: outdated
-delivery-checked: "2026-11-28T15:38:14Z"
+delivery: implemented
+delivery-checked: "2026-11-28T19:36:14Z"
 ---
 
 # Link the modules of a monorepo

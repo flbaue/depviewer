@@ -2,7 +2,7 @@
 id: FR-007
 type: functional-requirement
 title: Skip a language whose toolchain is missing
-status: accepted
+status: review
 created: 2026-11-27
 updated: 2026-11-28
 sources: ["[[SRC-011-spec-multi-language-architecture]]", "[[SRC-008-usage-reference]]"]
@@ -17,7 +17,7 @@ release: delivered
 lane: backbone
 order: 6
 goal: []
-delivery: implemented
+delivery: outdated
 delivery-checked: "2026-11-28T08:27:38Z"
 ---
 
@@ -29,7 +29,7 @@ A missing Node or Dart must not stop a Java user ([[QR-005-java-projects-scan-wi
 
 ## Requirement
 
-When the toolchain of a language is not found, its modules are skipped with a note on stderr and the remaining languages are still scanned. It is never a scan failure.
+When the toolchain of a language is not found, its modules are skipped with a note on stderr and the remaining languages are still scanned. It is never a scan failure, except for Java and Kotlin: they are the scanner's own languages ([[QR-005-java-projects-scan-with-nothing-but-a-jdk]]), so when no JDK can run their extractor, or it fails, the scan stops with an error and writes no model, and `check` exits 2 ([[CC-002-extractor-contract]]). A scan or check without them would look clean.
 
 ## Acceptance criteria
 
