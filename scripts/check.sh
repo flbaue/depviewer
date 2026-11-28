@@ -132,6 +132,14 @@ javac -Xlint:all -Werror -cp "$OUT/classes:$OUT/test-classes" -d "$OUT/test-clas
 java -cp "$OUT/classes:$OUT/test-classes" depviewer.AssignCheck "$OUT/fixture.json" test/fixture-architecture.json
 expect 1 'layering' --rules test/fixture-architecture.json test/fixture
 grep -q "warning  overlap" "$OUT/check.log" && { cat "$OUT/check.log"; fail "overlap reported for test/fixture-architecture.json"; }
+# The viewer places every element where check does (FR-041): random views, decide() against resolve().
+javac -Xlint:all -Werror -cp "$OUT/classes:$OUT/test-classes" -d "$OUT/test-classes" test/checks/DecideCheck.java
+java -cp "$OUT/classes:$OUT/test-classes" depviewer.DecideCheck "$OUT/fixture.json" 300 1 "$OUT/decide-cases.json"
+if command -v node >/dev/null 2>&1; then
+  node test/checks/viewer_decide.mjs viewer.html "$OUT/fixture.json" "$OUT/decide-cases.json"
+else
+  echo "viewer comparison skipped: node not installed"
+fi
 sed 's/@interface//' test/fixture-architecture.json > "$A/overlap.json"
 expect 1 'warning  overlap  T:fixture:com.example.infra.InMemoryOrderRepository  selected by dom and by infra through F:fixture:src/main/java/com/example/infra/InMemoryOrderRepository.java, goes to dom (view layers)' --rules "$A/overlap.json" test/fixture
 [ "$(grep -c "warning  overlap" "$OUT/check.log")" = 1 ] || { cat "$OUT/check.log"; fail "expected exactly one overlap warning"; }
