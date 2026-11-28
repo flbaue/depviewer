@@ -50,6 +50,8 @@ The core computes the file lists and test flags; paths are relative to the file'
 
 The core rejects a fragment whose `contract` is not 1 and skips the run's modules with a note. It ignores unknown fields. A node with a missing parent or an edge with a missing endpoint is dropped with a warning.
 
-**Diagnostics.** Lines on stderr start with the fragment's language, e.g. `dart: shop_app: 1 file(s) skipped`. Errors the toolchain reports are counted in the fragment's `errors`. A non-zero exit skips the run with a note.
+**Diagnostics.** Lines on stderr start with the fragment's language, e.g. `dart: shop_app: 1 file(s) skipped`. Errors the toolchain reports are counted in the fragment's `errors`. A non-zero exit skips the run with a note. A fragment the core cannot read (not an object, lists that hold no objects) is skipped whole, so nothing of it enters the model.
+
+**Required extractor.** The jvm extractor ([[BB-011-jvm-extractor]]) is the exception to every "skipped" above: Java and Kotlin are the core's own languages ([[QR-005-java-projects-scan-with-nothing-but-a-jdk]]), and a scan or `check` without them would look clean. If no JDK can run it, it speaks another contract, fails or prints a fragment the core rejects, the scan stops with an error and writes no model, and `check` exits 2.
 
 **Conformance.** `DEPVIEWER_FRAGMENTS=<folder>` keeps every run's request and raw fragment. `test/checks/contract.py <request> <fragment>` checks one run without knowing its language: the contract version, the shape, unique ids, parents before children, allowed node and edge kinds, every edge endpoint known, lines inside their file, and every file in a module and a file of the request. `scripts/check.sh` runs it on every extractor's run over its fixture, and first on broken fragments it must reject.

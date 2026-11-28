@@ -56,7 +56,7 @@ rules prints `no rules` and exits 0.
 |---|---|
 | 0 | No failing violations. |
 | 1 | Failing violations. |
-| 2 | Invalid arguments, architecture file or model, for example a missing file, an unknown `version`, an unknown rule kind, a rule naming a group that does not exist, two views with one id, a view with rules but no id, a `|` in the id of a rule or of a view with rules, or a `--model` that is not a depviewer model. |
+| 2 | The scan failed, e.g. the jvm extractor (Java and Kotlin) could not run; or invalid arguments, architecture file or model, for example a missing file, an unknown `version`, an unknown rule kind, a rule naming a group that does not exist, two views with one id, a view with rules but no id, a `|` in the id of a rule or of a view with rules, or a `--model` that is not a depviewer model. |
 
 ### Selectors
 
@@ -193,7 +193,8 @@ output and VCS folders:
 
 A directory without any marker is scanned as a plain Java/Kotlin source root. Several markers in
 one tree (a monorepo, a Flutter app next to a backend) give several modules in one model. A
-language whose toolchain is missing is skipped with a note; the others are still scanned. Which
+language whose toolchain is missing is skipped with a note; the others are still scanned. Java and
+Kotlin are the exception: if their extractor cannot run, the scan stops with an error. Which
 toolchain each language uses is described in [languages](languages.md).
 
 The model records it in `analysis`, one entry per language and set of modules

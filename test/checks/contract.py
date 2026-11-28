@@ -40,7 +40,9 @@ files = {(f.get("module"), f.get("path")) for f in request.get("files") or []}
 check(all(m in modules for m, _ in files), "request: a file names an unknown module")
 
 # --- the fragment
-check(isinstance(frag, dict), "fragment is not an object")
+if not isinstance(frag, dict):
+    print(f"FAIL contract.py {sys.argv[2]}:\n  fragment is not an object")
+    sys.exit(1)
 check(major(frag.get("contract")) == 1, f"fragment: contract {frag.get('contract')!r}, expected 1")
 check(isinstance(frag.get("language"), str) and frag["language"], "fragment: no language")
 check(is_int(frag.get("errors")), f"fragment: errors {frag.get('errors')!r} is not a count")

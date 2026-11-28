@@ -142,6 +142,8 @@ final class Toolchain {
                             contract == null ? "(none)" : Json.write(contract), CONTRACT, names));
                     return;
                 }
+                String bad = invalid(frag);   // checked first, so nothing of a broken fragment enters the model
+                if (bad != null) { skip("the extractor printed a broken fragment for " + names + " (" + bad + ")"); return; }
                 merge(first.name, frag);
                 for (List<Module> ms : bySource.values()) record(frag, ms, chosen.get(ms.get(0)));
             } catch (IOException | RuntimeException e) {
@@ -161,6 +163,23 @@ final class Toolchain {
     private void skip(String what) {
         if (required) DepScan.die(label + ": " + what + "; no model written");
         System.err.printf("%s: %s, skipped%n", label, what);
+    }
+
+    /** Why a fragment cannot be merged as `merge` reads it, or null: its lists must hold objects, lines numbers. */
+    static String invalid(Map<?, ?> frag) {
+        for (String list : List.of("packages", "nodes", "externals", "edges")) {
+            Object v = frag.get(list);
+            if (v == null) continue;
+            if (!(v instanceof List)) return "\"" + list + "\" is not a list";
+            for (Object o : (List<?>) v) {
+                if (!(o instanceof Map)) return "\"" + list + "\" holds " + (o == null ? "null" : Json.write(o));
+                if (list.equals("edges") && ((Map<?, ?>) o).get("lines") != null) {
+                    Object ls = ((Map<?, ?>) o).get("lines");
+                    if (!(ls instanceof List) || ((List<?>) ls).stream().anyMatch(l -> !(l instanceof Number))) return "an edge's \"lines\" are not numbers";
+                }
+            }
+        }
+        return null;
     }
 
     static String names(List<Module> ms) { return ms.stream().map(m -> m.name).collect(java.util.stream.Collectors.joining(", ")); }
@@ -373,8 +392,10 @@ final class Toolchain {
                 try (InputStream in = p.getInputStream()) { out = new String(in.readAllBytes(), StandardCharsets.UTF_8); }
                 if (p.waitFor() == 0) return Json.parse(out.trim());
                 // Why it could not run, e.g. a JDK too old for the classes: the first line that is not JVM chatter.
-                why = Files.readAllLines(err, StandardCharsets.ISO_8859_1).stream().map(String::trim)
-                        .filter(l -> !l.isEmpty() && !l.startsWith("Picked up ")).findFirst().orElse(null);
+                List<String> lines = Files.readAllLines(err, StandardCharsets.ISO_8859_1).stream().map(String::trim)
+                        .filter(l -> !l.isEmpty() && !l.startsWith("Picked up ")).collect(java.util.stream.Collectors.toList());
+                why = lines.stream().filter(l -> l.contains("UnsupportedClassVersionError")).findFirst()
+                        .orElse(lines.isEmpty() ? null : lines.get(0));
                 return null;
             } finally {
                 Files.deleteIfExists(err);
@@ -387,7 +408,14 @@ final class Toolchain {
 
     /** The command that runs the extractor with a candidate's toolchain; null if it cannot be set up. */
     List<String> extractorCommand(Candidate c) throws IOException, InterruptedException {
-        if (language.equals("jvm")) return new ArrayList<>(List.of(c.location(), "-cp", System.getProperty("java.class.path"), "depviewer.JvmExtractor"));
+        if (language.equals("jvm")) {
+            List<String> cmd = new ArrayList<>(List.of(c.location()));
+            // The heap and stack options depviewer was started with apply to the analysis, which runs there.
+            for (String a : java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments())
+                if (a.startsWith("-Xmx") || a.startsWith("-Xms") || a.startsWith("-Xss")) cmd.add(a);
+            cmd.addAll(List.of("-cp", System.getProperty("java.class.path"), "depviewer.JvmExtractor"));
+            return cmd;
+        }
         if (language.equals("typescript")) return new ArrayList<>(List.of(node, home.resolve("extractors/typescript/extract.mjs").toString()));
         String dart = c.location();
         Path dir = home.resolve("extractors/dart");
@@ -493,7 +521,7 @@ final class Toolchain {
                 continue;
             }
             Integer parent = ids.get(str(n.get("parent")));
-            if (parent == null) { dropped.add(id); continue; }
+            if (parent == null || n.get("name") == null) { dropped.add(id); continue; }
             Node x = node(prefix + id, str(n.get("name")), kind, parent);
             x.q = str(n.getOrDefault("q", id));
             x.line = intOf(n.get("line"));

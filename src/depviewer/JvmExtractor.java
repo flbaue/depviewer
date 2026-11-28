@@ -50,16 +50,14 @@ final class JvmExtractor {
 
     static Map<String, Object> describe(String source) {
         int feature = Runtime.version().feature();
-        boolean compiler = javax.tools.ToolProvider.getSystemJavaCompiler() != null;
         Map<String, Object> t = new LinkedHashMap<>();
         t.put("tool", "java");
         t.put("version", System.getProperty("java.version"));
         t.put("source", source);
         t.put("path", Path.of(System.getProperty("java.home"), "bin", "java").toString());
-        t.put("supported", feature >= MIN_JAVA && compiler);
+        t.put("supported", feature >= MIN_JAVA);   // a JRE suffices for Kotlin; Java files need a JDK, JavaScanner says so
         t.put("range", ">=" + MIN_JAVA + " (a JDK)");
         if (feature < MIN_JAVA) t.put("problem", "version not supported");
-        else if (!compiler) t.put("problem", "a JRE without the Java compiler");
         Map<String, Object> d = new LinkedHashMap<>();
         d.put("name", NAME);
         d.put("version", VERSION);

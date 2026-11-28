@@ -80,6 +80,20 @@ grep -q "^depviewer: Java/Kotlin: extractor failed for fixture (exit code [0-9]*
 [ ! -e "$OUT/fixture-badkt.json" ] || fail "a model was written although the jvm extractor failed"
 set +e; ./depviewer check --rules test/fixture-architecture.json "$OUT/fixture-badkt" > "$OUT/fixture-badkt-check.log" 2>&1; got=$?; set -e
 [ "$got" = 2 ] || { cat "$OUT/fixture-badkt-check.log"; fail "check with a failed jvm extractor: exit $got, expected 2"; }
+# Every other way the jvm extractor can fail stops the scan too: a stand-in first on the classpath.
+javac -Xlint:all -Werror --release 17 -d "$OUT/fakejvm" test/checks/fakejvm/JvmExtractor.java
+for c in "unsupported:no supported JDK found for fixture" "describe2:the extractor speaks another contract" \
+         "contract2:the extractor printed contract 2, this depviewer reads contract 1; fixture" \
+         "null:the extractor printed no fragment for fixture" "broken:the extractor printed a broken fragment for fixture (\"nodes\" is not a list)"; do
+  mode=${c%%:*} text=${c#*:}
+  rm -f "$OUT/fakejvm.json"
+  set +e
+  FAKE_JVM=$mode "$J" -cp "$OUT/fakejvm:$OUT/classes" depviewer.DepScan --template viewer.html -o "$OUT/fakejvm.json" test/fixture > "$OUT/fakejvm.log" 2>&1; scan=$?
+  FAKE_JVM=$mode "$J" -cp "$OUT/fakejvm:$OUT/classes" depviewer.DepScan check --rules test/fixture-architecture.json test/fixture > "$OUT/fakejvm-check.log" 2>&1; chk=$?
+  set -e
+  [ "$scan" = 1 ] && [ "$chk" = 2 ] && [ ! -e "$OUT/fakejvm.json" ] || { cat "$OUT/fakejvm.log" "$OUT/fakejvm-check.log"; fail "jvm $mode: scan exit $scan, check exit $chk, expected 1 and 2 with no model"; }
+  grep -qF "Java/Kotlin: $text" "$OUT/fakejvm.log" || { cat "$OUT/fakejvm.log"; fail "jvm $mode: log lacks '$text'"; }
+done
 
 step "TypeScript/JavaScript (spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md)"
 NODE_BIN=${DEPVIEWER_NODE:-node}
@@ -254,19 +268,29 @@ if [ -n "$HAVE_TS" ]; then
   cat > "$H/extractors/typescript/extract.mjs" <<'JS'
 const v = +(process.env.FAKE_CONTRACT || 1), describe = process.argv[2] === "--describe";
 if (!describe && process.env.FAKE_NULL) { console.log("null"); process.exit(0); }
+if (!describe && process.env.FAKE_PARTIAL) {   // valid nodes, then an edge that is no object
+  console.log(JSON.stringify({ contract: 1, language: "typescript", errors: 0, externals: [], edges: ["oops"],
+    nodes: [{ id: "f", kind: "file", path: "src/model/cart.ts", package: "src/model", loc: 9 },
+            { id: "g", kind: "class", name: "Ghost", parent: "f", line: 1, loc: 1 }] }));
+  process.exit(0);
+}
 console.log(JSON.stringify(describe
   ? { name: "fake", version: "0", contract: describe && process.env.FAKE_DESCRIBE ? 2 : 1, languages: ["typescript"],
       toolchain: { tool: "typescript", version: "5.9.3", source: process.argv[4], path: process.argv[3], supported: true } }
   : { contract: v, language: "typescript", errors: 0, nodes: [], externals: [], edges: [] }));
 JS
   printf '{"name": "fake", "version": "0"}' > "$H/extractors/typescript/package.json"
-  fake() { env DEPVIEWER_HOME="$H" "$@" java -cp "$OUT/classes" depviewer.DepScan --template viewer.html -o "$C/fake.json" test/fixture-ts > "$C/fake.log" 2>&1 || true; }
+  fake() { rm -f "$C/fake.json"; env DEPVIEWER_HOME="$H" "$@" java -cp "$OUT/classes" depviewer.DepScan --template viewer.html -o "$C/fake.json" test/fixture-ts > "$C/fake.log" 2>&1 || true; }
   fake FAKE_CONTRACT=2
   grep -q "^TypeScript/JavaScript: the extractor printed contract 2, this depviewer reads contract 1; shop-web, skipped$" "$C/fake.log" \
     || { cat "$C/fake.log"; fail "a fragment of contract 2 was not rejected"; }
   fake FAKE_NULL=1   # a fragment that is no object skips the run, it does not stop the scan
   grep -q "^TypeScript/JavaScript: the extractor printed no fragment for shop-web, skipped$" "$C/fake.log" && [ -s "$C/fake.json" ] \
     || { cat "$C/fake.log"; fail "a fragment that is no object was not skipped"; }
+  fake FAKE_PARTIAL=1   # a broken fragment leaves nothing behind, not even its valid nodes
+  grep -q "^TypeScript/JavaScript: the extractor printed a broken fragment for shop-web (.*), skipped$" "$C/fake.log" \
+    || { cat "$C/fake.log"; fail "a broken fragment was not skipped"; }
+  grep -q '"Ghost"' "$C/fake.json" && fail "a skipped fragment left nodes in the model"
   fake FAKE_DESCRIBE=1
   grep -q "^TypeScript/JavaScript: extractor fake 0 speaks contract 2, this depviewer speaks contract 1; skipped$" "$C/fake.log" \
     || { cat "$C/fake.log"; fail "an extractor of contract 2 was not rejected"; }
