@@ -26,10 +26,12 @@ final class Architecture {
     }
 
     final String text;
+    final Map<?, ?> root;
     final List<Object> views;
 
-    private Architecture(String text, List<Object> views) {
+    private Architecture(String text, Map<?, ?> root, List<Object> views) {
         this.text = text;
+        this.root = root;
         this.views = views;
     }
 
@@ -65,7 +67,13 @@ final class Architecture {
             if (!(groups instanceof List)) continue;
             for (Object g : (List<?>) groups) if (g instanceof Map) checkMatch(file, (Map<?, ?>) g);
         }
-        return new Architecture(text, list);
+        Set<Object> viewIds = new HashSet<>();
+        for (Object view : list) {
+            Object id = ((Map<?, ?>) view).get("id");
+            if (id != null && !viewIds.add(id)) throw new Invalid(file + ": view id \"" + id + "\" is used twice");
+        }
+        for (Object view : list) Rules.validate(file.toString(), (Map<?, ?>) view);
+        return new Architecture(text, (Map<?, ?>) root, list);
     }
 
     /** True when at least one view has a non-empty {@code rules} array. */
@@ -241,8 +249,12 @@ final class Architecture {
     static final class Resolution {
         final String[] group;
         final List<Overlap> overlaps = new ArrayList<>();
+        /** Per node: the first group whose {@code match} selects it directly, whatever {@code assign} says; null if none. */
+        final String[] direct;
+        /** Per group id: the nodes its {@code !} selectors keep out, which never inherit it. */
+        final Map<String, BitSet> excluded = new HashMap<>();
 
-        Resolution(int n) { group = new String[n]; }
+        Resolution(int n) { group = new String[n]; direct = new String[n]; }
     }
 
     /**
@@ -274,6 +286,7 @@ final class Architecture {
         Map<?, ?> assign = view.get("assign") instanceof Map ? (Map<?, ?>) view.get("assign") : Map.of();
 
         Resolution r = new Resolution(n);
+        for (int g = 0; g < ids.size(); g++) r.excluded.put(ids.get(g), excluded.get(g));
         boolean[] byMatch = new boolean[n];   // the group came from a pattern, here or on the ancestor it was inherited from
         int[] parent = new int[n];
         String[] module = new String[n], key = new String[n];
@@ -282,13 +295,14 @@ final class Architecture {
             parent[i] = node.get("p") instanceof Double ? ((Double) node.get("p")).intValue() : -1;
             module[i] = parent[i] >= 0 ? module[parent[i]] : (String) node.get("n");
             key[i] = key(node, module[i]);
+            List<String> direct = new ArrayList<>();
+            for (int g = 0; g < ids.size(); g++) if (selected.get(g).get(i)) direct.add(ids.get(g));
+            if (!direct.isEmpty()) r.direct[i] = direct.get(0);
             if (key[i] != null && assign.containsKey(key[i])) {
                 Object g = assign.get(key[i]);
                 r.group[i] = g instanceof String && ids.contains(g) ? (String) g : null;
                 continue;
             }
-            List<String> direct = new ArrayList<>();
-            for (int g = 0; g < ids.size(); g++) if (selected.get(g).get(i)) direct.add(ids.get(g));
             int from = parent[i];   // nearest ancestor whose group this node may inherit
             while (from >= 0 && r.group[from] != null && excluded.get(ids.indexOf(r.group[from])).get(i)) from = parent[from];
             String inherited = from >= 0 ? r.group[from] : null;

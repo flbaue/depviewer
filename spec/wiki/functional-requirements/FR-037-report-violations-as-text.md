@@ -17,8 +17,8 @@ release: m1-rules-and-check
 lane: backbone
 order: 2
 goal: []
-delivery:
-delivery-checked:
+delivery: implemented
+delivery-checked: "2026-11-28T09:08:23Z"
 ---
 
 # Report violations as text

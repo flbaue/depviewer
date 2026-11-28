@@ -17,8 +17,8 @@ release: m1-rules-and-check
 lane: backbone
 order: 1
 goal: []
-delivery:
-delivery-checked:
+delivery: implemented
+delivery-checked: "2026-11-28T14:09:19Z"
 ---
 
 # Show pattern assignments as by pattern
@@ -29,7 +29,7 @@ The viewer does not match patterns itself ([[CON-005-selectors-are-resolved-only
 
 ## Requirement
 
-The scanner resolves all `match` selectors and embeds them as assignments marked `"from": "match"`. The viewer shows them like manual ones, labelled "by pattern". Dragging one, also to ungrouped, creates a manual assignment that overrides the pattern, labelled "manual (overrides pattern)". Removing that assignment brings back the pattern's group.
+The scanner resolves all `match` selectors and embeds them per view next to `assign`, which keeps its format: `matched` holds each element's first group whose pattern selects it directly, and `excluded` the groups its `!` selectors keep it out of. The viewer decides each element's group in the order of [[FR-028-decide-each-elements-group-by-precedence]], so it shows the same groups as `check`, and labels a group that comes from a pattern "by pattern". A type selected on its own shows with its file. Dragging one, also to ungrouped, creates a manual assignment that overrides the pattern, labelled "manual (overrides pattern)". Removing that assignment brings back the pattern's group.
 
 ## Acceptance criteria
 

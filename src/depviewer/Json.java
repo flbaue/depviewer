@@ -5,7 +5,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Minimal JSON reader for extractor output: objects become Maps, arrays Lists, numbers Doubles. */
+/**
+ * Minimal JSON reader for extractor output: objects become Maps, arrays Lists, numbers Doubles. {@link #write}
+ * turns such values back into compact JSON.
+ */
 final class Json {
     private final String s;
     private int i;
@@ -19,6 +22,48 @@ final class Json {
         j.ws();
         if (j.i != j.s.length()) throw j.error("trailing characters");
         return v;
+    }
+
+    /** Compact JSON for Maps, Lists, Strings, Numbers, Booleans and null; strings are escaped as {@link Model#js}. */
+    static String write(Object v) {
+        StringBuilder sb = new StringBuilder();
+        write(sb, v);
+        return sb.toString();
+    }
+
+    private static void write(StringBuilder sb, Object v) {
+        if (v == null) {
+            sb.append("null");
+        } else if (v instanceof String) {
+            sb.append(Model.js((String) v));
+        } else if (v instanceof Double || v instanceof Float) {
+            double d = ((Number) v).doubleValue();
+            if (d == Math.rint(d) && Math.abs(d) < 1e15) sb.append((long) d);
+            else sb.append(d);
+        } else if (v instanceof Number || v instanceof Boolean) {
+            sb.append(v);
+        } else if (v instanceof Map) {
+            sb.append('{');
+            boolean first = true;
+            for (Map.Entry<?, ?> e : ((Map<?, ?>) v).entrySet()) {
+                if (!first) sb.append(',');
+                first = false;
+                sb.append(Model.js(String.valueOf(e.getKey()))).append(':');
+                write(sb, e.getValue());
+            }
+            sb.append('}');
+        } else if (v instanceof List) {
+            sb.append('[');
+            boolean first = true;
+            for (Object o : (List<?>) v) {
+                if (!first) sb.append(',');
+                first = false;
+                write(sb, o);
+            }
+            sb.append(']');
+        } else {
+            throw new IllegalArgumentException("cannot write " + v.getClass());
+        }
     }
 
     private IllegalArgumentException error(String msg) {

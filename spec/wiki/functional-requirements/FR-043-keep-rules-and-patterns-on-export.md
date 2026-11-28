@@ -17,8 +17,8 @@ release: m1-rules-and-check
 lane: backbone
 order: 3
 goal: []
-delivery:
-delivery-checked:
+delivery: implemented
+delivery-checked: "2026-11-28T14:09:19Z"
 ---
 
 # Keep rules and patterns on export
@@ -29,7 +29,7 @@ The viewer may edit only manual assignments, but must not lose what it cannot ed
 
 ## Requirement
 
-*Export views* writes `match`, `rules` and `version` back unchanged and leaves out the resolved `"from": "match"` assignments.
+*Export views* writes `match`, `rules` and `version` back unchanged and leaves out what the scanner resolved ([[FR-041-show-pattern-assignments-as-by-pattern]]).
 
 ## Acceptance criteria
 

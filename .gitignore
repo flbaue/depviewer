@@ -7,6 +7,8 @@ example-*.html
 build/
 !test/fixture-views.json
 extractors/typescript/node_modules/
+test/ui/node_modules/
+test/ui/test-results/
 extractors/dart/.dart_tool/
 .dart_tool/
 test/fixture-dart/pubspec.lock

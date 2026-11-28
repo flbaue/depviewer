@@ -23,10 +23,16 @@ jobs:
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: "3.12.0"
+      - name: Install the UI test runner (Playwright Test, pinned in test/ui)
+        working-directory: test/ui
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
       # Every toolchain must be present so that no step of the script is skipped in CI.
       - name: Fail instead of skipping
         run: |
           command -v node
           command -v dart
           command -v google-chrome
+          test -d test/ui/node_modules/@playwright/test
       - run: scripts/check.sh

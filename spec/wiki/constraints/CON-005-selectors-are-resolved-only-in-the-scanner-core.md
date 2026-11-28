@@ -17,4 +17,4 @@ category: technical
 
 **Rationale / origin.** One implementation of matching keeps viewer and CLI from disagreeing ([[GOAL-004-one-answer-in-every-interface]]).
 
-**Impact.** The scanner embeds resolved assignments marked `"from": "match"` ([[FR-041-show-pattern-assignments-as-by-pattern]]). Editing patterns in the viewer is out of scope.
+**Impact.** The scanner embeds the resolved pattern assignments ([[FR-041-show-pattern-assignments-as-by-pattern]]). Editing patterns in the viewer is out of scope.

@@ -110,6 +110,7 @@ main { flex: 1; display: flex; min-height: 0; }
 #arcs path.arc { fill: none; stroke-linecap: round; transition: opacity .12s; }
 #arcs path.down { stroke: var(--down); } #arcs path.up { stroke: var(--up); }
 #arcs path.cyc { stroke: var(--cyc); } #arcs path.nest { stroke: var(--nest); stroke-dasharray: 3 3; }
+#arcs path.viol { stroke: var(--up); }
 #arcs.focus path.arc { opacity: .07; }
 #arcs.focus path.arc.on { opacity: 1; }
 #arcs path.hit { fill: none; stroke: transparent; stroke-width: 9; pointer-events: stroke; cursor: pointer; }
@@ -302,13 +303,33 @@ const storeKey = () => 'depviewer:views:' + D.title;
 function loadViews() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(storeKey())); } catch (e) { s = null; }
-  if (!(s && Array.isArray(s.views)) && EMBEDDED_VIEWS && Array.isArray(EMBEDDED_VIEWS.views)) s = JSON.parse(JSON.stringify(EMBEDDED_VIEWS));
+  const emb = EMBEDDED_VIEWS && Array.isArray(EMBEDDED_VIEWS.views) ? JSON.parse(JSON.stringify(EMBEDDED_VIEWS)) : null;
+  if (!(s && Array.isArray(s.views)) && emb) s = emb;
   V = s && Array.isArray(s.views) ? s : { views: [], current: null };
-  for (const v of V.views) { v.groups = v.groups || []; v.assign = v.assign || {}; }
+  // Patterns, rules and what the scanner resolved from them come from the architecture file, not from
+  // browser storage (spec/wiki/functional-requirements/FR-041-show-pattern-assignments-as-by-pattern.md).
+  // Views and groups new in the file are added; stored groups and manual assignments stay.
+  if (emb && s !== emb) {
+    if (emb.version != null) V.version = emb.version;
+    for (const e of emb.views) {
+      const v = V.views.find(x => x && x.id === e.id);
+      if (!v) { V.views.push(e); continue; }
+      for (const k of ['matched', 'excluded', 'violations', 'rules']) if (k in e) v[k] = e[k]; else delete v[k];
+      v.groups = v.groups || [];
+      for (const g of v.groups) {
+        const eg = (e.groups || []).find(x => x.id === g.id);
+        if (eg && 'match' in eg) g.match = eg.match; else delete g.match;
+      }
+      for (const eg of e.groups || []) if (!v.groups.some(g => g.id === eg.id)) v.groups.push(eg);
+    }
+  }
+  for (const v of V.views) { v.groups = v.groups || []; v.assign = v.assign || {}; v.matched = v.matched || {}; }
   if (!V.views.some(v => v.id === V.current)) V.current = null;
   renderViewSel();
 }
-function saveViews() { try { localStorage.setItem(storeKey(), JSON.stringify(V)); } catch (e) { /* storage unavailable */ } }
+// What the scanner resolved is tied to one scan (violations name edges by index), so it is not stored.
+const scanFree = x => { const c = Object.assign({}, x); delete c.matched; delete c.excluded; delete c.violations; return c; };
+function saveViews() { try { localStorage.setItem(storeKey(), JSON.stringify(Object.assign({}, V, { views: V.views.map(scanFree) }))); } catch (e) { /* storage unavailable */ } }
 const curView = () => V.views.find(v => v.id === V.current) || null;
 
 function renderViewSel() {
@@ -324,7 +345,7 @@ function switchView(id) {
 }
 
 function newView(name) {
-  const v = { id: uid(), name, groups: [], assign: {} };
+  const v = { id: uid(), name, groups: [], assign: {}, matched: {} };
   V.views.push(v); switchView(v.id);
   return v;
 }
@@ -385,7 +406,27 @@ function deleteGroup(gid) {
 }
 
 const isOrigDesc = (d, o) => { for (let a = d; a; a = a.op) if (a === o) return true; return false; };
-function inherited(v, o) { for (let a = o.op; a; a = a.op) if (hasOwn(v.assign, a.okey)) return v.assign[a.okey] || null; return null; }
+// The group an element is in (null: ungrouped) and where that comes from: manual assignments win over
+// pattern assignments ("matched", resolved by the scanner) on the same element, the nearer element wins.
+// An element a group's "!" selector keeps out ("excluded") never inherits that group, as in the scanner.
+// Same order as Architecture.resolve() in the scanner; `manual` false leaves out all manual assignments.
+function decide(v, o, ownManual = true, manual = true) {
+  if (manual && ownManual && hasOwn(v.assign, o.okey)) return { gid: v.assign[o.okey] || null, from: 'manual', at: o };
+  if (hasOwn(v.matched, o.okey)) return { gid: v.matched[o.okey] || null, from: 'match', at: o };
+  const ex = v.excluded && hasOwn(v.excluded, o.okey) ? v.excluded[o.okey] : null;
+  for (let p = o.op; p; p = p.op) {
+    const d = decide(v, p, true, manual);
+    if (!d.gid || !ex || !ex.includes(d.gid)) return d;
+  }
+  return { gid: null, from: null, at: null };
+}
+// The group of `o` without its own manual assignment.
+const inherited = (v, o) => decide(v, o, false).gid;
+// The group patterns alone give `o`, or undefined when no pattern decides it.
+function byPattern(v, o) {
+  const d = decide(v, o, true, false);
+  return d.from ? d.gid : undefined;
+}
 
 // The original element a display node stands for when it is assigned (types/members move with their file).
 function assignTarget(n) {
@@ -402,6 +443,19 @@ function assign(okey, gid) {
   delete v.assign[okey];
   if ((gid || null) !== inherited(v, o)) v.assign[okey] = gid || '';
   saveViews();
+  rebuildAt(o);
+}
+
+// Drops the manual assignment of an element, so its pattern assignment (or its parent's group) applies again.
+function unassignManual(okey) {
+  const v = curView(), o = D.byOKey.get(okey);
+  if (!v || !o) return;
+  delete v.assign[okey];
+  saveViews();
+  rebuildAt(o);
+}
+
+function rebuildAt(o) {
   build();
   const d = findDisplay(o);
   if (d) for (const a of d.anc.slice(0, -1)) st.expanded.add(a.key);
@@ -417,7 +471,7 @@ function findDisplay(o) {
 // then everything not assigned, in its physical structure.
 function build() {
   gen++;
-  const v = curView(), asg = v ? v.assign : {};
+  const v = curView();
   const mk = o => Object.assign({ children: [], parent: null, line: 0, loc0: 0, test0: false, path: '', v: '', st: false, clone: true }, o);
   const groups = v ? v.groups.map(g => mk({ key: 'G:' + g.id, n: g.name, k: 'group', q: g.name, gid: g.id, color: g.color, clone: false })) : [];
   const gById = new Map(groups.map(g => [g.gid, g]));
@@ -432,8 +486,8 @@ function build() {
   const top = [], clones = new Map();
   for (const n of D.nodes) if (!CONTAINER.has(n.k)) { n.parent = n.op; n.children = n.oc.slice(); }
   const eff = n => {
-    for (let a = n; a; a = a.op) if (hasOwn(asg, a.okey)) return asg[a.okey] ? gById.get(asg[a.okey]) || null : null;
-    return null;
+    const d = v ? decide(v, n).gid : null;
+    return d ? gById.get(d) || null : null;
   };
   const container = (o, G) => {
     const key = (G ? G.key : '') + '/' + o.okey;
@@ -451,7 +505,8 @@ function build() {
   const compact = n => {
     while (n.k === 'package' && n.children.length === 1 && n.children[0].k === 'package') {
       const c = n.children[0];
-      n.n += (c.origin.sep || '.') + c.n; n.q = c.q;   // folder packages (TS, Dart) join with '/' n.origin = c.origin; n.origins.push(c.origin);
+      n.n += (c.origin.sep || '.') + c.n; n.q = c.q;   // folder packages (TS, Dart) join with '/'
+      n.origin = c.origin; n.origins.push(c.origin);
       n.children = c.children; n.children.forEach(g => g.parent = n);
     }
     if (n.clone || n.k === 'group') n.children.forEach(compact);
@@ -566,6 +621,15 @@ function analyze() {
   };
   M.sorted = proc(null, M.roots);
   for (const e of active) e.cyc = !e.nest && e.a.scc === e.b.scc;
+  // Rule violations the scanner found for this view, per edge (spec/wiki/functional-requirements/FR-042-mark-arcs-that-violate-a-rule.md).
+  const cv = curView(), vmap = new Map();
+  if (cv && Array.isArray(cv.violations))
+    for (const x of cv.violations) for (const [f, t] of x.edges || []) {
+      const k = f + '>' + t;
+      let l = vmap.get(k); if (!l) vmap.set(k, l = []);
+      if (!l.some(y => y.rule === x.rule)) l.push(x);
+    }
+  for (const e of active) e.viol = vmap.size ? vmap.get(e.f.i + '>' + e.t.i) || null : null;
 
   const vis = M.nodes.filter(n => !n.hid && !n.ext);
   const count = f => vis.filter(f).length;
@@ -603,8 +667,9 @@ function computeArcs() {
     if (!rf || !rt || rf === rt) continue;
     const id = rf.row * rows.length + rt.row;
     let a = map.get(id);
-    if (!a) map.set(id, a = { key: rf.key + '>' + rt.key, from: rf, to: rt, count: 0, edges: [], cyc: false, nest: e.nest });
+    if (!a) map.set(id, a = { key: rf.key + '>' + rt.key, from: rf, to: rt, count: 0, edges: [], cyc: false, nest: e.nest, viol: null });
     a.count += e.c; a.edges.push(e); a.cyc = a.cyc || e.cyc;
+    if (e.viol) for (const x of e.viol) { if (!a.viol) a.viol = []; if (!a.viol.includes(x)) a.viol.push(x); }
   }
   return [...map.values()];
 }
@@ -668,7 +733,8 @@ function draw() {
   for (const a of arcs) { a.lo = Math.min(a.from.row, a.to.row); a.hi = Math.max(a.from.row, a.to.row); }
   arcs.sort((a, b) => (b.hi - b.lo) - (a.hi - a.lo)); // long arcs below short ones
   arcs.forEach((a, i) => {
-    a.cls = a.nest ? 'nest' : a.cyc && a.to.row < a.from.row ? 'cyc' : a.to.row < a.from.row ? 'up' : 'down';
+    const up = a.to.row < a.from.row, err = !!a.viol && a.viol.some(x => x.severity !== 'warning');
+    a.cls = a.nest ? 'nest' : a.cyc && up ? 'cyc' : up ? 'up' : err ? 'viol' : 'down';
     add(a.from, i); add(a.to, i);
   });
   svg.setAttribute('width', width);
@@ -686,7 +752,7 @@ function draw() {
 
 // Only the rows around the visible part of the scroll area, and the arcs that pass through them,
 // are in the DOM. Re-rendered when the visible part gets within one screen of the window's edge.
-const MARKERS = `<defs>${['down', 'up', 'cyc', 'nest'].map(c => `<marker id="m-${c}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0L10,5L0,10z" style="fill:var(--${c})"/></marker>`).join('')}</defs>`;
+const MARKERS = `<defs>${['down', 'up', 'cyc', 'nest', 'viol'].map(c => `<marker id="m-${c}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0L10,5L0,10z" style="fill:var(--${c === 'viol' ? 'up' : c})"/></marker>`).join('')}</defs>`;
 function renderWindow(force) {
   if (!M || !geo) return;
   const screen = Math.max(1, Math.ceil(view.clientHeight / H));
@@ -770,10 +836,15 @@ function groupList(edges, side) {
 function groupSelect(n) {
   const v = curView(), o = assignTarget(n);
   if (!v || !o) return '';
-  let cur = null;
-  for (let a = o; a; a = a.op) if (hasOwn(v.assign, a.okey)) { cur = v.assign[a.okey] || null; break; }
+  const d = decide(v, o), pat = byPattern(v, d.at || o);
   const what = o === n || (n.origins && n.origins.includes(o)) ? '' : ` <span class="sub">(${esc(o.n)})</span>`;
-  return `<span>Group</span><span><select data-assign="${esc(o.okey)}">${groupOptions(v, cur)}</select>${what}</span>`;
+  let how = '';
+  if (d.from === 'match') how = ' <span class="sub how">by pattern</span>';
+  else if (d.from === 'manual' && pat !== undefined && pat !== d.gid) {
+    how = ' <span class="sub how">manual (overrides pattern)</span>';
+    if (d.at === o) how += ` <button class="x" data-unmanual="${esc(o.okey)}" title="Remove the manual assignment, so the pattern applies again">✕</button>`;
+  }
+  return `<span>Group</span><span><select data-assign="${esc(o.okey)}">${groupOptions(v, d.gid)}</select>${what}${how}</span>`;
 }
 
 // <option>s for all groups of a view as full paths ("Core › Domain"), optionally leaving out a subtree.
@@ -790,6 +861,7 @@ function showPanel() {
     const a = st.selArc;
     pbody.innerHTML = `<h2>${icon(a.from)}${esc(a.from.n)}</h2><div class="sub" style="margin:2px 0 2px 22px">depends on</div><h2>${icon(a.to)}${esc(a.to.n)}</h2>` +
       `<div class="kv"><span>References</span><span>${a.count}</span>${a.cyc ? '<span>Cycle</span><span style="color:var(--cyc)">yes — the two sides depend on each other</span>' : ''}</div>` +
+      (a.viol ? `<h3>Rule violations</h3><ul style="padding-left:0">${a.viol.map(x => `<li class="viol"><b>${esc(x.rule)}</b> · ${esc(x.severity || 'error')} · ${x.exact === false ? 'by name' : 'exact'}</li>`).join('')}</ul>` : '') +
       `<h3>Dependencies</h3><ul style="padding-left:0">${a.edges.slice(0, 500).map(edgeLi).join('')}</ul>`;
     return;
   }
@@ -800,6 +872,7 @@ function showPanel() {
       <i style="border-color:var(--down)"></i><span>Downward dependency (left side)</span>
       <i style="border-color:var(--up)"></i><span>Upward dependency (right side)</span>
       <i style="border-color:var(--cyc)"></i><span>Upward dependency that closes a cycle</span>
+      ${v && v.violations && v.violations.length ? '<i style="border-color:var(--up)"></i><span>Dependency that breaks a rule (also on the left side)</span>' : ''}
       <i style="border-color:var(--nest);border-top-style:dashed"></i><span>Dependency on own parent (“Parent deps”)</span></div>
       <div class="help"><h3>Groups &amp; views</h3>
       ${v ? `<p>You are in the view <b>${esc(v.name)}</b>. Drag packages, files or modules onto a group row (or pick a group in the details of a selected element). Assigning a package moves everything inside it; a more specific assignment wins. Drag something back onto an ungrouped row to remove it from its group.</p>
@@ -837,9 +910,13 @@ function showPanel() {
     const v = curView(), g = v.groups.find(x => x.id === n.gid);
     gs = `<span>Parent</span><span><select data-parent="${esc(n.gid)}">${groupOptions(v, g.parent || null, n.gid)}</select></span>`;
   }
+  // no-ungrouped violations name the element itself (spec/wiki/functional-requirements/FR-040-show-rule-violations-in-the-viewer.md).
+  const cv = curView(), okeys = (n.origins || [n]).map(o => o.okey).filter(Boolean);
+  const own = cv && Array.isArray(cv.violations) ? cv.violations.filter(x => Array.isArray(x.keys) && x.keys.some(k => okeys.includes(k))) : [];
   pbody.innerHTML = `<h2>${icon(n)}${esc(n.n)}${n.cyc ? '<span class="badge">cycle</span>' : ''}</h2>` +
     (n.q !== n.n ? `<div class="sub">${esc(n.q)}</div>` : '') +
     `<div class="kv">${kv.map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join('')}${gs}</div>` + extra +
+    (own.length ? `<h3>Rule violations</h3><ul style="padding-left:0">${own.map(x => `<li class="viol"><b>${esc(x.rule)}</b> · ${esc(x.severity || 'error')} · in no group</li>`).join('')}</ul>` : '') +
     (cycWith.length ? `<h3 style="color:var(--cyc)">In a cycle with</h3><ul style="padding-left:0">${cycWith.map(x => `<li data-k="${esc(x.key)}">${icon(x)}${esc(x.n)}</li>`).join('')}</ul>` : '') +
     `<h3>Depends on (${sum(out)})</h3>${groupList(out, 'out')}` +
     `<h3>Used by (${sum(inc)})</h3>${groupList(inc, 'in')}`;
@@ -972,6 +1049,8 @@ svg.addEventListener('click', ev => {
 pbody.addEventListener('click', ev => {
   const x = ev.target.closest('[data-unassign]');
   if (x) { assign(x.dataset.unassign, null); return; }
+  const u = ev.target.closest('[data-unmanual]');
+  if (u) { unassignManual(u.dataset.unmanual); return; }
   const li = ev.target.closest('li'); if (!li) return;
   let n = null;
   if (li.dataset.k) n = M.byKey.get(li.dataset.k);
@@ -1030,7 +1109,10 @@ $('#viewMenu').addEventListener('click', ev => {
       if (confirm(`Delete view "${v.name}" with ${v.groups.length} group(s)?`)) { V.views = V.views.filter(x => x !== v); switchView(null); }
       break;
     case 'export': {
-      const blob = new Blob([JSON.stringify({ views: V.views }, null, 2)], { type: 'application/json' });
+      // Resolved pattern assignments and violations are the scanner's, not part of the file
+      // (spec/wiki/functional-requirements/FR-043-keep-rules-and-patterns-on-export.md).
+      const views = V.views.map(scanFree);
+      const blob = new Blob([JSON.stringify(V.version != null ? { version: V.version, views } : { views }, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = D.title.replace(/[^\w.-]+/g, '_') + '-views.json';
@@ -1051,7 +1133,7 @@ $('#viewFile').addEventListener('change', ev => {
       const views = Array.isArray(data) ? data : data.views;
       if (!Array.isArray(views)) throw new Error('no "views" array');
       for (const v of views) {
-        v.groups = v.groups || []; v.assign = v.assign || {};
+        v.groups = v.groups || []; v.assign = v.assign || {}; v.matched = v.matched || {};
         V.views = V.views.filter(x => x.id !== v.id).concat(v);
       }
       if (views.length) switchView(views[0].id);

@@ -23,7 +23,7 @@ superseded-by:
 
 ## Purpose / Responsibility
 
-Part of the core that loads the architecture file ([[FR-026-read-the-architecture-file]], built), matches selectors against the model ([[FR-027-select-code-by-patterns]], built), decides each element's group and reports overlapping patterns ([[FR-028-decide-each-elements-group-by-precedence]], built) and, planned, evaluates the rules on the model, applies the baseline and formats violations as text or JSON.
+Part of the core that loads the architecture file ([[FR-026-read-the-architecture-file]], built), matches selectors against the model ([[FR-027-select-code-by-patterns]], built), decides each element's group and reports overlapping patterns ([[FR-028-decide-each-elements-group-by-precedence]], built), evaluates the rules on the model ([[FR-029-check-the-code-against-architecture-rules]], built), and applies the baseline and formats violations as text or JSON ([[FR-035-run-the-check-from-the-command-line-and-in-ci]], built). `Rules.java` checks, `Report.java` writes the reports and the resolved views for the viewer.
 
 ## Interfaces
 

@@ -143,10 +143,48 @@ final class Model {
         return sb.append('"').toString();
     }
 
+    /** The model as {@link Json#parse} would read {@link #toJson}'s output, for {@code check} without a round trip. */
+    static Map<String, Object> toMap(String title, String generated, Collection<Edge> edges, int errors) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("title", title);
+        m.put("generated", generated);
+        m.put("errors", (double) errors);
+        m.put("edgeKinds", new ArrayList<Object>(EDGE_KINDS));
+        List<Object> ns = new ArrayList<>(nodes.size());
+        for (Node n : nodes) {
+            Map<String, Object> o = new LinkedHashMap<>();
+            o.put("n", n.name);
+            o.put("k", n.kind);
+            if (n.parent >= 0) o.put("p", (double) n.parent);
+            if (n.line > 0) o.put("l", (double) n.line);
+            if (n.loc > 0) o.put("loc", (double) n.loc);
+            if (n.test) o.put("t", 1.0);
+            if (n.isStatic) o.put("s", 1.0);
+            if (n.vis != null) o.put("v", n.vis);
+            if (n.q != null && !n.q.equals(n.name)) o.put("q", n.q);
+            if (n.path != null) o.put("path", n.path);
+            if (n.sep != null) o.put("sep", n.sep);
+            ns.add(o);
+        }
+        m.put("nodes", ns);
+        List<Object> es = new ArrayList<>(edges.size());
+        for (Edge e : edges) {
+            List<Object> ls = new ArrayList<>(e.lines.size());
+            for (int l : e.lines) ls.add((double) l);
+            es.add(new ArrayList<Object>(List.of((double) e.from, (double) e.to, (double) e.kind, (double) e.count, ls)));
+        }
+        m.put("edges", es);
+        return m;
+    }
+
     static String toJson(String title, Collection<Edge> edges, int errors) {
+        return toJson(title, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")), edges, errors);
+    }
+
+    static String toJson(String title, String generated, Collection<Edge> edges, int errors) {
         StringBuilder sb = new StringBuilder();
         sb.append("{\"title\":").append(js(title))
-                .append(",\"generated\":").append(js(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))))
+                .append(",\"generated\":").append(js(generated))
                 .append(",\"errors\":").append(errors)
                 .append(",\"edgeKinds\":[").append(EDGE_KINDS.stream().map(Model::js).collect(Collectors.joining(","))).append("]")
                 .append(",\"nodes\":[");
