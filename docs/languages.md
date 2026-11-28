@@ -8,7 +8,7 @@ tooling allows; the [requirements wiki](../spec/) has the details and known limi
 | Java | JDK compiler (`javac` Trees API): parses and attributes | Exact: overloads, inherited members, static imports… | JDK 17+ |
 | Kotlin (`.kt`) | Built-in parser, references resolved by name | Approximate (see below) | JDK 17+ |
 | TypeScript / JavaScript | TypeScript compiler API and type checker | Exact: imports, re-exports, default exports | Node.js 18+ |
-| Dart (incl. Flutter) | Official Dart analyzer | Exact | Dart SDK 3.x |
+| Dart (incl. Flutter) | Official Dart analyzer | Exact | Dart SDK 3.11+ |
 
 ## Java
 

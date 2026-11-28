@@ -42,6 +42,11 @@ if not sources:
     c.analysis("typescript", ["@acme/app", "@acme/core"], "typescript", True, "depviewer-typescript-extractor")
     check(len(c.data.get("analysis") or []) == 1, "one extractor run, one analysis entry")
 else:
+    for a in c.data.get("analysis") or []:   # every entry is complete and names the same toolchain
+        x = a.get("extractor") or {}
+        check(a.get("language") == "typescript" and a.get("tool") == "typescript" and a.get("exact") is True
+              and a.get("version") == "5.9.3" and x.get("name") == "depviewer-typescript-extractor" and x.get("version"),
+              f"analysis entry incomplete: {a}")
     got = {m: a.get("source") for a in c.data.get("analysis") or [] for m in a.get("modules", [])}
     check(got == sources, f"analysis sources: expected {sources}, got {got}")
     check(len(c.data["analysis"]) == len(set(sources.values())), "one analysis entry per source")

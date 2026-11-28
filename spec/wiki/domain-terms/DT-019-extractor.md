@@ -20,7 +20,7 @@ relationships: []
 
 # Extractor
 
-**Definition.** A separate process that analyses the languages of one ecosystem and prints one fragment, run once per scan.
+**Definition.** A separate process that analyses the languages of one ecosystem and prints one fragment, run once per scan and chosen toolchain.
 
 **In context.** Today TypeScript and Dart. Java and Kotlin follow in the `jvm` extractor ([[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]).
 

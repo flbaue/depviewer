@@ -13,7 +13,7 @@ parent:
 hosts: ["[[BB-001-depviewer-wrapper-script]]"]
 connects:
   - {to: "[[DN-005-web-browser]]", protocol: "file://", note: opens the written HTML}
-technology: "JDK 17+, optional Node.js 18+ and Dart SDK 3.x"
+technology: "JDK 17+, optional Node.js 18+ and Dart SDK 3.11+"
 drivers: ["[[QR-005-java-projects-scan-with-nothing-but-a-jdk]]"]
 decisions: []
 state: current

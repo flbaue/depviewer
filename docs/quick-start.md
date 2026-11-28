@@ -6,7 +6,7 @@ From zero to "where are the cycles in my code?" in about five minutes. The refer
 ## 1. What you need
 
 - **JDK 17 or newer** (`java -version`). That is all for Java and Kotlin projects.
-- **Node.js 18+** for TypeScript/JavaScript, **Dart SDK 3.x** (or Flutter) for Dart. Languages
+- **Node.js 18+** for TypeScript/JavaScript, **Dart SDK 3.11+** (or Flutter) for Dart. Languages
   whose toolchain is missing are skipped with a note, so a mixed repository still works.
 - A browser. The viewer is a single HTML file that works offline.
 

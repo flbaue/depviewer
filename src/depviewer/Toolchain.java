@@ -106,7 +106,9 @@ final class Toolchain {
         // One log line and provenance entry per source, so each module's source is recorded (spec FR-011).
         Map<String, List<Module>> bySource = new LinkedHashMap<>();
         for (Map.Entry<Module, Choice> e : chosen.entrySet()) bySource.computeIfAbsent(e.getValue().source, k -> new ArrayList<>()).add(e.getKey());
-        for (List<Module> ms : bySource.values()) System.err.printf("%s: %s for %s%n", label, chosen.get(ms.get(0)), names(ms));
+        Map<String, List<Module>> byPlace = new LinkedHashMap<>();   // the log names each place the toolchain was found
+        for (Map.Entry<Module, Choice> e : chosen.entrySet()) byPlace.computeIfAbsent(e.getValue().toString(), k -> new ArrayList<>()).add(e.getKey());
+        for (Map.Entry<String, List<Module>> e : byPlace.entrySet()) System.err.printf("%s: %s for %s%n", label, e.getKey(), names(e.getValue()));
         String names = names(run);
         Path input = Files.createTempFile("depviewer-" + language, ".json");
         try {
@@ -179,7 +181,7 @@ final class Toolchain {
                     label, tool, t.get("version"), where, t.get("range"));
         }
         System.err.printf("%s: skipped %s - no supported %s found (%s).%n", label, m.name, tool,
-                language.equals("dart") ? "install Dart 3 or set DEPVIEWER_DART" : "add typescript to the project or set DEPVIEWER_TYPESCRIPT");
+                language.equals("dart") ? "install Dart 3.11 or later or set DEPVIEWER_DART" : "add typescript to the project or set DEPVIEWER_TYPESCRIPT");
         return null;
     }
 

@@ -84,7 +84,11 @@ if [ -n "$HAVE_TS" ]; then
   done
   ./depviewer -o "$M.json" "$M" 2> "$M.log" || { cat "$M.log"; fail "pnpm monorepo scan failed"; }
   python3 -I test/checks/typescript_mono.py "$M.json"
-  grep -q "^TypeScript/JavaScript: typescript 5.9.3 (project: .*) for @acme/app, @acme/core$" "$M.log" || { cat "$M.log"; fail "expected one run for both pnpm packages"; }
+  # One run: typescript_mono.py found the links between the packages and one analysis entry for both.
+  for p in app core; do
+    grep -qxF "TypeScript/JavaScript: typescript 5.9.3 (project: $(pwd -P)/$M/packages/$p/node_modules/typescript) for @acme/$p" "$M.log" \
+      || { cat "$M.log"; fail "pnpm: the log does not name the TypeScript of @acme/$p"; }
+  done
   # One package has its own TypeScript, the other finds the same one through the PATH: one run,
   # and each package's source is recorded (spec/wiki/functional-requirements/FR-011-record-the-provenance-of-every-language-and-module.md).
   M="$OUT/fixture-ts-mixed"; rm -rf "$M" "$M-bin" && cp -R "$OUT/fixture-ts-mono" "$M" && mkdir -p "$M/packages/core/node_modules" "$M-bin"
@@ -92,6 +96,11 @@ if [ -n "$HAVE_TS" ]; then
   ln -s "$(pwd -P)/extractors/typescript/node_modules/typescript/bin/tsc" "$M-bin/tsc"
   PATH="$(pwd -P)/$M-bin:$PATH" ./depviewer -o "$M.json" "$M" 2> "$M.log" || { cat "$M.log"; fail "mixed monorepo scan failed"; }
   python3 -I test/checks/typescript_mono.py "$M.json" @acme/app=path @acme/core=project
+  for want in "typescript 5.9.3 (path: $(pwd -P)/extractors/typescript/node_modules/typescript) for @acme/app" \
+              "typescript 5.9.3 (project: $(pwd -P)/$M/packages/core/node_modules/typescript) for @acme/core"; do
+    grep -qxF "TypeScript/JavaScript: $want" "$M.log" || { cat "$M.log"; fail "mixed monorepo: log lacks '$want'"; }
+  done
+  [ "$(grep -c "^typescript\|^TypeScript/JavaScript: typescript" "$M.log")" = 2 ] || { cat "$M.log"; fail "mixed monorepo: expected two log lines"; }
 else
   echo "skipped: node not installed (set DEPVIEWER_NODE)"
 fi

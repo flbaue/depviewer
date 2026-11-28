@@ -215,3 +215,6 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
   - `check.sh` checks that `npm ci` does not run when the project has a supported TypeScript, with a depviewer home that has no pinned copy.
   - Stale text in [[BB-009-typescript-extractor]], [[BB-010-dart-extractor]], [[RS-001-scan-a-mixed-repository-into-one-viewer-file]] and `docs/languages.md`: runs are per toolchain, not per scan.
 - Not changed: [[FR-006-analyse-dart-with-the-dart-analyzer]] says all packages of a scan run together, which holds when they use one Dart SDK; it is delivered requirement text, which the maintainer changes, like the FR-005 and FR-012 points above.
+
+## [2026-11-28] review | m2-extractor-contract, third fresh session
+- Third review in a fresh session found no bug in the fixes. Fixed what it found besides: the Dart minimum reads 3.11 in the skip note, `docs/languages.md`, `docs/quick-start.md`, [[DN-001-developer-machine]], [[DN-004-dart-process]] and [[EIF-004-dart-sdk-with-the-dart-analyzer]]; [[CC-002-extractor-contract]] and [[DT-019-extractor]] say one run per scan and chosen toolchain; the log names every place a shared toolchain was found; `check.sh` checks the log lines and every field of each `analysis` entry in the mixed monorepo case. No behaviour of the model changed, so no further review round.

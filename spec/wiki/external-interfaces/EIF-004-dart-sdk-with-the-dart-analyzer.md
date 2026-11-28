@@ -8,7 +8,7 @@ updated: 2026-11-28
 sources: ["[[SRC-014-spec-dart-support]]", "[[SRC-009-supported-languages]]"]
 related: ["[[CTX-001-depviewer-context]]"]
 tags: [external-interface]
-partner: "Dart SDK 3.x and package:analyzer"
+partner: "Dart SDK 3.11+ and package:analyzer"
 tier:
 short_title: Dart SDK
 flows:
