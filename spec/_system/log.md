@@ -253,3 +253,11 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
   - `contract.py` reports a fragment that is not an object instead of crashing. The fake extractor checks in `check.sh` delete their output first, so a stale file cannot pass them.
   - Tests: a stand-in jvm extractor (`test/checks/fakejvm/`) first on the classpath covers no supported JDK, another contract at `--describe` and in the fragment, a fragment that is not an object and a broken one, each with the scan's exit 1, `check`'s exit 2 and no model; a fake TypeScript fragment with valid nodes and a broken edge leaves nothing behind. The last failed on the previous commit.
 - For the maintainer: [[FR-007-skip-a-language-whose-toolchain-is-missing]] says a missing toolchain "is never a scan failure", and [[FR-010-choose-the-toolchain-in-a-fixed-order]] skips the language when no candidate is supported. Both now have an exception for Java and Kotlin, stated in [[CC-002-extractor-contract]]. They are delivered requirement text, so they are left for the maintainer to amend.
+
+## [2026-11-28] review | the fixes above, third fresh session
+- Review in a fresh session of the fixes above. Fixed:
+  - A fragment with an explicit `null` list (`edges: null`) passed the whole-fragment check and was still partly merged; a list that is present must be a list.
+  - Accepting a JRE (no `javac`) let it be chosen for Java sources, and the scan then stopped instead of trying the next JDK. A JRE is unsupported again, so the next candidate is used; a Kotlin-only scan on a JRE is not supported, as `--describe` does not know the files. The extractor's own errors no longer print a stack trace.
+  - [[CC-002-extractor-contract]] names exactly which fragments are unreadable and that a node without a name or a file without a path is dropped.
+  - Tests: heap and stack options reaching the jvm extractor (a logging `DEPVIEWER_JAVA`), a JRE in `DEPVIEWER_JAVA` (built with `jlink` when the JDK has jmods), a fragment with a `null` list, the partial-merge case now also requires the model to exist, and the stand-in jvm cases check the reason in `check`'s output too. The reviewer reproduced the first two bugs on the previous commit.
+- The fixture and okhttp are still identical to the scanner before the migration. The fixes after this review do not change the model, so no further review round.

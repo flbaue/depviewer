@@ -43,21 +43,32 @@ final class JvmExtractor {
             System.err.println("java: usage: JvmExtractor <request.json> | --describe <source>");
             System.exit(2);
         }
-        String fragment = run((Map<?, ?>) Json.parse(Files.readString(Path.of(args[0]))));
+        String fragment;
+        try {
+            fragment = run((Map<?, ?>) Json.parse(Files.readString(Path.of(args[0]))));
+        } catch (DepScan.Failed e) {   // e.g. no Java compiler: a note for the core's log, not a stack trace
+            System.err.println("java: " + e.getMessage());
+            System.exit(1);
+            return;
+        }
         System.out.write(fragment.getBytes(StandardCharsets.UTF_8));
         System.out.flush();
     }
 
     static Map<String, Object> describe(String source) {
         int feature = Runtime.version().feature();
+        // A JRE has no javac. It could read Kotlin, but --describe does not know the files, so the
+        // next candidate (a JDK) is tried instead.
+        boolean compiler = javax.tools.ToolProvider.getSystemJavaCompiler() != null;
         Map<String, Object> t = new LinkedHashMap<>();
         t.put("tool", "java");
         t.put("version", System.getProperty("java.version"));
         t.put("source", source);
         t.put("path", Path.of(System.getProperty("java.home"), "bin", "java").toString());
-        t.put("supported", feature >= MIN_JAVA);   // a JRE suffices for Kotlin; Java files need a JDK, JavaScanner says so
+        t.put("supported", feature >= MIN_JAVA && compiler);
         t.put("range", ">=" + MIN_JAVA + " (a JDK)");
         if (feature < MIN_JAVA) t.put("problem", "version not supported");
+        else if (!compiler) t.put("problem", "a JRE without the Java compiler");
         Map<String, Object> d = new LinkedHashMap<>();
         d.put("name", NAME);
         d.put("version", VERSION);

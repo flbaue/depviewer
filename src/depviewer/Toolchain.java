@@ -168,8 +168,8 @@ final class Toolchain {
     /** Why a fragment cannot be merged as `merge` reads it, or null: its lists must hold objects, lines numbers. */
     static String invalid(Map<?, ?> frag) {
         for (String list : List.of("packages", "nodes", "externals", "edges")) {
+            if (!frag.containsKey(list)) continue;
             Object v = frag.get(list);
-            if (v == null) continue;
             if (!(v instanceof List)) return "\"" + list + "\" is not a list";
             for (Object o : (List<?>) v) {
                 if (!(o instanceof Map)) return "\"" + list + "\" holds " + (o == null ? "null" : Json.write(o));

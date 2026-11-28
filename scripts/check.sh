@@ -92,8 +92,25 @@ for c in "unsupported:no supported JDK found for fixture" "describe2:the extract
   FAKE_JVM=$mode "$J" -cp "$OUT/fakejvm:$OUT/classes" depviewer.DepScan check --rules test/fixture-architecture.json test/fixture > "$OUT/fakejvm-check.log" 2>&1; chk=$?
   set -e
   [ "$scan" = 1 ] && [ "$chk" = 2 ] && [ ! -e "$OUT/fakejvm.json" ] || { cat "$OUT/fakejvm.log" "$OUT/fakejvm-check.log"; fail "jvm $mode: scan exit $scan, check exit $chk, expected 1 and 2 with no model"; }
-  grep -qF "Java/Kotlin: $text" "$OUT/fakejvm.log" || { cat "$OUT/fakejvm.log"; fail "jvm $mode: log lacks '$text'"; }
+  grep -qF "Java/Kotlin: $text" "$OUT/fakejvm.log" && grep -qF "Java/Kotlin: $text" "$OUT/fakejvm-check.log" \
+    || { cat "$OUT/fakejvm.log" "$OUT/fakejvm-check.log"; fail "jvm $mode: scan or check log lacks '$text'"; }
 done
+# The heap and stack options of depviewer's JVM reach the jvm extractor: a DEPVIEWER_JAVA that logs its arguments.
+printf '#!/bin/sh\necho "$@" >> "%s"\nexec "%s" "$@"\n' "$(pwd -P)/$OUT/java-args.log" "$J" > "$OUT/logjava" && chmod +x "$OUT/logjava"
+rm -f "$OUT/java-args.log"
+DEPVIEWER_JAVA="$(pwd -P)/$OUT/logjava" "$J" -Xmx300m -Xss4m -cp "$OUT/classes" depviewer.DepScan --template viewer.html -o "$OUT/fixture-heap.json" test/fixture > "$OUT/fixture-heap.log" 2>&1 \
+  || { cat "$OUT/fixture-heap.log"; fail "scan with heap options failed"; }
+grep -q -- "-Xmx300m -Xss4m -cp .* depviewer.JvmExtractor [^-]" "$OUT/java-args.log" || { cat "$OUT/java-args.log"; fail "heap options did not reach the jvm extractor"; }
+# A JRE cannot compile Java: it is reported as not supported and the next JDK is used.
+if command -v jlink >/dev/null 2>&1 && [ -d "$(dirname "$(dirname "$(readlink -f "$J")")")/jmods" ]; then
+  [ -x "$OUT/jre/bin/java" ] || { rm -rf "$OUT/jre"; jlink --add-modules java.se --output "$OUT/jre" >/dev/null; }
+  DEPVIEWER_JAVA="$(pwd -P)/$OUT/jre/bin/java" ./depviewer -o "$OUT/fixture-jre.json" test/fixture > "$OUT/fixture-jre.log" 2>&1 \
+    || { cat "$OUT/fixture-jre.log"; fail "a JRE in DEPVIEWER_JAVA stopped the scan"; }
+  grep -q "^Java/Kotlin: JDK [0-9.]* (override: .*) is not supported" "$OUT/fixture-jre.log" || { cat "$OUT/fixture-jre.log"; fail "the JRE is not reported"; }
+  python3 -I test/checks/jvm.py "$OUT/fixture-jre.json" >/dev/null
+else
+  echo "JRE case skipped: no jlink or jmods"
+fi
 
 step "TypeScript/JavaScript (spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md)"
 NODE_BIN=${DEPVIEWER_NODE:-node}
@@ -268,8 +285,8 @@ if [ -n "$HAVE_TS" ]; then
   cat > "$H/extractors/typescript/extract.mjs" <<'JS'
 const v = +(process.env.FAKE_CONTRACT || 1), describe = process.argv[2] === "--describe";
 if (!describe && process.env.FAKE_NULL) { console.log("null"); process.exit(0); }
-if (!describe && process.env.FAKE_PARTIAL) {   // valid nodes, then an edge that is no object
-  console.log(JSON.stringify({ contract: 1, language: "typescript", errors: 0, externals: [], edges: ["oops"],
+if (!describe && process.env.FAKE_PARTIAL) {   // valid nodes, then edges that are broken or null
+  console.log(JSON.stringify({ contract: 1, language: "typescript", errors: 0, externals: [], edges: process.env.FAKE_PARTIAL === "null" ? null : ["oops"],
     nodes: [{ id: "f", kind: "file", path: "src/model/cart.ts", package: "src/model", loc: 9 },
             { id: "g", kind: "class", name: "Ghost", parent: "f", line: 1, loc: 1 }] }));
   process.exit(0);
@@ -287,10 +304,12 @@ JS
   fake FAKE_NULL=1   # a fragment that is no object skips the run, it does not stop the scan
   grep -q "^TypeScript/JavaScript: the extractor printed no fragment for shop-web, skipped$" "$C/fake.log" && [ -s "$C/fake.json" ] \
     || { cat "$C/fake.log"; fail "a fragment that is no object was not skipped"; }
-  fake FAKE_PARTIAL=1   # a broken fragment leaves nothing behind, not even its valid nodes
-  grep -q "^TypeScript/JavaScript: the extractor printed a broken fragment for shop-web (.*), skipped$" "$C/fake.log" \
-    || { cat "$C/fake.log"; fail "a broken fragment was not skipped"; }
-  grep -q '"Ghost"' "$C/fake.json" && fail "a skipped fragment left nodes in the model"
+  for partial in list null; do   # a broken fragment leaves nothing behind, not even its valid nodes
+    fake FAKE_PARTIAL=$partial
+    grep -q "^TypeScript/JavaScript: the extractor printed a broken fragment for shop-web (.*), skipped$" "$C/fake.log" && [ -s "$C/fake.json" ] \
+      || { cat "$C/fake.log"; fail "a broken fragment ($partial) was not skipped"; }
+    if grep -q '"Ghost"' "$C/fake.json"; then fail "a skipped fragment ($partial) left nodes in the model"; fi
+  done
   fake FAKE_DESCRIBE=1
   grep -q "^TypeScript/JavaScript: extractor fake 0 speaks contract 2, this depviewer speaks contract 1; skipped$" "$C/fake.log" \
     || { cat "$C/fake.log"; fail "an extractor of contract 2 was not rejected"; }
