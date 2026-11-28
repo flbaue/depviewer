@@ -148,18 +148,18 @@ never block or silently rewrite. The human decides.
 ## Commit policy
 
 Every change goes on a feature branch and into a PR, wiki changes included. The
-human merges; you never merge your own PR. The `status` field still carries a
+human merges. You never merge your own PR. The `status` field still carries a
 page's maturity, so a merge to `main` does not mean "agreed". Keep one commit
 per capture or inspect run, with a message naming it, so `git revert` stays
-clean; the `_system/log.md` entry is the review trail.
+clean. The `_system/log.md` entry is the review trail.
 
 | Change | Delivery |
 |--------|----------|
 | New or edited `wiki/` pages at `draft` or `review`, raising or resolving an Issue | PR |
-| Promoting a page to `accepted`, or demoting to `deprecated` | PR; only the human promotes |
+| Promoting a page to `accepted`, or demoting to `deprecated` | PR, and only the human promotes |
 | Substantive edit to an `accepted` page | Set it back to `review`, in a PR |
 | `AGENTS.md`, `CLAUDE.md`, `.agents/skills/`, `_templates/`, `_system/` (workflows, anchors, scripts, apps) | PR |
-| `raw/` | Human-owned; the human adds sources, and a capture PR may carry the source it captures |
+| `raw/` | Human-owned. The human adds sources, and a capture PR may carry the source it captures |
 
 Review of `draft` content happens in the grilling passes, by status promotion
 and in the PR. Anything that reads `main` (reports, exports) must filter on `status`.

@@ -13,7 +13,7 @@ no frameworks** — a JDK 17+ and a browser are all a user needs.
 | File | Role |
 |---|---|
 | `src/depviewer/` | Scanner (Java 17, JDK only, package `depviewer`). `DepScan` = CLI, source discovery, orchestration, output; `Model` = nodes/edges/packages/externals/JSON writer shared by all languages; `JavaScanner` = javac Trees API (parses *and attributes*, exact); `KotlinScanner` = built-in lexer/parser, name-based resolution ([FR-004](spec/wiki/functional-requirements/FR-004-analyse-kotlin-by-name.md)); `Toolchain` = runs a language extractor and merges its JSON fragment; `Json` = minimal JSON reader; `Architecture` = loads and validates the architecture file for `check` and `--views` ([FR-026](spec/wiki/functional-requirements/FR-026-read-the-architecture-file.md)) matches `match` selectors against the model's nodes ([FR-027](spec/wiki/functional-requirements/FR-027-select-code-by-patterns.md)) and decides each element's group, with overlap warnings ([FR-028](spec/wiki/functional-requirements/FR-028-decide-each-elements-group-by-precedence.md)). The `depviewer` wrapper compiles it into `build/depviewer-classes` on first use. Without the wrapper: `javac -d out src/depviewer/*.java && java -cp out depviewer.DepScan …`. |
-| `spec/` | **The spec and the backlog.** Requirements and architecture as a [systems42](https://systems42.org) wiki (req42 + arc42): goals, functional and quality requirements, constraints, building blocks, decisions (ADR 0001 is [DR-001](spec/wiki/decisions/DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract.md)) and open issues. Start here for any change. Read `spec/AGENTS.md` before you work there; its content and commit rules apply inside `spec/`, while its `capture` and `implement` workflows govern every change (see Workflow). Skills: `capture`, `grill-requirements`, `implement`, `recover`, `requirements-wiki` (linked in `.claude/skills/`). The old `docs/specs/`, `docs/adr/` and GitHub issues are archived in `spec/raw/ingested/` ([ISS-014](spec/wiki/issues/ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr.md)). |
+| `spec/` | **The spec and the backlog.** Requirements and architecture as a [systems42](https://systems42.org) wiki (req42 + arc42): goals, functional and quality requirements, constraints, building blocks, decisions (ADR 0001 is [DR-001](spec/wiki/decisions/DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract.md)) and open issues. Start here for any change. Read `spec/AGENTS.md` before you work there. Its content and commit rules apply inside `spec/`, its `capture` and `implement` workflows govern every change (see Workflow), and its [writing style](spec/_system/writing-style.md) binds all text in the repository. Skills: `capture`, `grill-requirements`, `implement`, `recover`, `requirements-wiki` (linked in `.claude/skills/`). The old `docs/specs/`, `docs/adr/` and GitHub issues are archived in `spec/raw/ingested/` ([ISS-014](spec/wiki/issues/ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr.md)). |
 | `viewer.html` | Viewer template. One self-contained HTML file with inline CSS and vanilla JS. The scanner replaces `/*DEPS_DATA*/null` with the model and `/*DEPS_VIEWS*/null` with exported views. |
 | `depviewer` | POSIX shell wrapper that passes `--template` and runs the scanner. |
 | `extractors/typescript/` | TypeScript/JavaScript extractor: `extract.mjs` on the TypeScript compiler API (Node). Pinned in `package-lock.json`. |
@@ -29,14 +29,15 @@ no frameworks** — a JDK 17+ and a browser are all a user needs.
 
 The spec in `spec/` drives every change, and its workflows are the process. Do not restate them
 here or work around them. Paths in `spec/AGENTS.md`, its workflows and its skills are relative to
-`spec/`; run their scripts from there.
+`spec/`, so run their scripts from there.
 
 Every change goes on a feature branch and into a PR that the maintainer merges, wiki changes
 included ([commit policy](spec/AGENTS.md#commit-policy)). A branch name set by your harness or a
-fork replaces `implement/<id>-<slug>`.
+fork replaces `implement/<id>-<slug>`. Outside contributors open an issue first (see
+[CONTRIBUTING.md](CONTRIBUTING.md)).
 
 - **A new idea or changed behaviour** becomes requirements with the `capture` skill
-  ([capture.md](spec/_system/workflows/capture.md); grill-gated, see
+  ([capture.md](spec/_system/workflows/capture.md), grill-gated, see
   [spec/AGENTS.md](spec/AGENTS.md)). Its source goes into `spec/raw/`, which the human owns. Write
   no code for it until the maintainer selects the requirement.
 - **Building a requirement** runs the `implement` skill
@@ -50,31 +51,31 @@ fork replaces `implement/<id>-<slug>`.
 Inside that loop, depviewer adds these rules:
 
 1. **Tests first, and watch them fail.** Turn each criterion (for a bug fix: the bug) into a
-   check — fixture code plus assertions in `test/checks/<fixture>.py` for the scanner,
+   check: fixture code plus assertions in `test/checks/<fixture>.py` for the scanner,
    `scripts/check.sh` (headless smoke test) for the viewer. Run them and confirm they fail for the
    right reason. If a test fails because the test itself was wrong, fix the test and say so in the
-   commit — do not weaken a test to make an implementation pass.
+   commit. Do not weaken a test to make an implementation pass.
 2. **Implement until green**, then run the whole `scripts/check.sh`.
 3. **Check for regressions on real code**: rescan a larger project with the previous scanner
    version (`git archive HEAD src | tar -x -C <tmp>`, compile it there) and the new one and compare
-   the JSON (ignoring `generated`); differences must be intended.
+   the JSON (ignoring `generated`). Differences must be intended.
 4. **Update the docs and the wiki**: `docs/usage.md`, `languages.md`, `viewer.md`,
    `quick-start.md` (the README only for the overview), this file if behaviour or invariants
    changed, and on the requirement pages `release` (e.g. `delivered`) and affected child
    requirements, which `implement.md` does not cover.
-5. **Review in a fresh agent session** (for AI-assisted changes) after rules 1–4 — in an
-   `implement` run after its criterion check (step 5) — and before the PR. Commit everything first,
-   so the diff below holds the whole change. Start a new session, or a subagent that does not
-   inherit your conversation (not a fork). Point it at the repository, the diff against the freshly
-   fetched base (`git fetch origin main && git diff origin/main...HEAD`; a local `main` may be
-   stale), the requirement pages if any, and this file. Do not hand it your reasoning or your
-   evidence table. Ask it for correctness bugs, broken invariants (below), criteria the change does
-   not meet, missing or weakened tests, and stale docs — not for style. Fix every finding (with a
-   test where it is a bug) or note why not, run `scripts/check.sh` again, and review again in a new
-   fresh session if the fixes changed behaviour. In an `implement` run, if a fix changes the
-   approved outcome, ask for renewed approval and update the criterion table first (`implement.md`
-   step 4). Without a way to start a fresh session, say so in the PR instead of calling your own
-   review independent.
+5. **Review in a fresh agent session** (for AI-assisted changes) after rules 1 to 4 (in an
+   `implement` run, after its criterion check in step 5) and before the PR. Commit everything
+   first, so the diff below holds the whole change. Start a new session, or a subagent that does
+   not inherit your conversation (not a fork). Point it at the repository, the diff against the
+   freshly fetched base (`git fetch origin main && git diff origin/main...HEAD`, because a local
+   `main` may be stale), the requirement pages if any, and this file. Do not hand it your reasoning
+   or your evidence table. Ask it for correctness bugs, broken invariants (below), criteria the
+   change does not meet, missing or weakened tests, and stale docs, not style. Fix every finding
+   (with a test where it is a bug) or note why not, run `scripts/check.sh` again, and review again
+   in a new fresh session if the fixes changed behaviour. In an `implement` run, if a fix changes
+   the approved outcome, ask for renewed approval and update the criterion table first
+   (`implement.md` step 4). Without a way to start a fresh session, say so in the PR instead of
+   calling your own review independent.
 
 ## How to verify your change
 
@@ -126,8 +127,8 @@ Read the accepted decision [DR-001](spec/wiki/decisions/DR-001-every-language-is
 [CC-002](spec/wiki/crosscutting-concepts/CC-002-extractor-contract.md) (contract) first (every language becomes an extractor run once per scan,
 using the user's toolchain first; its migration plan is in progress), then follow the workflow above:
 
-1. Requirements in `spec/` (from a source in `spec/raw/`, with `capture`; then `implement` once the
-   maintainer selects a child): refine the language's FR (e.g. [FR-053](spec/wiki/functional-requirements/FR-053-analyse-go.md))
+1. Requirements in `spec/` (from a source in `spec/raw/`, with `capture`, then `implement` once
+   the maintainer selects a child): refine the language's FR (e.g. [FR-053](spec/wiki/functional-requirements/FR-053-analyse-go.md))
    into child requirements for toolchain, sources, model mapping, dependency rules and fixture
    expectations, as [FR-006](spec/wiki/functional-requirements/FR-006-analyse-dart-with-the-dart-analyzer.md) does for Dart.
 2. Fixture `test/fixture-<language>/` and `test/checks/<language>.py`; add both to
