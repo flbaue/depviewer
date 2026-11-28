@@ -27,37 +27,39 @@ no frameworks** — a JDK 17+ and a browser are all a user needs.
 
 ## Workflow: spec first, then test-driven
 
-The maintainer wants every feature and behaviour change done this way:
+The spec in `spec/` drives every change, and its workflows are the process. Do not restate them
+here or work around them:
 
-1. **Spec first.** Write or update the requirements in the wiki under `spec/` before writing code
-   (a new idea goes into `spec/raw/` and is captured with the `capture` skill): goal, constraints,
-   the expected behaviour as checkable acceptance criteria, and what is out of scope. Small bug
-   fixes can skip the spec but not the test.
-2. **Tests next, and watch them fail.** Turn the acceptance criteria into checks — fixture code
-   plus assertions in `test/checks/<fixture>.py` for the scanner, `scripts/check.sh` (headless
-   smoke test) for the viewer. Run them and confirm they fail for the right reason.
-3. **Implement until green**, then run the whole `scripts/check.sh`.
-4. **Check for regressions on real code**: rescan a larger project with the previous scanner
+- **A new idea or changed behaviour** goes into `spec/raw/` and becomes requirements with the
+  `capture` skill ([capture.md](spec/_system/workflows/capture.md); grill-gated, see
+  [spec/AGENTS.md](spec/AGENTS.md)). Write no code for it until the human selects the requirement.
+- **Building a requirement** runs the `implement` skill
+  ([implement.md](spec/_system/workflows/implement.md)): readiness, an approved plan, the
+  `Implements:` trailer, a criterion-by-criterion evidence table, the `delivery` fields, the log
+  entry and one PR the human merges.
+- **A small bug fix** that changes no specified behaviour skips both, but not the rules below.
+
+Inside that loop, depviewer adds these rules:
+
+1. **Tests first, and watch them fail.** Turn each criterion into a check — fixture code plus
+   assertions in `test/checks/<fixture>.py` for the scanner, `scripts/check.sh` (headless smoke
+   test) for the viewer. Run them and confirm they fail for the right reason. If a test fails
+   because the test itself was wrong, fix the test and say so in the commit — do not weaken a test
+   to make an implementation pass.
+2. **Implement until green**, then run the whole `scripts/check.sh`.
+3. **Check for regressions on real code**: rescan a larger project with the previous scanner
    version (`git archive HEAD src | tar -x -C <tmp>`, compile it there) and the new one and compare
-   the JSON (ignoring `generated`); differences must
-   be intended.
-5. Update the wiki pages (`delivery`, `release`, child requirements), the user docs (`docs/usage.md`, `languages.md`, `viewer.md`,
-   `quick-start.md`; the README only for the overview) and this file if behaviour or invariants
-   changed.
-6. **Review in a fresh agent session** before you open the PR or say you are done. Start a new
-   session, or a subagent that does not inherit your conversation (not a fork), and give it only
-   the diff against `main` (`git diff main...HEAD`), the requirement pages it implements and this
-   file. Ask it for correctness bugs, broken invariants (below), spec criteria the change does not
-   meet, missing or weakened tests, and docs left out of date — not for style. The reviewer reads
-   the code itself; do not hand it your reasoning or your conclusions. Then deal with every finding:
-   fix it (with a test where it is a bug) or note why not. Run `scripts/check.sh` again after
-   fixes, and review again in a new fresh session if the fixes changed behaviour. Without a way to
-   start a fresh session, say so in the PR instead of reviewing your own work and calling it
-   independent. This also applies when you work through the `implement` skill: do the review
-   before its PR step.
-
-If a test fails because the test itself was wrong, fix the test and say so in the commit — do
-not weaken a test to make an implementation pass.
+   the JSON (ignoring `generated`); differences must be intended.
+4. **Update the docs**: `docs/usage.md`, `languages.md`, `viewer.md`, `quick-start.md` (the README
+   only for the overview) and this file if behaviour or invariants changed.
+5. **Review in a fresh agent session** before the PR. Start a new session, or a subagent that does
+   not inherit your conversation (not a fork), and give it only the diff against `main`
+   (`git diff main...HEAD`), the requirement pages and this file — not your reasoning or your
+   evidence table. Ask it for correctness bugs, broken invariants (below), criteria the change
+   does not meet, missing or weakened tests, and stale docs — not for style. Fix every finding
+   (with a test where it is a bug) or note why not, run `scripts/check.sh` again, and review again
+   in a new fresh session if the fixes changed behaviour. Without a way to start a fresh session,
+   say so in the PR instead of calling your own review independent.
 
 ## How to verify your change
 
@@ -109,7 +111,7 @@ Read the accepted decision [DR-001](spec/wiki/decisions/DR-001-every-language-is
 [CC-002](spec/wiki/crosscutting-concepts/CC-002-extractor-contract.md) (contract) first (every language becomes an extractor run once per scan,
 using the user's toolchain first; its migration plan is in progress), then follow the workflow above:
 
-1. Requirements in `spec/`: refine the language's FR (e.g. [FR-053](spec/wiki/functional-requirements/FR-053-analyse-go.md))
+1. Requirements in `spec/` (with `capture`): refine the language's FR (e.g. [FR-053](spec/wiki/functional-requirements/FR-053-analyse-go.md))
    into child requirements for toolchain, sources, model mapping, dependency rules and fixture
    expectations, as [FR-006](spec/wiki/functional-requirements/FR-006-analyse-dart-with-the-dart-analyzer.md) does for Dart.
 2. Fixture `test/fixture-<language>/` and `test/checks/<language>.py`; add both to
@@ -165,4 +167,5 @@ changes between major versions.
   `Assisted-by: <tool>` — see CONTRIBUTING.md.
 - PR description: what changed, why, how it was verified (paste the `check.sh` result; say what you
   tried by hand in the browser and what you did not), and the fresh-session review: each finding
-  and whether it was fixed or why not.
+  and whether it was fixed or why not. For a requirement, it also holds what `implement.md`
+  asks for (the approved plan and the criterion table).
