@@ -2,9 +2,9 @@
 id: FR-036
 type: functional-requirement
 title: Provide the check command and its exit codes
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: ["[[ISS-001-should-check-find-architecture-json-on-its-own]]", "[[ISS-004-should-name-based-violations-fail-the-build-by-default]]"]
 tags: [functional-requirement]

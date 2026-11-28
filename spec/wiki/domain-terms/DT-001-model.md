@@ -2,9 +2,9 @@
 id: DT-001
 type: domain-term
 title: Model
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-008-usage-reference]]"]
 related: []
 tags: [domain-term]

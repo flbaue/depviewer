@@ -2,9 +2,9 @@
 id: STK-004
 type: stakeholder
 title: Maintainer
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-005-readme-of-depviewer]]", "[[SRC-007-mit-license]]"]
 related: []
 tags: [stakeholder]

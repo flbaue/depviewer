@@ -2,9 +2,9 @@
 id: BB-016
 type: building-block
 title: Go scanner core
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]]"]
 related: ["[[DR-002-the-scanner-core-is-a-static-go-binary]]"]
 tags: [building-block]

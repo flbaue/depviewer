@@ -2,9 +2,9 @@
 id: QR-008
 type: quality-requirement
 title: "The viewer reads well in light, dark and on a narrow screen"
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]"]
 related: ["[[ISS-012-what-makes-the-viewer-readable-on-a-narrow-screen]]"]
 tags: [quality-requirement]

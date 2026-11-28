@@ -2,9 +2,9 @@
 id: QR-004
 type: quality-requirement
 title: No dependency is invented
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-012-spec-kotlin-support]]", "[[SRC-008-usage-reference]]"]
 related: []
 tags: [quality-requirement]

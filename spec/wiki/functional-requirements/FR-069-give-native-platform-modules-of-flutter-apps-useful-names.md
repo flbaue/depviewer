@@ -2,9 +2,9 @@
 id: FR-069
 type: functional-requirement
 title: "Give native platform modules of Flutter apps useful names"
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-019-github-issue-3-flutter-projects-native-platform-code-shows-up-as-an-unhelpful-app]]"]
 related: []
 tags: [functional-requirement]

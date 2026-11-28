@@ -2,9 +2,9 @@
 id: FR-013
 type: functional-requirement
 title: Explore the dependency structure
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-010-viewer-reference]]", "[[SRC-005-readme-of-depviewer]]"]
 related: []
 tags: [functional-requirement]

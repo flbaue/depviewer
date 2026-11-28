@@ -2,9 +2,9 @@
 id: CTX-001
 type: context
 title: depviewer context
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-011-spec-multi-language-architecture]]"]
 related: ["[[EIF-001-scanned-code-base]]", "[[EIF-002-jdk]]", "[[EIF-003-node-js-with-the-typescript-compiler]]", "[[EIF-004-dart-sdk-with-the-dart-analyzer]]", "[[EIF-005-ci-pipeline]]", "[[EIF-006-package-registries]]", "[[STK-001-software-architects]]", "[[STK-002-developers]]", "[[STK-003-ai-coding-agents]]"]
 tags: [context]

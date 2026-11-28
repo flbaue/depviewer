@@ -2,9 +2,9 @@
 id: FR-011
 type: functional-requirement
 title: Record the provenance of every language and module
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-028-github-issue-12-toolchain-selection-user-s-first-pinned-fallback-and-analysis-prov]]"]
 related: ["[[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]", "[[ISS-007-should-the-provenance-record-the-extractors-own-version]]", "[[ISS-009-results-can-differ-between-machines]]"]
 tags: [functional-requirement]
@@ -29,7 +29,7 @@ Architecture checks and the viewer must be able to tell the user how far a resul
 
 ## Requirement
 
-The model carries an `analysis` list with one entry per language and set of modules: tool, version, source (`override`, `project`, `path`, `pinned`), `exact`, and the extractor's name and version ([[ISS-007-should-the-provenance-record-the-extractors-own-version]]). The viewer shows it in the header or details. Violations report `exact` from it ([[FR-038-report-violations-as-versioned-json]]).
+The model carries an `analysis` list with one entry per language and set of modules: tool, version, source (`override`, `project`, `path`, `pinned`), `exact`, and the extractor's name and version ([[ISS-007-should-the-provenance-record-the-extractors-own-version]]). The viewer's header lists each language and marks name-based ones as approximate, and a module row's details show tool, version, source and extractor. Violations report `exact` from it ([[FR-038-report-violations-as-versioned-json]]).
 
 ## Acceptance criteria
 

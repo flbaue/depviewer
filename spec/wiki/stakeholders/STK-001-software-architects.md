@@ -2,9 +2,9 @@
 id: STK-001
 type: stakeholder
 title: Software architects
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-005-readme-of-depviewer]]"]
 related: ["[[CTX-001-depviewer-context]]"]
 tags: [stakeholder]

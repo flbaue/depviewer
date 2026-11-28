@@ -2,9 +2,9 @@
 id: SOL-004
 type: solution-strategy
 title: Architecture as code with a ratchet
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]", "[[SRC-001-vision-and-goal-of-depviewer]]"]
 related: []
 tags: [solution-strategy]

@@ -2,9 +2,9 @@
 id: CC-005
 type: crosscutting-concept
 title: "Spec first, then test-driven"
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-035-how-depviewer-was-built]]", "[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-006-contributing-guide]]", "[[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]]"]
 related: ["[[ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr]]", "[[QR-010-every-delivered-viewer-requirement-has-an-automated-ui-scenario]]"]
 tags: [crosscutting-concept]

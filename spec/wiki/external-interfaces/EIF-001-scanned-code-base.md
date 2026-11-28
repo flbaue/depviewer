@@ -2,9 +2,9 @@
 id: EIF-001
 type: external-interface
 title: Scanned code base
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-008-usage-reference]]", "[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: ["[[CTX-001-depviewer-context]]"]
 tags: [external-interface]

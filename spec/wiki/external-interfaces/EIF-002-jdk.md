@@ -2,9 +2,9 @@
 id: EIF-002
 type: external-interface
 title: JDK
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-009-supported-languages]]", "[[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]]"]
 related: ["[[CTX-001-depviewer-context]]"]
 tags: [external-interface]

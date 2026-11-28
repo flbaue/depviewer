@@ -2,9 +2,9 @@
 id: DN-005
 type: deployment-node
 title: Web browser
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-008-usage-reference]]", "[[SRC-010-viewer-reference]]"]
 related: []
 tags: [deployment-node]

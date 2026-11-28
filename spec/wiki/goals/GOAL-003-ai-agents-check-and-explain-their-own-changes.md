@@ -2,9 +2,9 @@
 id: GOAL-003
 type: goal
 title: AI agents check and explain their own changes
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]"]
 related: []
 tags: [goal]

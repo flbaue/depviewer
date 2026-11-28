@@ -2,9 +2,9 @@
 id: FR-001
 type: functional-requirement
 title: Scan a code base into one model
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-008-usage-reference]]", "[[SRC-011-spec-multi-language-architecture]]"]
 related: []
 tags: [functional-requirement]

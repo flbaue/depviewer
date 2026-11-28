@@ -2,9 +2,9 @@
 id: FR-030
 type: functional-requirement
 title: Enforce a layer order
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: ["[[ISS-003-how-does-ungrouped-code-relate-to-a-layers-rule]]"]
 tags: [functional-requirement]
@@ -29,7 +29,7 @@ Layering is the most common architecture rule.
 
 ## Requirement
 
-A `layers` rule lists groups top to bottom in `order`. A dependency from a lower to a higher layer is a violation. With `strict: true`, skipping a layer is one too. Ungrouped code is outside every layer, so a dependency from or to it is never a `layering` violation ([[ISS-003-how-does-ungrouped-code-relate-to-a-layers-rule]]). A `no-ungrouped` rule makes every file belong to a group.
+A `layers` rule lists groups top to bottom in `order`. A dependency from a lower to a higher layer is a violation. With `strict: true`, skipping a layer is one too. Ungrouped code is outside every layer, so a dependency from or to it is never a `layering` violation ([[ISS-003-how-does-ungrouped-code-relate-to-a-layers-rule]]).
 
 ## Acceptance criteria
 

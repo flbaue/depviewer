@@ -2,9 +2,9 @@
 id: DN-003
 type: deployment-node
 title: Node.js process
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-013-spec-typescript-and-javascript-support]]"]
 related: []
 tags: [deployment-node]

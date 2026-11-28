@@ -2,9 +2,9 @@
 id: BB-006
 type: building-block
 title: Toolchain runner
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-003-adr-0001-architecture-for-language-support]]"]
 related: ["[[ISS-005-is-the-extractor-request-sent-on-stdin-or-in-a-file]]"]
 tags: [building-block]

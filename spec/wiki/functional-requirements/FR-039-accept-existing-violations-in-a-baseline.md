@@ -2,9 +2,9 @@
 id: FR-039
 type: functional-requirement
 title: Accept existing violations in a baseline
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: []
 tags: [functional-requirement]
@@ -29,7 +29,7 @@ Legacy code must be adoptable: hold the team to "do not make it worse" and ratch
 
 ## Requirement
 
-`--update-baseline` writes the fingerprints of all current violations, sorted, as one JSON array meant to be committed. With `--baseline`, violations in it are reported as `baselined` and never fail. Baseline entries that no longer occur are reported as `resolved`.
+`--update-baseline` writes the fingerprints of all current violations, sorted, as one JSON array meant to be committed, and exits 0, or 2 on invalid input. With `--baseline`, violations in it are reported as `baselined` and never fail. Baseline entries that no longer occur are reported as `resolved`.
 
 ## Acceptance criteria
 

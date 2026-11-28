@@ -2,9 +2,9 @@
 id: CON-012
 type: constraint
 title: The README is a short overview and the details live in docs
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-024-github-issue-8-clean-up-readme-short-overview-and-goal-move-details-into-separate]]", "[[SRC-004-guide-for-ai-coding-agents]]"]
 related: []
 tags: [constraint]

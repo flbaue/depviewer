@@ -2,9 +2,9 @@
 id: FR-067
 type: functional-requirement
 title: "Choose Dart source folders and skip files that cannot be analysed"
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-014-spec-dart-support]]"]
 related: []
 tags: [functional-requirement]
@@ -18,7 +18,7 @@ lane: backbone
 order: 3
 goal: []
 delivery: implemented
-delivery-checked: "2026-11-27T21:59:30+01:00"
+delivery-checked: "2026-11-28T08:27:38Z"
 ---
 
 # Choose Dart source folders and skip files that cannot be analysed

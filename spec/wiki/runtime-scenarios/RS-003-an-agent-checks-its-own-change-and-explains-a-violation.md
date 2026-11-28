@@ -2,9 +2,9 @@
 id: RS-003
 type: runtime-scenario
 title: An agent checks its own change and explains a violation
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: []
 tags: [runtime-scenario]

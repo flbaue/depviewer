@@ -2,9 +2,9 @@
 id: DT-013
 type: domain-term
 title: Selector
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: []
 tags: [domain-term]

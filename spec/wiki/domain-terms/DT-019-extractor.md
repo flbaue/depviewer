@@ -2,9 +2,9 @@
 id: DT-019
 type: domain-term
 title: Extractor
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-011-spec-multi-language-architecture]]"]
 related: []
 tags: [domain-term]

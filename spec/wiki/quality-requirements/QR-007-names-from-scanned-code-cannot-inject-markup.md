@@ -2,9 +2,9 @@
 id: QR-007
 type: quality-requirement
 title: Names from scanned code cannot inject markup
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]"]
 related: []
 tags: [quality-requirement]

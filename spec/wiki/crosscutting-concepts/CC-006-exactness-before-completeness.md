@@ -2,9 +2,9 @@
 id: CC-006
 type: crosscutting-concept
 title: Exactness before completeness
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-012-spec-kotlin-support]]"]
 related: []
 tags: [crosscutting-concept]

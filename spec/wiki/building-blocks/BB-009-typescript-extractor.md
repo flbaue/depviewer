@@ -2,9 +2,9 @@
 id: BB-009
 type: building-block
 title: TypeScript extractor
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-013-spec-typescript-and-javascript-support]]", "[[SRC-011-spec-multi-language-architecture]]"]
 related: []
 tags: [building-block]

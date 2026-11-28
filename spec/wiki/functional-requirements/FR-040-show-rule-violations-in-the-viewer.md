@@ -2,9 +2,9 @@
 id: FR-040
 type: functional-requirement
 title: Show rule violations in the viewer
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]", "[[SRC-022-github-issue-6-architecture-checks-for-ai-agents-rules-for-forbidden-layer-module]]"]
 related: []
 tags: [functional-requirement]

@@ -2,9 +2,9 @@
 id: FR-034
 type: functional-requirement
 title: Exempt test sources by default
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: []
 tags: [functional-requirement]
@@ -29,7 +29,7 @@ Tests often reach across layers on purpose.
 
 ## Requirement
 
-Test sources are not checked unless a rule sets `"tests": true`. `edgeKinds` limits a rule to some dependency kinds, default all.
+Test sources are not checked unless a rule sets `"tests": true`.
 
 ## Acceptance criteria
 

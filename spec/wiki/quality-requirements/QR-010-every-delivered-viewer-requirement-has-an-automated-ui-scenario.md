@@ -2,9 +2,9 @@
 id: QR-010
 type: quality-requirement
 title: Every delivered viewer requirement has an automated UI scenario
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]]"]
 related: ["[[CC-005-spec-first-then-test-driven]]"]
 tags: [quality-requirement]

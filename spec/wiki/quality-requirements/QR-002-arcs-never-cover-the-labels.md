@@ -2,9 +2,9 @@
 id: QR-002
 type: quality-requirement
 title: Arcs never cover the labels
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-015-spec-viewer-arc-geometry]]", "[[SRC-017-github-issue-1-viewer-arcs-cover-the-tree-labels-on-large-projects]]"]
 related: []
 tags: [quality-requirement]

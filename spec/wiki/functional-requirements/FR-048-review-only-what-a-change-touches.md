@@ -2,9 +2,9 @@
 id: FR-048
 type: functional-requirement
 title: Review only what a change touches
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: []
 tags: [functional-requirement]

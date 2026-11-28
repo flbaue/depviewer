@@ -2,9 +2,9 @@
 id: BB-011
 type: building-block
 title: jvm extractor
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-029-github-issue-13-move-java-and-kotlin-into-a-jvm-extractor-behind-the-contract]]", "[[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]]"]
 related: ["[[ISS-006-how-is-the-projects-kotlin-version-read-without-running-gradle]]", "[[ISS-008-moving-java-and-kotlin-into-the-jvm-extractor-can-change-the-output]]"]
 tags: [building-block]

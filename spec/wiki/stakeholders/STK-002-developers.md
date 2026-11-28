@@ -2,9 +2,9 @@
 id: STK-002
 type: stakeholder
 title: Developers
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]"]
 related: ["[[CTX-001-depviewer-context]]"]
 tags: [stakeholder]

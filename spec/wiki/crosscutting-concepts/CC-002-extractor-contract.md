@@ -2,9 +2,9 @@
 id: CC-002
 type: crosscutting-concept
 title: Extractor contract
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-011-spec-multi-language-architecture]]", "[[SRC-026-github-issue-10-extractor-contract-v1-versioned-spec-describe-handshake-and-confor]]"]
 related: ["[[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]", "[[ISS-005-is-the-extractor-request-sent-on-stdin-or-in-a-file]]"]
 tags: [crosscutting-concept]

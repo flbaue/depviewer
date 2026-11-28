@@ -2,9 +2,9 @@
 id: DT-022
 type: domain-term
 title: Toolchain
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]"]
 related: []
 tags: [domain-term]

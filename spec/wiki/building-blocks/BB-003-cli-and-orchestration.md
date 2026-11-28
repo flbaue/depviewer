@@ -2,9 +2,9 @@
 id: BB-003
 type: building-block
 title: CLI and orchestration
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-011-spec-multi-language-architecture]]"]
 related: []
 tags: [building-block]

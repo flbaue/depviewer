@@ -2,9 +2,9 @@
 id: RS-001
 type: runtime-scenario
 title: Scan a mixed repository into one viewer file
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-011-spec-multi-language-architecture]]", "[[SRC-012-spec-kotlin-support]]", "[[SRC-004-guide-for-ai-coding-agents]]"]
 related: []
 tags: [runtime-scenario]

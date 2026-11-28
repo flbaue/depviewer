@@ -2,9 +2,9 @@
 id: GOAL-005
 type: goal
 title: The real structure of a code base at a glance
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-005-readme-of-depviewer]]"]
 related: ["[[ISS-013-how-is-structure-at-a-glance-measured]]"]
 tags: [goal]

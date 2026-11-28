@@ -2,9 +2,9 @@
 id: DT-002
 type: domain-term
 title: Element
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-010-viewer-reference]]"]
 related: []
 tags: [domain-term]

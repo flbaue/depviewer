@@ -2,9 +2,9 @@
 id: CC-009
 type: crosscutting-concept
 title: Fragment format
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-011-spec-multi-language-architecture]]", "[[SRC-026-github-issue-10-extractor-contract-v1-versioned-spec-describe-handshake-and-confor]]"]
 related: ["[[DT-020-fragment]]"]
 tags: [crosscutting-concept]

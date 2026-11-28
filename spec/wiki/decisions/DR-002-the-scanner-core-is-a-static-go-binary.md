@@ -2,9 +2,9 @@
 id: DR-002
 type: decision-record
 title: The scanner core is a static Go binary
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]]"]
 related: ["[[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]", "[[CON-001-the-scanner-core-needs-only-a-jdk-17]]", "[[CON-013-the-scanner-core-is-go-with-the-standard-library-only]]", "[[BB-016-go-scanner-core]]", "[[QR-009-a-project-scans-with-the-depviewer-binary-and-its-own-toolchain]]"]
 tags: [decision-record]

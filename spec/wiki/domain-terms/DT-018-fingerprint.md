@@ -2,9 +2,9 @@
 id: DT-018
 type: domain-term
 title: Fingerprint
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: []
 tags: [domain-term]
@@ -20,7 +20,7 @@ relationships: []
 
 # Fingerprint
 
-**Definition.** The stable identity of a violation: rule, source element, target element and kind, without line numbers.
+**Definition.** The stable identity of a violation: view, rule, source element and target element, without line numbers or dependency kinds.
 
 **In context.** Stays the same when code moves within a file, so a baseline survives ordinary edits.
 

@@ -2,9 +2,9 @@
 id: DT-024
 type: domain-term
 title: Exact
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-009-supported-languages]]"]
 related: []
 tags: [domain-term]
