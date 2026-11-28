@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "current": "layers",
+  "views": [
+    {
+      "id": "layers",
+      "name": "Layers",
+      "groups": [
+        { "id": "app",   "name": "Application",    "color": "#e07a2f",
+          "match": ["package:com.example.app.**"] },
+        { "id": "core",  "name": "Core",           "color": "#577590" },
+        { "id": "svc",   "name": "Service",        "color": "#2a9d8f", "parent": "core",
+          "match": ["package:com.example.service.**"] },
+        { "id": "dom",   "name": "Domain",         "color": "#8e5cd9", "parent": "core",
+          "match": ["package:com.example.domain.**", "type:**Repository@interface"] },
+        { "id": "infra", "name": "Infrastructure", "color": "#c9a227",
+          "match": ["path:**/infra/**"] }
+      ],
+      "assign": { "F:fixture:src/main/java/com/example/app/Main.java": "app" }
+    }
+  ]
+}

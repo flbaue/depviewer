@@ -36,9 +36,10 @@ Without the wrapper: `javac -d out src/depviewer/*.java && java -cp out depviewe
 pass `--rules`. The file is plain JSON, without comments. `version` is optional (missing means 1).
 Fields depviewer does not know are ignored.
 
-Rule checking itself is not built yet. Today `check` validates the file: a file without rules
-prints `no rules` and exits 0, and a file with rules exits 2 so that a CI job never passes without
-checking.
+Rule checking itself is not built yet. Today `check` validates the file and, if a group has `match`
+patterns, scans the project (or reads `--model`) and reports overlapping patterns. A file without
+rules prints `no rules` and exits 0, and a file with rules exits 2 so that a CI job never passes
+without checking.
 
 | Exit code | Meaning |
 |---|---|
@@ -70,7 +71,26 @@ A group can select its elements by pattern instead of by hand. `match` lists sel
 TypeScript or Dart type is named `<path>#<Name>`, so select it with `type:**Name`. An unknown kind,
 an unknown `@<kind>` or `@` on any other kind than `type:` is rejected with exit code 2.
 
-Selectors are read and validated, but they do not assign anything yet.
+### Which group an element is in
+
+For each element, in this order:
+
+1. its own entry in `assign`,
+2. the first group, in the order of `groups`, whose `match` selects it,
+3. the group of its nearest ancestor, decided the same way.
+
+An element that a group removes with `!` never gets that group from an ancestor either. It takes the
+group of the next ancestor above, or stays ungrouped. Members always go with their type. A type can be
+assigned on its own with a `type:` selector or the key `T:<module>:<qualified name>` (the viewer does
+not show such assignments yet).
+
+`check` warns when two groups' patterns select the same element, and when an element's pattern
+overrides another group that the element would get from an ancestor's pattern. A subgroup refining
+the group it is nested in is not an overlap. Warnings do not change the exit code:
+
+```
+warning  overlap  T:fixture:com.example.infra.InMemoryOrderRepository  selected by dom and by infra through F:fixture:src/main/java/com/example/infra/InMemoryOrderRepository.java, goes to dom (view layers)
+```
 
 ## What gets scanned
 

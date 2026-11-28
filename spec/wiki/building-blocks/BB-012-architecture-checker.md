@@ -4,7 +4,7 @@ type: building-block
 title: Architecture checker
 status: draft
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: ["[[ISS-001-should-check-find-architecture-json-on-its-own]]"]
 tags: [building-block]
@@ -23,7 +23,7 @@ superseded-by:
 
 ## Purpose / Responsibility
 
-Part of the core that loads the architecture file ([[FR-026-read-the-architecture-file]], built), matches selectors against the model ([[FR-027-select-code-by-patterns]], built) and, planned, turns them into assignments, evaluates the rules on the model, applies the baseline and formats violations as text or JSON.
+Part of the core that loads the architecture file ([[FR-026-read-the-architecture-file]], built), matches selectors against the model ([[FR-027-select-code-by-patterns]], built), decides each element's group and reports overlapping patterns ([[FR-028-decide-each-elements-group-by-precedence]], built) and, planned, evaluates the rules on the model, applies the baseline and formats violations as text or JSON.
 
 ## Interfaces
 
