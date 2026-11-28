@@ -31,7 +31,11 @@ Details: [spec](../spec/wiki/functional-requirements/FR-004-analyse-kotlin-by-na
 ## TypeScript / JavaScript
 
 Files `.ts .tsx .mts .cts .js .jsx .mjs .cjs` below each `package.json`, analysed with the
-TypeScript compiler API, respecting the project's `tsconfig.json`. Node is found as `node` on the
+TypeScript compiler API, respecting each module's `tsconfig.json`. All modules of a scan are
+analysed in one run, so in a monorepo an import of a sibling workspace package (linked into
+`node_modules` by npm, yarn or pnpm) links to its declarations
+([spec](../spec/wiki/functional-requirements/FR-012-link-the-modules-of-a-monorepo.md)). A package
+whose types point to built `.d.ts` files instead of its sources still shows up as an external. Node is found as `node` on the
 `PATH`, or set `DEPVIEWER_NODE`. Details: [spec](../spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md).
 
 The `typescript` package is chosen per module, in this order

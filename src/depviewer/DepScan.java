@@ -389,7 +389,7 @@ public class DepScan {
             long modules = roots.stream().filter(r -> rootOfFile.containsValue(r) || rootOfKt.containsValue(r)).map(r -> r.module).distinct().count();
             what.append(String.format("%d Java and %d Kotlin files in %d module(s)", rootOfFile.size(), rootOfKt.size(), modules));
         }
-        if (tsFiles > 0) what.append(what.length() > 0 ? ", " : "").append(String.format("%d TypeScript/JavaScript files in %d module(s)", tsFiles, tsModules.size()));
+        if (tsFiles > 0) what.append(what.length() > 0 ? ", " : "").append(String.format("%d TypeScript/JavaScript files in %d module(s)", tsFiles, tsModules.stream().filter(m -> !m.files.isEmpty()).count()));
         if (dartFiles > 0) what.append(what.length() > 0 ? ", " : "").append(String.format("%d Dart files in %d module(s)", dartFiles, dartModules.size()));
         System.err.println("Scanning " + what + "...");
 

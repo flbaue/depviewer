@@ -3,7 +3,8 @@
 // Usage: node extract.mjs <request.json>
 //        node extract.mjs --describe [<typescript package folder> <source>]
 //   request: { "root": "/abs/project", "module": "name", "typescript": "/abs/node_modules/typescript",
-//              "files": [{ "path": "src/a.ts", "test": false }] }
+//              "files": [{ "path": "src/a.ts", "test": false, "module": "name", "root": "/abs/project" }] }
+//   One run covers several modules: each file names its module and that module's folder.
 // Prints a depviewer fragment (spec/wiki/crosscutting-concepts/CC-009-fragment-format.md) to stdout; diagnostics go to stderr.
 // --describe prints the extractor's name, version and contract and whether the given TypeScript is
 // supported (spec/wiki/functional-requirements/FR-010-choose-the-toolchain-in-a-fixed-order.md).
@@ -54,12 +55,27 @@ if (process.argv[2] === "--describe") {
 }
 
 const input = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
-const root = path.resolve(input.root);
 const ts = loadTypeScript(input.typescript);
 
-// ------------------------------------------------------------------ program
+// ------------------------------------------------------------------ programs
 
-function compilerOptions() {
+// One run covers all modules (package.json folders) of a scan, so an import of a sibling
+// workspace package links to its declarations (spec/wiki/functional-requirements/FR-012-link-the-modules-of-a-monorepo.md).
+// Each module gets its own program with its own tsconfig.json; declarations are matched across
+// programs by file and position, as each program has its own syntax trees.
+
+const realPaths = new Map();
+/** The real path of a file: workspace packages are symlinked into node_modules, and TypeScript follows the links. */
+function real(file) {
+  let r = realPaths.get(file);
+  if (r === undefined) {
+    try { r = fs.realpathSync.native(file); } catch { r = path.resolve(file); }
+    realPaths.set(file, r);
+  }
+  return r;
+}
+
+function compilerOptions(root) {
   for (const name of ["tsconfig.json", "jsconfig.json"]) {
     const file = path.join(root, name);
     if (!fs.existsSync(file)) continue;
@@ -70,24 +86,34 @@ function compilerOptions() {
   return { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, jsx: ts.JsxEmit.Preserve };
 }
 
-const options = { ...compilerOptions(), allowJs: true, checkJs: false, noEmit: true, skipLibCheck: true };
-const files = new Map(input.files.map((f) => [path.join(root, f.path), f]));
-const program = ts.createProgram([...files.keys()], options);
-const checker = program.getTypeChecker();
+const modules = new Map(); // module root -> { name, root, prefix, files: [absolute path] }
+const files = new Map(); // real path -> { path (relative to its module), test, module }
+for (const f of input.files) {
+  const root = path.resolve(f.root ?? input.root);
+  if (!modules.has(root)) modules.set(root, { name: f.module ?? input.module, root, prefix: `${modules.size}|`, files: [] });
+  const m = modules.get(root);
+  const abs = path.join(root, f.path);
+  m.files.push(abs);
+  files.set(real(abs), { path: f.path, test: !!f.test, module: m });
+}
+let program, checker; // of the module being read
 
 // ------------------------------------------------------------------ output
 
 const out = { language: "typescript", errors: 0, nodes: [], externals: [], edges: [] };
-const declId = new Map(); // ts.Node (declaration) -> fragment node id
+const declIds = new Map(); // "real path:pos:end:kind" of a declaration -> fragment node id
+const declKey = (node) => `${real(node.getSourceFile().fileName)}:${node.pos}:${node.end}:${node.kind}`;
+const declId = { set: (node, id) => declIds.set(declKey(node), id), get: (node) => declIds.get(declKey(node)) };
 const nodeKind = new Map(); // fragment id -> kind
 const externals = new Map(); // external id -> true
 
-const rel = (sf) => path.relative(root, sf.fileName).split(path.sep).join("/");
+/** Fragment ids start with the module's prefix, so equal paths in two modules stay apart; q leaves it out. */
+const qOf = (id) => id.slice(id.indexOf("|") + 1);
 const lineOf = (sf, pos) => sf.getLineAndCharacterOfPosition(pos).line + 1;
 
 function addNode(sf, decl, id, name, kind, parent, extra = {}) {
   const start = lineOf(sf, decl.getStart(sf));
-  out.nodes.push({ id, name, kind, parent, line: start, loc: lineOf(sf, decl.getEnd()) - start + 1, q: id, ...extra });
+  out.nodes.push({ id, name, kind, parent, line: start, loc: lineOf(sf, decl.getEnd()) - start + 1, q: qOf(id), ...extra });
   nodeKind.set(id, kind);
   declId.set(decl, id);
   return id;
@@ -115,10 +141,11 @@ const isFunctionInit = (init) => init && (ts.isArrowFunction(init) || ts.isFunct
 // ------------------------------------------------------------------ declarations
 
 function declareFile(sf) {
-  const info = files.get(sf.fileName);
-  const id = rel(sf);
-  const dir = id.includes("/") ? id.slice(0, id.lastIndexOf("/")) : "";
-  out.nodes.push({ id, kind: "file", path: id, package: dir, test: !!info.test, loc: sf.getLineAndCharacterOfPosition(sf.getEnd()).line + 1 });
+  const info = files.get(real(sf.fileName));
+  const id = info.module.prefix + info.path;
+  const dir = info.path.includes("/") ? info.path.slice(0, info.path.lastIndexOf("/")) : "";
+  out.nodes.push({ id, kind: "file", path: info.path, module: info.module.name, package: dir, test: info.test,
+    loc: sf.getLineAndCharacterOfPosition(sf.getEnd()).line + 1 });
   nodeKind.set(id, "file");
   declId.set(sf, id);
   declareStatements(sf, sf.statements, id, id + "#");
@@ -303,7 +330,7 @@ function reference(sf, id, owner) {
   if (!decl) return;
   const dsf = decl.getSourceFile();
   let target;
-  if (files.has(dsf.fileName)) {
+  if (files.has(real(dsf.fileName))) {
     target = ownerOf(decl);
     // `new X()`: the constructor when X declares one
     if (target && nodeKind.get(target) === "class") {
@@ -322,12 +349,22 @@ function reference(sf, id, owner) {
 
 // ------------------------------------------------------------------ run
 
-const sources = program.getSourceFiles().filter((sf) => files.has(sf.fileName));
-for (const sf of sources) declareFile(sf);
-for (const sf of sources) {
-  visitRefs(sf, sf, declId.get(sf));
-  out.errors += program.getSyntacticDiagnostics(sf).length + program.getSemanticDiagnostics(sf).length;
+// Each module's own files, read with its program: first all declarations, then the references,
+// which may point into any module.
+const runs = [...modules.values()].map((m) => {
+  const p = ts.createProgram(m.files, { ...compilerOptions(m.root), allowJs: true, checkJs: false, noEmit: true, skipLibCheck: true });
+  return { program: p, checker: p.getTypeChecker(), sources: p.getSourceFiles().filter((sf) => files.get(real(sf.fileName))?.module === m) };
+});
+for (const r of runs) for (const sf of r.sources) declareFile(sf);
+let read = 0;
+for (const r of runs) {
+  ({ program, checker } = r);
+  for (const sf of r.sources) {
+    visitRefs(sf, sf, declId.get(sf));
+    out.errors += program.getSyntacticDiagnostics(sf).length + program.getSemanticDiagnostics(sf).length;
+  }
+  read += r.sources.length;
 }
-const missing = input.files.length - sources.length;
+const missing = input.files.length - read;
 if (missing > 0) console.error(`typescript: ${missing} file(s) could not be loaded`);
 process.stdout.write(JSON.stringify(out));

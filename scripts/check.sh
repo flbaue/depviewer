@@ -65,6 +65,19 @@ else
   HAVE_TS=
 fi
 
+step "TypeScript monorepo (spec/wiki/functional-requirements/FR-012-link-the-modules-of-a-monorepo.md)"
+if [ -n "$HAVE_TS" ]; then
+  # A copy with node_modules linking the workspace packages, as `npm install` would.
+  rm -rf "$OUT/fixture-ts-mono" && cp -R test/fixture-ts-mono "$OUT/fixture-ts-mono"
+  mkdir -p "$OUT/fixture-ts-mono/node_modules/@acme"
+  for p in core app; do ln -s "../../packages/$p" "$OUT/fixture-ts-mono/node_modules/@acme/$p"; done
+  ./depviewer -o "$OUT/fixture-ts-mono.json" "$OUT/fixture-ts-mono" 2> "$OUT/fixture-ts-mono.log" || { cat "$OUT/fixture-ts-mono.log"; fail "monorepo scan failed"; }
+  python3 -I test/checks/typescript_mono.py "$OUT/fixture-ts-mono.json"
+  [ "$(grep -c "^TypeScript/JavaScript: typescript .* for " "$OUT/fixture-ts-mono.log")" = 1 ] || { cat "$OUT/fixture-ts-mono.log"; fail "expected one extractor run for both packages"; }
+else
+  echo "skipped: node not installed (set DEPVIEWER_NODE)"
+fi
+
 step "toolchain choice (spec/wiki/functional-requirements/FR-010-choose-the-toolchain-in-a-fixed-order.md)"
 if [ -n "$HAVE_TS" ]; then
   T="$(pwd -P)/$OUT/toolchain"; rm -rf "$T"; mkdir -p "$T"

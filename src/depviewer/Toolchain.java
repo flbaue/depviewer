@@ -80,17 +80,16 @@ final class Toolchain {
                 return;
             }
         }
-        // The toolchain is chosen per module (spec FR-010). Dart: one run per toolchain over all its
-        // packages, so references between them (workspaces, path dependencies) resolve to the real
-        // declarations. TypeScript: one run per module.
+        // The toolchain is chosen per module (spec FR-010), and each extractor runs once per toolchain
+        // with all its modules, so references between them (workspaces, path dependencies) resolve
+        // to the real declarations (spec FR-012).
         Map<String, List<Module>> runs = new LinkedHashMap<>();
         Map<String, Choice> choices = new HashMap<>();
         for (Module m : modules) {
             Choice c = choose(m);
             if (c == null) continue;
-            String run = language.equals("dart") ? c.key() : c.key() + "\n" + m.name;
-            choices.put(run, c);
-            runs.computeIfAbsent(run, k -> new ArrayList<>()).add(m);
+            choices.put(c.key(), c);
+            runs.computeIfAbsent(c.key(), k -> new ArrayList<>()).add(m);
         }
         for (Map.Entry<String, List<Module>> e : runs.entrySet()) run(e.getValue(), choices.get(e.getKey()), tests);
     }

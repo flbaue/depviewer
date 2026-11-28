@@ -17,8 +17,8 @@ release: m2-extractor-contract
 lane: backbone
 order: 11
 goal: []
-delivery:
-delivery-checked:
+delivery: implemented
+delivery-checked: "2026-11-28T15:38:14Z"
 ---
 
 # Link the modules of a monorepo
