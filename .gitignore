@@ -10,3 +10,4 @@ extractors/typescript/node_modules/
 extractors/dart/.dart_tool/
 .dart_tool/
 test/fixture-dart/pubspec.lock
+__pycache__/
