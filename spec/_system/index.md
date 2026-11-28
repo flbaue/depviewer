@@ -108,7 +108,7 @@ every capture (`_system/workflows/capture.md`, step 7).
 - [[FR-042-mark-arcs-that-violate-a-rule]] Mark arcs that violate a rule (requirement, Should, m1-rules-and-check, accepted)
 - [[FR-043-keep-rules-and-patterns-on-export]] Keep rules and patterns on export (requirement, Should, m1-rules-and-check, accepted)
 - [[FR-044-let-ai-agents-query-and-check-the-architecture]] Let AI agents query and check the architecture (feature, Should, m3-agent-interface, accepted)
-- [[FR-045-query-dependents-dependencies-paths-and-cycles]] Query dependents, dependencies, paths and cycles (requirement, Should, m3-agent-interface, draft)
+- [[FR-045-query-dependents-dependencies-paths-and-cycles]] Query dependents, dependencies, paths and cycles (requirement, Should, m3-agent-interface, review)
 - [[FR-046-document-depviewer-for-ai-agents]] Document depviewer for AI agents (requirement, Should, m3-agent-interface, accepted)
 - [[FR-047-serve-scan-query-and-check-over-mcp]] Serve scan, query and check over MCP (requirement, Could, m3-agent-interface, draft)
 - [[FR-048-review-only-what-a-change-touches]] Review only what a change touches (feature, Should, unscheduled, accepted)
@@ -186,7 +186,7 @@ every capture (`_system/workflows/capture.md`, step 7).
 - [[BB-011-jvm-extractor]] jvm extractor (current, accepted)
 - [[BB-012-architecture-checker]] Architecture checker (planned, accepted)
 - [[BB-013-viewer]] Viewer (current, accepted)
-- [[BB-014-query-commands]] Query commands (planned, accepted)
+- [[BB-014-query-commands]] Query commands (planned, review)
 - [[BB-015-mcp-server]] MCP server (planned, accepted)
 - [[BB-016-go-scanner-core]] Go scanner core (target, accepted)
 

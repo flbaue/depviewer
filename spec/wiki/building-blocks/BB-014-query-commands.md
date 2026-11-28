@@ -2,7 +2,7 @@
 id: BB-014
 type: building-block
 title: Query commands
-status: accepted
+status: review
 created: 2026-11-27
 updated: 2026-11-28
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]"]
@@ -23,7 +23,7 @@ superseded-by:
 
 ## Purpose / Responsibility
 
-Planned CLI commands `dependents`, `dependencies`, `path` and `cycles` on a scan or saved model, with JSON output for agents.
+Planned CLI command `depviewer query` with `dependents`, `dependencies`, `path` and `cycles` on a scan or saved model, with JSON output for agents.
 
 ## Interfaces
 

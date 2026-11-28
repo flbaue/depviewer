@@ -268,3 +268,7 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 
 ## [2026-11-28] accept | FR-007 and FR-010 as amended
 - Accepted by the maintainer: the amended [[FR-007-skip-a-language-whose-toolchain-is-missing]] and [[FR-010-choose-the-toolchain-in-a-fixed-order]]. Their criteria pass in `scripts/check.sh`, and the built behaviour is what they now say, so both are `implemented` again with a new `delivery-checked`.
+
+## [2026-11-28] clarify | FR-045 command syntax and JSON format
+- Decided by the maintainer, each the recommended option, for the open point of [[FR-045-query-dependents-dependencies-paths-and-cycles]]: one command `depviewer query` with the input options of `check`; elements named by selectors ([[FR-027-select-code-by-patterns]]); `path` returns one shortest chain at the level of the elements named; exit 0 with an answer, 1 when empty, 2 on an error; test sources included and marked, `--no-tests` leaves them out; `dependents` and `dependencies` list elements at the selector's level with their references, `--level` overrides it; JSON like the report of `check` ([[FR-038-report-violations-as-versioned-json]]).
+- Updated: [[FR-045-query-dependents-dependencies-paths-and-cycles]], with five new criteria from the fixture (dependents, dependencies with and without tests, the one package cycle, exit 1 on no path, the JSON fields), and the first criterion in selector form. It goes to `review`. [[BB-014-query-commands]] names `depviewer query` and goes to `review`. Neither page has a delivery record, so no drift.
