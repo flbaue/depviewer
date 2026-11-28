@@ -20,10 +20,13 @@ final class Report {
 
     /** Sorted by file and line, as the text report lists them; elements without a file last. */
     static List<Rules.Violation> sorted(List<Rules.Violation> vs, Rules.Graph g) {
+        Map<Rules.Violation, String> paths = new java.util.IdentityHashMap<>();
+        Map<Rules.Violation, Integer> lineOf = new java.util.IdentityHashMap<>();
+        for (Rules.Violation v : vs) { paths.put(v, path(v, g)); lineOf.put(v, line(v, g)); }
         List<Rules.Violation> out = new ArrayList<>(vs);
-        out.sort(Comparator.comparing((Rules.Violation v) -> path(v, g) == null ? 1 : 0)
-                .thenComparing(v -> Objects.toString(path(v, g), ""))
-                .thenComparingInt(v -> line(v, g))
+        out.sort(Comparator.comparing((Rules.Violation v) -> paths.get(v) == null ? 1 : 0)
+                .thenComparing(v -> Objects.toString(paths.get(v), ""))
+                .thenComparingInt(lineOf::get)
                 .thenComparing(v -> v.view).thenComparing(v -> v.rule).thenComparing(v -> v.fingerprint));
         return out;
     }
@@ -85,10 +88,15 @@ final class Report {
             if (v.baselined) sb.append("  baselined");
             sb.append('\n');
             List<Rules.Ref> refs = new ArrayList<>(v.refs);
-            if (v.members != null) refs.sort(Comparator.comparing((Rules.Ref r) -> Objects.toString(g.path(r.from), "")).thenComparing(r -> g.name(r.from)).thenComparing(r -> g.name(r.to)));
+            if (v.members != null) {   // a cycle can have many references: build each sort key once
+                Map<Rules.Ref, String> key = new java.util.IdentityHashMap<>();
+                for (Rules.Ref r : refs) key.put(r, Objects.toString(g.path(r.from), "") + '\u0000' + g.name(r.from) + '\u0000' + g.name(r.to));
+                refs.sort(Comparator.comparing(key::get));
+            }
             for (Rules.Ref r : refs) {
                 sb.append("    ").append(g.name(r.from)).append(" -> ").append(g.name(r.to)).append(" (").append(r.kind).append(')');
-                if (v.members != null && g.path(r.from) != null) sb.append("  ").append(g.path(r.from)).append(r.lines.isEmpty() ? "" : ":" + lines(r.lines));
+                String rp = v.members != null ? g.path(r.from) : null;
+                if (rp != null) sb.append("  ").append(rp).append(r.lines.isEmpty() ? "" : ":" + lines(r.lines));
                 sb.append('\n');
             }
         }
@@ -112,7 +120,7 @@ final class Report {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("title", model.get("title"));
         m.put("generated", model.get("generated"));
-        if (model.containsKey("analysis")) m.put("analysis", model.get("analysis"));
+        m.put("analysis", model.get("analysis"));   // null until the scanner records provenance (FR-011)
         r.put("model", m);
         Map<String, Object> sum = new LinkedHashMap<>();
         sum.put("error", vs.stream().filter(v -> !v.baselined && v.severity.equals("error")).count());

@@ -33,6 +33,8 @@ d, m, moved, kt = (load(p) for p in sys.argv[1:5])
 # FR-038: the format.
 check(d.get("format") == 1, "format must be 1")
 check(d["model"]["title"] == "fixture" and d["model"].get("generated"), "model title and date")
+# The model's analysis (FR-011), null while the scanner does not record it.
+check("analysis" in d["model"] and d["model"]["analysis"] is None, f"model analysis: {d['model']}")
 check(set(d["summary"]) == {"error", "warning", "baselined", "resolved", "overlaps"}, f"summary keys: {sorted(d['summary'])}")
 check(d["summary"]["error"] == 3, f"expected 3 errors, got {d['summary']['error']}")
 v = layering(d)

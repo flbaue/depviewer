@@ -309,12 +309,20 @@ final class Rules {
             return id != null && (id.equals(ancestor) || Architecture.nested(parentGroup, id, ancestor));
         }
 
+        final Map<String, boolean[]> extHits = new HashMap<>();
+
         /** An endpoint of a rule: a group (with its subgroups) or an {@code ext:} selector on the node or its ancestors. */
         boolean matches(String endpoint, int i) {
             if (!endpoint.startsWith("ext:")) return in(group[i], endpoint);
-            Architecture.Selector s = Architecture.Selector.parse(endpoint);
-            for (int a = i; a >= 0; a = g.parent[a]) if (s.selects((Map<?, ?>) g.nodes.get(a))) return true;
-            return false;
+            boolean[] hit = extHits.get(endpoint);
+            if (hit == null) {   // one pass over the model; parents come before children
+                Architecture.Selector s = Architecture.Selector.parse(endpoint);
+                hit = new boolean[g.n];
+                for (int a = 0; a < g.n; a++)
+                    hit[a] = g.ext[a] && (g.parent[a] >= 0 && hit[g.parent[a]] || s.selects((Map<?, ?>) g.nodes.get(a)));
+                extHits.put(endpoint, hit);
+            }
+            return hit[i];
         }
 
         List<String> list(String field) {
@@ -336,7 +344,6 @@ final class Rules {
             List<String> order = list("order"), from = list("from"), to = list("to"), groups = list("groups");
             boolean strict = Boolean.TRUE.equals(rule.get("strict"));
             Map<Long, Violation> byPair = new LinkedHashMap<>();
-            Map<String, Boolean> selCache = new HashMap<>();
             for (int e = 0; e < g.edges.length; e++) {
                 if (!applies(e)) continue;
                 int f = g.edges[e][0], t = g.edges[e][1];
@@ -350,10 +357,10 @@ final class Rules {
                         break;
                     }
                     case "forbid":
-                        bad = any(from, f, selCache) && any(to, t, selCache);
+                        bad = any(from, f) && any(to, t);
                         break;
                     case "allow-only":
-                        bad = any(from, f, selCache) && !any(to, t, selCache);
+                        bad = any(from, f) && !any(to, t);
                         break;
                     default: { // independent
                         int a = -1, b = -1;
@@ -396,12 +403,8 @@ final class Rules {
             return out;
         }
 
-        private boolean any(List<String> endpoints, int i, Map<String, Boolean> cache) {
-            for (String s : endpoints) {
-                Boolean hit = cache.get(s + "\u0000" + i);
-                if (hit == null) cache.put(s + "\u0000" + i, hit = matches(s, i));
-                if (hit) return true;
-            }
+        private boolean any(List<String> endpoints, int i) {
+            for (String s : endpoints) if (matches(s, i)) return true;
             return false;
         }
 

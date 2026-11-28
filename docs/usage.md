@@ -150,8 +150,8 @@ src/main/java/com/example/domain/Order.java:25  error  layering  dom -> svc
 errors: 3, warnings: 0, baselined: 0, resolved: 0, overlaps: 0
 ```
 
-`--format json` prints `format: 1`, the model's `title`, `generated` and (once the scanner records
-it) `analysis`, a `summary` with the counts `error`, `warning`, `baselined`, `resolved` and
+`--format json` prints `format: 1`, the model's `title`, `generated` and `analysis` (`null` until the
+scanner records which tool analysed each language, [FR-011](../spec/wiki/functional-requirements/FR-011-record-the-provenance-of-every-language-and-module.md)), a `summary` with the counts `error`, `warning`, `baselined`, `resolved` and
 `overlaps`, the `violations` and the `resolved` fingerprints. A violation has `rule`, `view`,
 `severity`, `kind` (the rule's kind), `from` and `to` (`key`, `q`, `path`, `group`), `lines`, `count`,
 `exact`, `baselined`, `fingerprint` and `refs` (one per reference: `kind`, `lines`, `count`, and `to`

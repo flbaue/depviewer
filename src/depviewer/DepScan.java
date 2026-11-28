@@ -182,7 +182,7 @@ public class DepScan {
         Map<?, ?> modelData;
         try {
             modelFile = model != null ? model : scanToJson(inputs, template, scanOptions);
-            modelData = readModel(modelFile);
+            modelData = model != null ? readModel(modelFile) : scanned;
         } catch (Failed e) {
             return invalid(e.getMessage());
         }
@@ -327,6 +327,9 @@ public class DepScan {
         return 2;
     }
 
+    /** The model of the last scan, as {@link #readModel} would read it: check uses it without parsing JSON. */
+    static Map<String, Object> scanned;
+
     void run(String[] args) throws Exception {
         // The wrapper puts --template before the command.
         int cmd = args.length > 1 && args[0].equals("--template") ? 2 : 0;
@@ -409,7 +412,9 @@ public class DepScan {
             tc.scan(tc.language.equals("dart") ? dartModules : tsModules.stream().filter(m -> !m.files.isEmpty()).collect(Collectors.toList()), tests);
             totalErrors += tc.errors;
         }
-        String json = toJson(title, edges.values(), totalErrors);
+        String generated = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        String json = toJson(title, generated, edges.values(), totalErrors);
+        scanned = toMap(title, generated, edges.values(), totalErrors);
         writeOutput(out, template, views, json);
 
         Set<String> typeKinds = Set.of("class", "interface", "enum", "record", "annotation", "object", "typealias", "namespace", "mixin", "extension");
