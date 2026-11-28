@@ -297,7 +297,9 @@ console.log(JSON.stringify(describe
   : { contract: v, language: "typescript", errors: 0, nodes: [], externals: [], edges: [] }));
 JS
   printf '{"name": "fake", "version": "0"}' > "$H/extractors/typescript/package.json"
-  fake() { rm -f "$C/fake.json"; env DEPVIEWER_HOME="$H" "$@" java -cp "$OUT/classes" depviewer.DepScan --template viewer.html -o "$C/fake.json" test/fixture-ts > "$C/fake.log" 2>&1 || true; }
+  # DEPVIEWER_TYPESCRIPT gives the fake a candidate on every machine; without it, a machine with no
+  # tsc on the PATH would try the pinned copy, which the fake home lacks, and never reach the fake.
+  fake() { rm -f "$C/fake.json"; env DEPVIEWER_HOME="$H" DEPVIEWER_TYPESCRIPT="$H/extractors/typescript" "$@" java -cp "$OUT/classes" depviewer.DepScan --template viewer.html -o "$C/fake.json" test/fixture-ts > "$C/fake.log" 2>&1 || true; }
   fake FAKE_CONTRACT=2
   grep -q "^TypeScript/JavaScript: the extractor printed contract 2, this depviewer reads contract 1; shop-web, skipped$" "$C/fake.log" \
     || { cat "$C/fake.log"; fail "a fragment of contract 2 was not rejected"; }
