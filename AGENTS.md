@@ -109,6 +109,8 @@ When you fix a scanner bug, add the case to the fixture and a check that fails w
 ```jsonc
 {
   "title": "…", "generated": "yyyy-MM-dd HH:mm", "errors": 0,
+  "analysis": [ { "language": "java|kotlin|typescript|dart", "modules": ["name"], "tool": "javac", "version": "21.0.5",
+                  "source": "override|project|path|pinned", "exact": true, "extractor": { "name": "…", "version": "…" } } ],
   "edgeKinds": ["uses", "extends", "implements", "call", "new", "access"],
   "nodes": [ { "n": "name", "k": "kind", "p": parentIndex, "l": line, "loc": lines,
                "t": 1 /*test*/, "s": 1 /*static*/, "v": "+|#|-|~", "q": "qualified.name", "path": "src/…/X.java" } ],
@@ -125,6 +127,9 @@ When you fix a scanner bug, add the case to the fixture and a check that fails w
 - Edges go from the innermost declaring element (member, or type for `extends`/annotations) to the
   most specific target that exists in the model (member → type → external top-level type).
   Imports, `this`/`super`, local variables and compiler-generated code produce no edges.
+- `analysis` (provenance, [FR-011](spec/wiki/functional-requirements/FR-011-record-the-provenance-of-every-language-and-module.md)) has one entry per language and set of
+  modules, in scan order. Rule violations take `exact` from it. It holds no local paths: models
+  are shared.
 - Keep the JSON compact; real projects have hundreds of thousands of edges.
 
 ## Adding a language

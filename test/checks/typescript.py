@@ -104,4 +104,7 @@ edge(T, "(builtin).Error", "new")
 edge("src/util/money.ts", C + "Cart", "uses", present=False)
 check(all(f != t for f, t, _ in c.edges), "self-dependency found")
 
+# --- provenance (spec FR-011)
+c.analysis("typescript", ["shop-web"], "typescript", True, "depviewer-typescript-extractor")
+
 c.finish("typescript")

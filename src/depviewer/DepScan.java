@@ -404,6 +404,13 @@ public class DepScan {
         if (!rootOfFile.isEmpty()) java.scan(rootOfFile, roots, cp, errors, firstErrors);
         java.resolve();
         kotlin.resolveAll();
+        // Provenance (spec FR-011): javac is the JDK that runs depviewer, the Kotlin parser is built in.
+        List<String> javaModules = roots.stream().filter(rootOfFile::containsValue).map(r -> r.module).distinct().collect(Collectors.toList());
+        List<String> ktModules = roots.stream().filter(rootOfKt::containsValue).map(r -> r.module).distinct().collect(Collectors.toList());
+        if (!javaModules.isEmpty()) provenance("java", javaModules, "javac", System.getProperty("java.version"), "path", true,
+                JavaScanner.EXTRACTOR, JavaScanner.VERSION);
+        if (!ktModules.isEmpty()) provenance("kotlin", ktModules, KotlinScanner.EXTRACTOR, KotlinScanner.VERSION, "pinned", false,
+                KotlinScanner.EXTRACTOR, KotlinScanner.VERSION);
         Path home = Paths.get(Toolchain.env("DEPVIEWER_HOME", template != null && template.toAbsolutePath().getParent() != null
                 ? template.toAbsolutePath().getParent().toString() : ".")).toAbsolutePath().normalize();
         List<Toolchain> toolchains = List.of(new Toolchain("typescript", "TypeScript/JavaScript", home), new Toolchain("dart", "Dart", home));

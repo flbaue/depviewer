@@ -129,6 +129,8 @@ final class Rules {
         final int[][] edges;                 // {from, to, kind, count}
         final List<List<Integer>> lines = new ArrayList<>();
         final List<String> edgeKinds;
+        final String[] module;
+        private final Map<String, Boolean> exactOf = new HashMap<>();   // "language module" -> exact, from the provenance
 
         @SuppressWarnings("unchecked")
         Graph(Map<?, ?> model) {
@@ -137,7 +139,7 @@ final class Rules {
             parent = new int[n]; file = new int[n];
             kind = new String[n]; q = new String[n]; key = new String[n]; id = new String[n];
             test = new boolean[n]; ext = new boolean[n];
-            String[] module = new String[n];
+            module = new String[n];
             for (int i = 0; i < n; i++) {
                 Map<?, ?> m = (Map<?, ?>) nodes.get(i);
                 parent[i] = m.get("p") instanceof Double ? ((Double) m.get("p")).intValue() : -1;
@@ -151,6 +153,13 @@ final class Rules {
                 file[i] = "file".equals(kind[i]) ? i : p >= 0 ? file[p] : -1;
                 test[i] = Boolean.TRUE.equals(m.get("t")) || m.get("t") instanceof Double && (Double) m.get("t") != 0 || p >= 0 && test[p] && file[p] >= 0;
                 ext[i] = kind[i].startsWith("ext");
+            }
+            if (model.get("analysis") instanceof List) {
+                for (Object o : (List<?>) model.get("analysis")) {
+                    if (!(o instanceof Map) || !(((Map<?, ?>) o).get("modules") instanceof List)) continue;
+                    Map<?, ?> a = (Map<?, ?>) o;
+                    for (Object m : (List<?>) a.get("modules")) exactOf.put(a.get("language") + " " + m, !Boolean.FALSE.equals(a.get("exact")));
+                }
             }
             edgeKinds = model.get("edgeKinds") instanceof List ? (List<String>) model.get("edgeKinds") : Model.EDGE_KINDS;
             List<?> es = model.get("edges") instanceof List ? (List<?>) model.get("edges") : List.of();
@@ -186,10 +195,23 @@ final class Rules {
             return k >= 0 && k < edgeKinds.size() ? edgeKinds.get(k) : "uses";
         }
 
-        /** Name-based: the source is Kotlin, which is resolved by name until FR-052. */
+        /**
+         * Whether the source's references are resolved exactly: from the provenance of its language and
+         * module (spec FR-011). Models without one: Kotlin is resolved by name until FR-052.
+         */
         boolean exact(int from) {
             String p = path(from);
-            return p == null || !p.endsWith(".kt");
+            if (p == null) return true;
+            Boolean known = exactOf.get(language(p) + " " + module[from]);
+            return known != null ? known : !p.endsWith(".kt");
+        }
+
+        /** The language of a source file, as the provenance names it. */
+        static String language(String path) {
+            if (path.endsWith(".java")) return "java";
+            if (path.endsWith(".kt")) return "kotlin";
+            if (path.endsWith(".dart")) return "dart";
+            return path.matches(".*\\.[cm]?[jt]sx?$") ? "typescript" : "";
         }
 
         boolean isAncestor(int a, int i) {

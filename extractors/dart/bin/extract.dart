@@ -50,6 +50,7 @@ void describe(String source) {
     'version': extractorVersion,
     'contract': 1,
     'languages': ['dart'],
+    'exact': true,
     'toolchain': {
       'tool': 'dart',
       'version': version,

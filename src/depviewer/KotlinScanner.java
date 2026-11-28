@@ -25,6 +25,9 @@ import static depviewer.Model.*;
 /** Kotlin: built-in lexer and declaration parser, references resolved by name (spec/wiki/functional-requirements/FR-004-analyse-kotlin-by-name.md). */
 final class KotlinScanner {
 
+    /** Name and version of this built-in parser in the provenance (spec FR-011); it resolves by name. */
+    static final String EXTRACTOR = "depviewer-kotlin", VERSION = "1.0.0";
+
     //
     // A lightweight reader for Kotlin sources (no Kotlin compiler needed). It is deliberately
     // simpler than javac:

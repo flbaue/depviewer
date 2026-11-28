@@ -48,7 +48,7 @@ if (process.argv[2] === "--describe") {
       toolchain.problem = "could not be loaded";
     }
   }
-  const describe = { name: manifest.name, version: manifest.version, contract: 1, languages: ["typescript", "javascript"], toolchain };
+  const describe = { name: manifest.name, version: manifest.version, contract: 1, languages: ["typescript", "javascript"], exact: true, toolchain };
   process.stdout.write(JSON.stringify(describe) + "\n");
   process.exit(0);
 }

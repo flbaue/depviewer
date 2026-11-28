@@ -1,11 +1,12 @@
 """JSON report checks for `depviewer check` on the fixture (spec/wiki/functional-requirements/FR-036-provide-the-check-command-and-its-exit-codes.md,
 FR-038-report-violations-as-versioned-json.md).
 
-Usage: rules.py <dir.json> <model.json> <moved.json> <kotlin.json>
+Usage: rules.py <dir.json> <model.json> <moved.json> <kotlin.json> <kotlin-exact.json>
   dir.json     check of test/fixture with test/fixture-architecture.json
   model.json   the same check on build/fixture.json (--model)
   moved.json   the same check on a copy with a blank line above Order.total()
   kotlin.json  a forbid rule from the Kotlin notify package to the domain
+  kotlin-exact.json  the same on a model whose provenance says Kotlin is exact (FR-011)
 """
 import json
 import sys
@@ -28,13 +29,14 @@ def layering(report):
     return vs[0] if vs else {}
 
 
-d, m, moved, kt = (load(p) for p in sys.argv[1:5])
+d, m, moved, kt, kt_exact = (load(p) for p in sys.argv[1:6])
 
 # FR-038: the format.
 check(d.get("format") == 1, "format must be 1")
 check(d["model"]["title"] == "fixture" and d["model"].get("generated"), "model title and date")
-# The model's analysis (FR-011), null while the scanner does not record it.
-check("analysis" in d["model"] and d["model"]["analysis"] is None, f"model analysis: {d['model']}")
+# The model's analysis (FR-011).
+check([a.get("language") for a in d["model"].get("analysis") or []] == ["java", "kotlin"], f"model analysis: {d['model']}")
+check(m["model"].get("analysis") == d["model"].get("analysis"), "--model must report the saved model's analysis")
 check(set(d["summary"]) == {"error", "warning", "baselined", "resolved", "overlaps"}, f"summary keys: {sorted(d['summary'])}")
 check(d["summary"]["error"] == 3, f"expected 3 errors, got {d['summary']['error']}")
 v = layering(d)
@@ -68,6 +70,10 @@ check(v.get("fingerprint") == "layers|layering|T:fixture:com.example.domain.Orde
 # FR-038: Kotlin violations are name-based.
 kv = [x for x in kt["violations"] if x["rule"] == "notify-no-domain"]
 check(kv and all(x["exact"] is False and x["from"]["path"].endswith(".kt") for x in kv), f"Kotlin violations must have exact false: {kv}")
+
+# FR-011: exact comes from the provenance of the source's language and module.
+kv = [x for x in kt_exact["violations"] if x["rule"] == "notify-no-domain"]
+check(kv and all(x["exact"] is True for x in kv), f"exact must follow the provenance: {kv}")
 
 if failures:
     print("FAIL rules.py:\n  " + "\n  ".join(failures))

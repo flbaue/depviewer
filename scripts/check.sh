@@ -82,6 +82,9 @@ if [ -n "$HAVE_TS" ]; then
   printf '{"name": "typescript", "version": "3.9.7"}' > "$T/old/node_modules/typescript/package.json"
   # The project's own supported TypeScript is used.
   tc project "typescript 5.9.3 (project: $T/project/node_modules/typescript) for shop-web"
+  # ... and recorded in the model (spec/wiki/functional-requirements/FR-011-record-the-provenance-of-every-language-and-module.md).
+  python3 -I -c 'import json, sys; a = json.load(open(sys.argv[1]))["analysis"]; sys.exit(not (len(a) == 1 and a[0]["source"] == "project" and a[0]["version"] == "5.9.3" and "path" not in a[0]))' \
+    "$T/project.json" || fail "the project's TypeScript is not recorded as source project"
   # An unsupported project version is reported and the next candidate is tried.
   tc old "TypeScript 3.9.7 (project: $T/old/node_modules/typescript) is not supported (needs >=5.0.0 <7.0.0), trying the next one"
   grep "for shop-web" "$T/old.log" | grep -q "(project:" && fail "the unsupported project TypeScript was used"
@@ -284,7 +287,10 @@ json "$R/model.json" --rules test/fixture-architecture.json --model "$OUT/fixtur
 variant moved
 python3 -I -c 'import sys; p=sys.argv[1]; s=open(p).read(); open(p,"w").write(s.replace("    // Deliberate upward", "\n    // Deliberate upward"))' "$R/moved/src/main/java/com/example/domain/Order.java"
 json "$R/moved.json" --rules test/fixture-architecture.json "$R/moved"
-python3 -I test/checks/rules.py "$R/dir.json" "$R/model.json" "$R/moved.json" "$R/kotlin-report.json"
+# FR-011: exact follows the model's provenance, here a Kotlin entry that claims exact resolution.
+python3 -I -c 'import json,sys; m=json.load(open(sys.argv[1])); [a.update(exact=True) for a in m["analysis"] if a["language"] == "kotlin"]; json.dump(m,open(sys.argv[2],"w"))' "$OUT/fixture.json" "$R/kotlin-exact-model.json"
+json "$R/kotlin-exact.json" --rules "$R/kotlin.json" --model "$R/kotlin-exact-model.json"
+python3 -I test/checks/rules.py "$R/dir.json" "$R/model.json" "$R/moved.json" "$R/kotlin-report.json" "$R/kotlin-exact.json"
 # FR-039: --update-baseline, then everything is baselined; a removed reference shows as resolved.
 expect 0 'wrote 3 fingerprints' --rules test/fixture-architecture.json --baseline "$R/baseline.json" --update-baseline test/fixture
 expect 0 'errors: 0, warnings: 0, baselined: 3, resolved: 0' --rules test/fixture-architecture.json --baseline "$R/baseline.json" test/fixture

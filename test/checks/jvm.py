@@ -108,4 +108,9 @@ edge("com.example.domain.OrderTest.totalIsZeroForNewOrder()", "com.example.domai
 bogus = [q for q in by_q if q.startswith("?") and q[1:].split(".")[0] in ("NotificationService", "EmailNotifier")]
 check(not bogus, f"Java->Kotlin references must not end up as unresolved externals: {bogus}")
 
+# --- provenance (spec FR-011): Java is exact, Kotlin name-based until FR-052
+c.analysis("java", ["fixture"], "javac", True, "depviewer-java")
+c.analysis("kotlin", ["fixture"], "depviewer-kotlin", False, "depviewer-kotlin")
+check(len(c.data.get("analysis") or []) == 2, "analysis: only java and kotlin expected")
+
 c.finish("jvm")

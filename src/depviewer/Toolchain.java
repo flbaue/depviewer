@@ -33,6 +33,7 @@ final class Toolchain {
     /** The toolchain chosen for a set of modules, as the extractor's --describe reported it. */
     static final class Choice {
         final String tool, version, source, path, extractor, extractorVersion;
+        final boolean exact;
         final List<String> command;   // the extractor command, without the request file
 
         Choice(Map<?, ?> describe, List<String> command) {
@@ -43,6 +44,7 @@ final class Toolchain {
             path = str(t.get("path"));
             extractor = str(describe.get("name"));
             extractorVersion = str(describe.get("version"));
+            exact = !Boolean.FALSE.equals(describe.get("exact"));
             this.command = command;
         }
 
@@ -124,6 +126,8 @@ final class Toolchain {
                 int code = p.waitFor();
                 if (code != 0) { System.err.printf("%s: extractor failed for %s (exit code %d), skipped%n", label, names, code); return; }
                 merge(first.name, Json.parse(out));
+                provenance(language, run.stream().map(m -> m.name).collect(java.util.stream.Collectors.toList()), choice.tool,
+                        choice.version, choice.source, choice.exact, choice.extractor, choice.extractorVersion);
             } catch (IOException | IllegalArgumentException | ClassCastException e) {
                 System.err.printf("%s: extractor failed for %s (%s), skipped%n", label, names, e.getMessage());
             }
