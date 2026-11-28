@@ -107,3 +107,23 @@ test('FR-043: groups new in the architecture file show up over an older copy in 
   expect(out.views[0].groups.map(g => g.id)).toEqual(src.views[0].groups.map(g => g.id));
   expect(out.views[0].groups.find(g => g.id === 'infra').match).toEqual(['path:**/infra/**']);
 });
+
+test('FR-041: patterns and manual assignments at different levels place files as check does', async ({ page }) => {
+  // build/fixture-levels.html: com.example.domain is assigned to svc by hand; dom selects it and its
+  // subpackage event by pattern and excludes Status.java. check puts OrderPlaced.java in dom, Status.java in svc.
+  await page.goto(page_('fixture-levels.html'));
+  const select = page.locator('#pbody select[data-assign]');
+  await pick(page, 'OrderPlaced.java');
+  await expect(select).toHaveValue('dom');
+  await expect(page.locator('#pbody .kv')).toContainText('by pattern');
+  await pick(page, 'Status.java');
+  await expect(select).toHaveValue('svc');
+  await pick(page, 'Order.java');
+  await expect(select).toHaveValue('svc');
+});
+
+test('FR-040: an element in no group shows its no-ungrouped violation', async ({ page }) => {
+  await page.goto(page_('fixture-ungrouped.html'));
+  await pick(page, 'com.example.notify');
+  await expect(page.locator('#pbody .viol').filter({ hasText: 'all-grouped' })).toContainText('error');
+});

@@ -30,6 +30,9 @@ final class Rules {
         if (rs == null) return;
         String where = file + ": view \"" + view.get("id") + "\": ";
         if (!(rs instanceof List)) throw new Architecture.Invalid(where + "\"rules\" must be an array");
+        // Fingerprints join view and rule ids with "|" (DT-018).
+        if (!((List<?>) rs).isEmpty() && !(view.get("id") instanceof String && !((String) view.get("id")).isEmpty() && !((String) view.get("id")).contains("|")))
+            throw new Architecture.Invalid(where + "a view with rules needs an id, which must not contain \"|\"");
         Set<String> groups = new HashSet<>();
         if (view.get("groups") instanceof List)
             for (Object g : (List<?>) view.get("groups")) if (g instanceof Map && ((Map<?, ?>) g).get("id") instanceof String) groups.add((String) ((Map<?, ?>) g).get("id"));
@@ -42,6 +45,7 @@ final class Rules {
             if (!(r.get("id") instanceof String) || ((String) r.get("id")).isEmpty()) throw new Architecture.Invalid(where + "rule " + n + ": \"id\" is required");
             String id = (String) r.get("id");
             String at = where + "rule \"" + id + "\": ";
+            if (id.contains("|")) throw new Architecture.Invalid(at + "the id must not contain \"|\"");
             if (!ids.add(id)) throw new Architecture.Invalid(at + "the id is used twice in this view");
             Object kind = r.get("kind");
             if (!KINDS.contains(kind))
@@ -52,6 +56,7 @@ final class Rules {
                 if (r.containsKey(b) && !(r.get(b) instanceof Boolean)) throw new Architecture.Invalid(at + "\"" + b + "\" must be true or false");
             if (r.containsKey("edgeKinds")) {
                 if (!(r.get("edgeKinds") instanceof List)) throw new Architecture.Invalid(at + "\"edgeKinds\" must be an array");
+                if (((List<?>) r.get("edgeKinds")).isEmpty()) throw new Architecture.Invalid(at + "\"edgeKinds\" needs at least 1 entry");
                 for (Object k : (List<?>) r.get("edgeKinds"))
                     if (!Model.EDGE_KINDS.contains(k)) throw new Architecture.Invalid(at + "unknown dependency kind \"" + k + "\" in \"edgeKinds\" (" + String.join(", ", Model.EDGE_KINDS) + ")");
             }

@@ -200,6 +200,12 @@ rules "$R/badrule.json" '[{"id": "x", "kind": "layers", "order": ["app", "nope"]
 expect 2 'rule "x": unknown group "nope"' --rules "$R/badrule.json" test/fixture
 rules "$R/badkind.json" '[{"id": "x", "kind": "sideways"}]'
 expect 2 'rule "x": unknown kind "sideways"' --rules "$R/badkind.json" test/fixture
+rules "$R/nokinds.json" '[{"id": "x", "kind": "forbid", "from": "app", "to": "dom", "edgeKinds": []}]'
+expect 2 'rule "x": "edgeKinds" needs at least 1 entry' --rules "$R/nokinds.json" test/fixture
+rules "$R/pipe.json" '[{"id": "a|b", "kind": "forbid", "from": "app", "to": "dom"}]'
+expect 2 'must not contain "|"' --rules "$R/pipe.json" test/fixture
+python3 -I -c 'import json,sys; a=json.load(open("test/fixture-architecture.json")); a["views"].append(a["views"][0]); json.dump(a,open(sys.argv[1],"w"))' "$R/dupview.json"
+expect 2 'view id "layers" is used twice' --rules "$R/dupview.json" test/fixture
 echo ok
 
 step "check command (spec/wiki/functional-requirements/FR-035-run-the-check-from-the-command-line-and-in-ci.md)"
@@ -336,6 +342,21 @@ step "UI scenarios (spec/wiki/quality-requirements/QR-010-every-delivered-viewer
 ./depviewer -o "$OUT/fixture-arch.html" --views test/fixture-architecture.json test/fixture 2>/dev/null
 ./depviewer -o "$OUT/fixture-forbid.html" --views "$R/forbid.json" test/fixture 2>/dev/null
 ./depviewer -o "$OUT/fixture-exclude.html" --views "$R/exclude.json" test/fixture 2>/dev/null
+./depviewer -o "$OUT/fixture-ungrouped.html" --views "$R/ungrouped.json" test/fixture 2>/dev/null
+# levels.html: com.example.domain assigned to svc by hand. Its subpackage event is still selected by dom's
+# pattern, and Status.java, which dom excludes, inherits svc (FR-028), in check and in the viewer.
+python3 -I -c 'import json,sys; a=json.load(open("test/fixture-architecture.json")); v=a["views"][0]; d=[g for g in v["groups"] if g["id"]=="dom"][0]; d["match"]=["package:com.example.domain.**", "!path:**/Status.java"]; v["assign"]["P:fixture:com.example.domain"]="svc"; v["rules"].append({"id": "app-svc", "kind": "forbid", "from": "app", "to": "svc"}); json.dump(a,open(sys.argv[1],"w"))' "$R/levels.json"
+./depviewer -o "$OUT/fixture-levels.html" --views "$R/levels.json" test/fixture 2>/dev/null
+./depviewer check --rules "$R/levels.json" --format json test/fixture > "$R/levels-report.json" 2>/dev/null || true
+python3 -I -c '
+import json,sys
+r=json.load(open(sys.argv[1])); g={}
+for v in r["violations"]:
+    for e in (v.get("from"),v.get("to")):
+        if e and "path" in e: g.setdefault(e["path"].rsplit("/",1)[-1], e.get("group"))
+want={"OrderPlaced.java":"dom","Status.java":"svc"}
+bad={k:(g.get(k),w) for k,w in want.items() if g.get(k)!=w}
+sys.exit("check groups differ: %s" % bad if bad else 0)' "$R/levels-report.json"
 grep -q '"matched":{' "$OUT/fixture-arch.html" || fail "--views: pattern assignments not embedded"
 grep -q '"violations":\[{"rule":"layering"' "$OUT/fixture-arch.html" || fail "--views: violations not embedded"
 if command -v node >/dev/null 2>&1 && [ -d test/ui/node_modules/@playwright/test ]; then

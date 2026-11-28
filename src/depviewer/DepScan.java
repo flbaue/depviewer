@@ -205,6 +205,16 @@ public class DepScan {
             byView.put(String.valueOf(view.get("id")), vs);
             all.addAll(vs);
         }
+        if (out != null) {
+            try {
+                String html = viewerHtml(template, Files.readString(modelFile), Report.embed(arch.root, nodes, byView, g));
+                Files.writeString(out, html);
+            } catch (IOException e) {
+                return invalid(out + ": cannot write (" + e.getMessage() + ")");
+            } catch (Failed e) {
+                return invalid(e.getMessage());
+            }
+        }
         // A fingerprint starts with its view: entries of views this run does not check stay as they are.
         Set<String> checkedIds = new HashSet<>();
         for (Map<?, ?> v : checked) checkedIds.add(String.valueOf(v.get("id")));
@@ -235,16 +245,6 @@ public class DepScan {
         for (String f : baselineIn) if (!current.contains(f) && ours.test(f)) resolved.add(f);
         resolved.sort(null);
 
-        if (out != null) {
-            try {
-                String html = viewerHtml(template, Files.readString(modelFile), Report.embed(arch.root, nodes, byView, g));
-                Files.writeString(out, html);
-            } catch (IOException e) {
-                return invalid(out + ": cannot write (" + e.getMessage() + ")");
-            } catch (Failed e) {
-                return invalid(e.getMessage());
-            }
-        }
         if (format.equals("json")) {
             System.out.println(Json.write(Report.json(modelData, all, g, groups, resolved, overlaps)));
         } else {

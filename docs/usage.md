@@ -56,7 +56,7 @@ rules prints `no rules` and exits 0.
 |---|---|
 | 0 | No failing violations. |
 | 1 | Failing violations. |
-| 2 | Invalid arguments, architecture file or model, for example a missing file, an unknown `version`, an unknown rule kind, a rule naming a group that does not exist, or a `--model` that is not a depviewer model. |
+| 2 | Invalid arguments, architecture file or model, for example a missing file, an unknown `version`, an unknown rule kind, a rule naming a group that does not exist, two views with one id, a `|` in the id of a rule or of a view with rules, or a `--model` that is not a depviewer model. |
 
 ### Selectors
 

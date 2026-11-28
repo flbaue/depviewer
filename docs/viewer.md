@@ -64,7 +64,8 @@ Scanned with `--views architecture.json` (or `check --out`), a view with `match`
   pattern)**. Its **✕** removes the manual assignment, and the pattern applies again. The viewer
   does not edit patterns or rules, and places a type matched on its own with its file.
 - An arc's details list the rule violations on it, with rule, severity and **exact** or **by name**
-  (Kotlin). An arc with an error is drawn in the violation colour even when it points downward.
+  (Kotlin). An arc with an error is drawn in the violation colour even when it points downward. An
+  element that `no-ungrouped` reports lists the rule in its own details.
 - *Export views* writes `version`, `match` and `rules` back unchanged, with your manual assignments
   and without what the scanner resolved. Patterns, rules and violations always come from the
   embedded file, and groups or views new in it are added: browser storage only keeps your own

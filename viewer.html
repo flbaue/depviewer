@@ -409,12 +409,13 @@ const isOrigDesc = (d, o) => { for (let a = d; a; a = a.op) if (a === o) return 
 // The group an element is in (null: ungrouped) and where that comes from: manual assignments win over
 // pattern assignments ("matched", resolved by the scanner) on the same element, the nearer element wins.
 // An element a group's "!" selector keeps out ("excluded") never inherits that group, as in the scanner.
-function decide(v, o, ownManual = true) {
-  if (ownManual && hasOwn(v.assign, o.okey)) return { gid: v.assign[o.okey] || null, from: 'manual', at: o };
+// Same order as Architecture.resolve() in the scanner; `manual` false leaves out all manual assignments.
+function decide(v, o, ownManual = true, manual = true) {
+  if (manual && ownManual && hasOwn(v.assign, o.okey)) return { gid: v.assign[o.okey] || null, from: 'manual', at: o };
   if (hasOwn(v.matched, o.okey)) return { gid: v.matched[o.okey] || null, from: 'match', at: o };
   const ex = v.excluded && hasOwn(v.excluded, o.okey) ? v.excluded[o.okey] : null;
   for (let p = o.op; p; p = p.op) {
-    const d = decide(v, p);
+    const d = decide(v, p, true, manual);
     if (!d.gid || !ex || !ex.includes(d.gid)) return d;
   }
   return { gid: null, from: null, at: null };
@@ -423,8 +424,8 @@ function decide(v, o, ownManual = true) {
 const inherited = (v, o) => decide(v, o, false).gid;
 // The group patterns alone give `o`, or undefined when no pattern decides it.
 function byPattern(v, o) {
-  for (let a = o; a; a = a.op) if (hasOwn(v.matched, a.okey)) return v.matched[a.okey] || null;
-  return undefined;
+  const d = decide(v, o, true, false);
+  return d.from ? d.gid : undefined;
 }
 
 // The original element a display node stands for when it is assigned (types/members move with their file).
@@ -908,9 +909,13 @@ function showPanel() {
     const v = curView(), g = v.groups.find(x => x.id === n.gid);
     gs = `<span>Parent</span><span><select data-parent="${esc(n.gid)}">${groupOptions(v, g.parent || null, n.gid)}</select></span>`;
   }
+  // no-ungrouped violations name the element itself (spec/wiki/functional-requirements/FR-040-show-rule-violations-in-the-viewer.md).
+  const cv = curView(), okeys = (n.origins || [n]).map(o => o.okey).filter(Boolean);
+  const own = cv && Array.isArray(cv.violations) ? cv.violations.filter(x => Array.isArray(x.keys) && x.keys.some(k => okeys.includes(k))) : [];
   pbody.innerHTML = `<h2>${icon(n)}${esc(n.n)}${n.cyc ? '<span class="badge">cycle</span>' : ''}</h2>` +
     (n.q !== n.n ? `<div class="sub">${esc(n.q)}</div>` : '') +
     `<div class="kv">${kv.map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join('')}${gs}</div>` + extra +
+    (own.length ? `<h3>Rule violations</h3><ul style="padding-left:0">${own.map(x => `<li class="viol"><b>${esc(x.rule)}</b> · ${esc(x.severity || 'error')} · in no group</li>`).join('')}</ul>` : '') +
     (cycWith.length ? `<h3 style="color:var(--cyc)">In a cycle with</h3><ul style="padding-left:0">${cycWith.map(x => `<li data-k="${esc(x.key)}">${icon(x)}${esc(x.n)}</li>`).join('')}</ul>` : '') +
     `<h3>Depends on (${sum(out)})</h3>${groupList(out, 'out')}` +
     `<h3>Used by (${sum(inc)})</h3>${groupList(inc, 'in')}`;

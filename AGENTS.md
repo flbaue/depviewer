@@ -161,10 +161,10 @@ changes between major versions.
   `""` means "explicitly ungrouped" (overrides an assigned ancestor). `parent` nests a group; a
   missing parent or a parent loop (hand-edited files) must degrade to a top-level group, never hang
   or crash — `inGroup()` guards the walks.
-- Embedded views may also carry what the scanner resolved: `matched` (`{ key: groupId | "" }`, the
-  pattern assignments), `excluded` (`{ key: [groupId] }`, groups a `!` selector keeps the element out
+- Embedded views may also carry what the scanner resolved: `matched` (`{ key: groupId }`, the first
+  group whose pattern selects the element itself), `excluded` (`{ key: [groupId] }`, groups a `!` selector keeps the element out
   of, which it then never inherits) and `violations` (`[{ rule, severity, exact, kind, edges: [[from, to]] }]`,
-  node indices of this model). They never go into localStorage or an export, and a manual `assign`
+  node indices of this model; `no-ungrouped` has `keys` instead of `edges`). They never go into localStorage or an export, and a manual `assign`
   entry wins over a `matched` entry on the same element (`decide()`, which mirrors
   `Architecture.resolve()`).
 - The two template markers must stay in `viewer.html` exactly once each (`check.sh` enforces it).

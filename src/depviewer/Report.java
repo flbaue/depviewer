@@ -196,15 +196,22 @@ final class Report {
             if (list != null) {
                 List<Object> vl = new ArrayList<>();
                 for (Rules.Violation v : list) {
-                    if (v.refs.isEmpty()) continue;
+                    if (v.refs.isEmpty() && v.from < 0) continue;
                     Map<String, Object> x = new LinkedHashMap<>();
                     x.put("rule", v.rule);
                     x.put("severity", v.severity);
                     x.put("exact", v.exact);
                     x.put("kind", v.kind);
-                    Set<List<Integer>> pairs = new LinkedHashSet<>();
-                    for (Rules.Ref r : v.refs) pairs.add(List.of(r.from, r.to));
-                    x.put("edges", new ArrayList<>(pairs));
+                    if (v.refs.isEmpty()) {   // no-ungrouped: the element, by the key the viewer knows (a type: its file)
+                        int e = v.from;
+                        while (e >= 0 && (Architecture.TYPE_KINDS.contains(g.kind[e]) || Architecture.MEMBER_KINDS.contains(g.kind[e]))) e = g.parent[e];
+                        if (e < 0 || g.key[e] == null) continue;
+                        x.put("keys", List.of(g.key[e]));
+                    } else {
+                        Set<List<Integer>> pairs = new LinkedHashSet<>();
+                        for (Rules.Ref r : v.refs) pairs.add(List.of(r.from, r.to));
+                        x.put("edges", new ArrayList<>(pairs));
+                    }
                     vl.add(x);
                 }
                 view.put("violations", vl);
@@ -237,22 +244,17 @@ final class Report {
         return out;
     }
 
-    /** Pattern assignments for the viewer: where the group from patterns alone differs from the nearest keyed ancestor's. */
+    /**
+     * Pattern assignments for the viewer: each element's first group whose {@code match} selects it directly.
+     * The viewer applies them as {@link Architecture#resolve} does: own manual assignment, own pattern, then the
+     * nearest ancestor's group, skipping the groups in {@code excluded}.
+     */
     static Map<String, Object> matched(Map<?, ?> view, List<Object> nodes, Rules.Graph g) {
-        Map<String, Object> patternsOnly = new LinkedHashMap<>();
-        for (Map.Entry<?, ?> e : view.entrySet()) if (!"assign".equals(e.getKey())) patternsOnly.put(String.valueOf(e.getKey()), e.getValue());
-        String[] group = Architecture.resolve(patternsOnly, nodes).group;
-        String[] vk = new String[g.n];
-        int[] keyed = new int[g.n];   // nearest ancestor with a viewer key
+        String[] direct = Architecture.resolve(view, nodes).direct;
         Map<String, Object> out = new LinkedHashMap<>();
         for (int i = 0; i < g.n; i++) {
-            int p = g.parent[i];
-            keyed[i] = p < 0 ? -1 : vk[p] != null ? p : keyed[p];
-            String k = Architecture.MEMBER_KINDS.contains(g.kind[i]) || Architecture.TYPE_KINDS.contains(g.kind[i]) ? null : g.key[i];
-            vk[i] = k;
-            if (k == null) continue;
-            String inherited = keyed[i] >= 0 ? group[keyed[i]] : null;
-            if (!Objects.equals(group[i], inherited)) out.put(k, group[i] == null ? "" : group[i]);
+            if (direct[i] == null || Architecture.MEMBER_KINDS.contains(g.kind[i]) || Architecture.TYPE_KINDS.contains(g.kind[i]) || g.key[i] == null) continue;
+            out.put(g.key[i], direct[i]);
         }
         return out;
     }
