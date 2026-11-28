@@ -150,8 +150,8 @@ never block or silently rewrite. The human decides.
 Every change goes on a feature branch and into a PR, wiki changes included. The
 human merges. You never merge your own PR. The `status` field still carries a
 page's maturity, so a merge to `main` does not mean "agreed". Keep one commit
-per capture or inspect run, with a message naming it, so `git revert` stays
-clean. The `_system/log.md` entry is the review trail.
+per capture or inspect run, with a message naming it, plus any commits that fix
+review findings, so `git revert` stays clean. The `_system/log.md` entry is the review trail.
 
 | Change | Delivery |
 |--------|----------|

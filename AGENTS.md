@@ -13,7 +13,7 @@ no frameworks** — a JDK 17+ and a browser are all a user needs.
 | File | Role |
 |---|---|
 | `src/depviewer/` | Scanner (Java 17, JDK only, package `depviewer`). `DepScan` = CLI, source discovery, orchestration, output; `Model` = nodes/edges/packages/externals/JSON writer shared by all languages; `JavaScanner` = javac Trees API (parses *and attributes*, exact); `KotlinScanner` = built-in lexer/parser, name-based resolution ([FR-004](spec/wiki/functional-requirements/FR-004-analyse-kotlin-by-name.md)); `Toolchain` = runs a language extractor and merges its JSON fragment; `Json` = minimal JSON reader; `Architecture` = loads and validates the architecture file for `check` and `--views` ([FR-026](spec/wiki/functional-requirements/FR-026-read-the-architecture-file.md)) matches `match` selectors against the model's nodes ([FR-027](spec/wiki/functional-requirements/FR-027-select-code-by-patterns.md)) and decides each element's group, with overlap warnings ([FR-028](spec/wiki/functional-requirements/FR-028-decide-each-elements-group-by-precedence.md)). The `depviewer` wrapper compiles it into `build/depviewer-classes` on first use. Without the wrapper: `javac -d out src/depviewer/*.java && java -cp out depviewer.DepScan …`. |
-| `spec/` | **The spec and the backlog.** Requirements and architecture as a [systems42](https://systems42.org) wiki (req42 + arc42): goals, functional and quality requirements, constraints, building blocks, decisions (ADR 0001 is [DR-001](spec/wiki/decisions/DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract.md)) and open issues. Start here for any change. Read `spec/AGENTS.md` before you work there. Its content and commit rules apply inside `spec/`, its `capture` and `implement` workflows govern every change (see Workflow), and its [writing style](spec/_system/writing-style.md) binds all text in the repository. Skills: `capture`, `grill-requirements`, `implement`, `recover`, `requirements-wiki` (linked in `.claude/skills/`). The old `docs/specs/`, `docs/adr/` and GitHub issues are archived in `spec/raw/ingested/` ([ISS-014](spec/wiki/issues/ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr.md)). |
+| `spec/` | **The spec and the backlog.** Requirements and architecture as a [systems42](https://systems42.org) wiki (req42 + arc42): goals, functional and quality requirements, constraints, building blocks, decisions (ADR 0001 is [DR-001](spec/wiki/decisions/DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract.md)) and open issues. Start here for any change. Read `spec/AGENTS.md` before you work there. Its content and commit rules apply inside `spec/`, its `capture` and `implement` workflows govern every change (see Workflow), and its [writing style](spec/_system/writing-style.md) binds all text in the repository, including code comments, UI text and PR descriptions. Its source and Issue rules apply to the wiki only. Skills: `capture`, `grill-requirements`, `implement`, `recover`, `requirements-wiki` (linked in `.claude/skills/`). The old `docs/specs/`, `docs/adr/` and GitHub issues are archived in `spec/raw/ingested/` ([ISS-014](spec/wiki/issues/ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr.md)). |
 | `viewer.html` | Viewer template. One self-contained HTML file with inline CSS and vanilla JS. The scanner replaces `/*DEPS_DATA*/null` with the model and `/*DEPS_VIEWS*/null` with exported views. |
 | `depviewer` | POSIX shell wrapper that passes `--template` and runs the scanner. |
 | `extractors/typescript/` | TypeScript/JavaScript extractor: `extract.mjs` on the TypeScript compiler API (Node). Pinned in `package-lock.json`. |
@@ -32,9 +32,10 @@ here or work around them. Paths in `spec/AGENTS.md`, its workflows and its skill
 `spec/`, so run their scripts from there.
 
 Every change goes on a feature branch and into a PR that the maintainer merges, wiki changes
-included ([commit policy](spec/AGENTS.md#commit-policy)). A branch name set by your harness or a
-fork replaces `implement/<id>-<slug>`. Outside contributors open an issue first (see
-[CONTRIBUTING.md](CONTRIBUTING.md)).
+included ([commit policy](spec/AGENTS.md#commit-policy)). A branch name your harness requires
+replaces `implement/<id>-<slug>`. For a feature or behaviour change, outside contributors open a
+GitHub issue first (see [CONTRIBUTING.md](CONTRIBUTING.md)). The maintainer approves their plan
+there, and that comment, linked in the PR, is the approval `implement.md` asks for.
 
 - **A new idea or changed behaviour** becomes requirements with the `capture` skill
   ([capture.md](spec/_system/workflows/capture.md), grill-gated, see
@@ -47,6 +48,7 @@ fork replaces `implement/<id>-<slug>`. Outside contributors open an issue first 
 - **A small bug fix** that changes no specified behaviour skips both, but not the rules below.
 - **A change with no user-visible behaviour** (refactor, docs, CI, tooling, this file) skips both
   as well. Rule 1 does not apply: the existing checks must stay green instead.
+- **A wiki-only PR** (capture, inspect) needs none of rules 1 to 4, but rule 5 applies.
 
 Inside that loop, depviewer adds these rules:
 
@@ -58,7 +60,8 @@ Inside that loop, depviewer adds these rules:
 2. **Implement until green**, then run the whole `scripts/check.sh`.
 3. **Check for regressions on real code**: rescan a larger project with the previous scanner
    version (`git archive HEAD src | tar -x -C <tmp>`, compile it there) and the new one and compare
-   the JSON (ignoring `generated`). Differences must be intended.
+   the JSON (ignoring `generated`); differences must
+   be intended.
 4. **Update the docs and the wiki**: `docs/usage.md`, `languages.md`, `viewer.md`,
    `quick-start.md` (the README only for the overview), this file if behaviour or invariants
    changed, and on the requirement pages `release` (e.g. `delivered`) and affected child
