@@ -87,7 +87,7 @@ never block or silently rewrite. The human decides.
   recommended answer, so the questions the writing threw up are answered before
   any of them become Issues. See `_system/workflows/capture.md`, step 6.
 - **IDs**: `TYPE-NNN`, e.g. `DT-001`, `STK-003`, `FR-024`, `QR-004`, `ISS-009`.
-  IDs are stable and never reused. Filenames: `TYPE-NNN-kebab-title.md`.
+  IDs are stable and never reused once merged to `main`. Filenames: `TYPE-NNN-kebab-title.md`.
 - **Links**: use Obsidian wikilinks `[[FEAT-002-checkout]]`. Every cross-reference
   is a real link so the graph view works. No bare prose references.
 - **Link every reference in what you write to the human.** In chat replies,
@@ -153,10 +153,14 @@ page's maturity, so a merge to `main` does not mean "agreed". Keep one commit
 per capture or inspect run, with a message naming it, plus any commits that fix
 review findings, so `git revert` stays clean. The `_system/log.md` entry is the review trail.
 
-IDs are final only once merged. Before you assign one, run `git fetch origin`
-and take the next ID above the highest on `main` and on every remote branch.
-Before merge, update the branch from `main` and renumber any ID that was taken
-in the meantime, with the filename and every link to it.
+Two open PRs can claim the same ID. When you assign one (`capture.md` step 5),
+the highest ID ever used includes every remote branch: run `git fetch origin`
+and check the page files and the retirements in `_system/log.md` on `main` and
+on each `origin/*` branch (`git ls-tree -r --name-only <branch> -- wiki` and
+`git show <branch>:_system/log.md`). When you ask for merge, and whenever the
+human asks you to update the PR, update it from `main` and renumber any ID taken
+in the meantime: the filename, the `id:` field, every link to it, its
+`_system/index.md` entry, the source's `ingested-pages:` and your log entry.
 
 | Change | Delivery |
 |--------|----------|
