@@ -2,7 +2,7 @@
 id: CON-005
 type: constraint
 title: Selectors are resolved only in the scanner core
-status: review
+status: accepted
 created: 2026-11-27
 updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]

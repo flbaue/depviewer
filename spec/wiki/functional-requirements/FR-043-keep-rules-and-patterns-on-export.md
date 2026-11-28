@@ -2,7 +2,7 @@
 id: FR-043
 type: functional-requirement
 title: Keep rules and patterns on export
-status: review
+status: accepted
 created: 2026-11-27
 updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
@@ -18,7 +18,7 @@ lane: backbone
 order: 3
 goal: []
 delivery: implemented
-delivery-checked: "2026-11-28T14:07:25Z"
+delivery-checked: "2026-11-28T14:09:19Z"
 ---
 
 # Keep rules and patterns on export
