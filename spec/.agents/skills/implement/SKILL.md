@@ -22,7 +22,4 @@ one use-case slice.
    deliverable.
 4. Keep a criterion-by-criterion result/evidence table through implementation;
    a passing test suite alone is not enough to claim coverage.
-5. Before the PR, have a fresh agent session (one that does not inherit this
-   conversation) review the diff against the requirement, as in the workflow's
-   step 7. Fix or answer every finding and list them in the PR.
-6. Stop at a PR for human review and merge.
+5. Stop at a PR for human review and merge.

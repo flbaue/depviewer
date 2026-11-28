@@ -53,7 +53,8 @@ The maintainer wants every feature and behaviour change done this way:
    fix it (with a test where it is a bug) or note why not. Run `scripts/check.sh` again after
    fixes, and review again in a new fresh session if the fixes changed behaviour. Without a way to
    start a fresh session, say so in the PR instead of reviewing your own work and calling it
-   independent.
+   independent. This also applies when you work through the `implement` skill: do the review
+   before its PR step.
 
 If a test fails because the test itself was wrong, fix the test and say so in the commit — do
 not weaken a test to make an implementation pass.
