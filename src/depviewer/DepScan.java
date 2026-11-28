@@ -56,7 +56,18 @@ public class DepScan {
     }
 
     public static void main(String[] args) throws Exception {
-        new DepScan().run(args);
+        try {
+            new DepScan().run(args);
+        } catch (Failed e) {
+            System.err.println("depviewer: " + e.getMessage());
+            System.exit(1);
+        }
+    }
+
+    /** A scan that cannot go on; the message is meant for the user. */
+    static final class Failed extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+        Failed(String msg) { super(msg); }
     }
 
     static void usage() {
@@ -86,12 +97,11 @@ public class DepScan {
     }
 
     static void die(String msg) {
-        System.err.println("depviewer: " + msg);
-        System.exit(1);
+        throw new Failed(msg);
     }
 
     /** {@code depviewer check}: exit 0 no failing violations, 1 failing violations, 2 invalid input. */
-    static int check(String[] args) {
+    static int check(String[] args, Path template) {
         Path rules = null, model = null;
         List<Path> inputs = new ArrayList<>();
         for (int i = 1; i < args.length; i++) {
@@ -119,11 +129,54 @@ public class DepScan {
         } catch (Architecture.Invalid e) {
             return invalid(e.getMessage());
         }
+        List<Map<?, ?>> patterned = arch.viewsWithPatterns();
+        if (!patterned.isEmpty()) {
+            List<Object> nodes;
+            try {
+                nodes = modelNodes(model != null ? model : scanToJson(inputs, template));
+            } catch (Failed e) {
+                return invalid(e.getMessage());
+            }
+            for (Map<?, ?> view : patterned)
+                for (Architecture.Overlap o : Architecture.resolve(view, nodes).overlaps) System.out.println(o.message(String.valueOf(view.get("id"))));
+        }
         if (!arch.hasRules()) {
             System.out.println("no rules in " + rules);
             return 0;
         }
         return invalid(rules + ": rule checking is not implemented yet");
+    }
+
+    /** Scans the project directories with the default options into a temporary JSON model. */
+    static Path scanToJson(List<Path> inputs, Path template) {
+        try {
+            Path tmp = Files.createTempFile("depviewer-check", ".json");
+            tmp.toFile().deleteOnExit();
+            List<String> a = new ArrayList<>();
+            if (template != null) { a.add("--template"); a.add(template.toString()); }
+            a.add("-o"); a.add(tmp.toString());
+            for (Path in : inputs) a.add(in.toString());
+            new DepScan().run(a.toArray(new String[0]));
+            return tmp;
+        } catch (Failed e) {
+            throw e;
+        } catch (Exception e) {
+            throw new Failed("scan failed: " + e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    static List<Object> modelNodes(Path model) {
+        Object root;
+        try {
+            root = Json.parse(Files.readString(model));
+        } catch (IOException e) {
+            throw new Failed(model + ": cannot read (" + e.getMessage() + ")");
+        } catch (IllegalArgumentException e) {
+            throw new Failed(model + ": " + e.getMessage());
+        }
+        if (!(root instanceof Map) || !(((Map<?, ?>) root).get("nodes") instanceof List)) throw new Failed(model + ": not a depviewer model");
+        return (List<Object>) ((Map<?, ?>) root).get("nodes");
     }
 
     static int invalid(String msg) {
@@ -135,7 +188,7 @@ public class DepScan {
         // The wrapper puts --template before the command.
         int cmd = args.length > 1 && args[0].equals("--template") ? 2 : 0;
         if (args.length > cmd && args[cmd].equals("check")) {
-            System.exit(check(Arrays.copyOfRange(args, cmd, args.length)));
+            System.exit(check(Arrays.copyOfRange(args, cmd, args.length), cmd == 2 ? Paths.get(args[1]) : null));
             return;
         }
         List<Path> inputs = new ArrayList<>();

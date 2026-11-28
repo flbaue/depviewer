@@ -113,6 +113,17 @@ printf '{"views": [{"id": "a", "groups": [{"id": "g", "match": ["package:com.**"
 expect 0 'no rules' --rules "$A/goodsel.json" test/fixture
 echo ok
 
+step "assignment precedence (spec/wiki/functional-requirements/FR-028-decide-each-elements-group-by-precedence.md)"
+javac -Xlint:all -Werror -cp "$OUT/classes:$OUT/test-classes" -d "$OUT/test-classes" test/checks/AssignCheck.java
+java -cp "$OUT/classes:$OUT/test-classes" depviewer.AssignCheck "$OUT/fixture.json" test/fixture-architecture.json
+expect 0 'no rules' --rules test/fixture-architecture.json test/fixture
+grep -q "warning  overlap" "$OUT/check.log" && { cat "$OUT/check.log"; fail "overlap reported for test/fixture-architecture.json"; }
+sed 's/@interface//' test/fixture-architecture.json > "$A/overlap.json"
+expect 0 'warning  overlap  T:fixture:com.example.infra.InMemoryOrderRepository  selected by dom and by infra through F:fixture:src/main/java/com/example/infra/InMemoryOrderRepository.java, goes to dom (view layers)' --rules "$A/overlap.json" test/fixture
+[ "$(grep -c "warning  overlap" "$OUT/check.log")" = 1 ] || { cat "$OUT/check.log"; fail "expected exactly one overlap warning"; }
+expect 0 'goes to dom' --rules "$A/overlap.json" --model "$OUT/fixture.json"
+echo ok
+
 step "viewer script syntax"
 if command -v node >/dev/null 2>&1; then
   python3 -I -c 'import sys; s=open(sys.argv[1]).read(); a=s.index("<script>")+8; print(s[a:s.index("</script>")])' viewer.html > "$OUT/viewer.js"
