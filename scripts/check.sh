@@ -7,8 +7,9 @@
 #  4. the viewer script parses (node --check), if node is installed
 #  5. the generated viewer runs in headless Chrome and renders rows, arcs and the
 #     embedded "Layers" view, if Chrome/Chromium is installed
+#  6. the UI scenarios in test/ui click through the viewer, if Playwright Test is installed there
 #
-# Steps 4 and 5 are skipped with a note when the tool is missing; CI runs all of them.
+# Steps 4 to 6 are skipped with a note when the tool is missing; CI runs all of them.
 # Outputs go to build/ (git-ignored): build/fixture.html is handy for a manual look.
 set -eu
 
@@ -307,6 +308,18 @@ if [ -n "$CHROME" ]; then
   fi
 else
   echo "skipped: no Chrome/Chromium found (set CHROME_BIN)"
+fi
+
+step "UI scenarios (spec/wiki/quality-requirements/QR-010-every-delivered-viewer-requirement-has-an-automated-ui-scenario.md)"
+./depviewer -o "$OUT/fixture-arch.html" --views test/fixture-architecture.json test/fixture 2>/dev/null
+./depviewer -o "$OUT/fixture-forbid.html" --views "$R/forbid.json" test/fixture 2>/dev/null
+grep -q '"matched":{' "$OUT/fixture-arch.html" || fail "--views: pattern assignments not embedded"
+grep -q '"violations":\[{"rule":"layering"' "$OUT/fixture-arch.html" || fail "--views: violations not embedded"
+if command -v node >/dev/null 2>&1 && [ -d test/ui/node_modules/@playwright/test ]; then
+  B="$(pwd)/$OUT"
+  (cd test/ui && DEPVIEWER_BUILD="$B" npx playwright test --output "$B/ui-results")
+else
+  echo "skipped: Playwright Test not installed (run 'npm ci' in test/ui)"
 fi
 
 printf '\nAll checks passed.\n'

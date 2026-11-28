@@ -1,0 +1,11 @@
+{
+  "name": "depviewer-ui-tests",
+  "private": true,
+  "description": "UI scenarios for the generated viewer (spec/wiki/quality-requirements/QR-010-every-delivered-viewer-requirement-has-an-automated-ui-scenario.md). scripts/check.sh runs them.",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}
