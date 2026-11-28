@@ -60,7 +60,7 @@ check(d == m, "check --model differs from checking the project directory")
 mv = layering(moved)
 check(mv.get("lines") == [26], f"the copy should move the line to 26, got {mv.get('lines')}")
 check(mv.get("fingerprint") == v.get("fingerprint"), f"fingerprint changed: {v.get('fingerprint')} -> {mv.get('fingerprint')}")
-check(v.get("fingerprint") == "layers|layering|com.example.domain.Order.total()|com.example.service.PriceCalculator.gross(double)",
+check(v.get("fingerprint") == "layers|layering|T:fixture:com.example.domain.Order#total()|T:fixture:com.example.service.PriceCalculator#gross(double)",
       f"fingerprint: {v.get('fingerprint')}")
 
 # FR-038: Kotlin violations are name-based.

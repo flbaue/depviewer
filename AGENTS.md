@@ -162,9 +162,11 @@ changes between major versions.
   missing parent or a parent loop (hand-edited files) must degrade to a top-level group, never hang
   or crash — `inGroup()` guards the walks.
 - Embedded views may also carry what the scanner resolved: `matched` (`{ key: groupId | "" }`, the
-  pattern assignments) and `violations` (`[{ rule, severity, exact, kind, edges: [[from, to]] }]`,
+  pattern assignments), `excluded` (`{ key: [groupId] }`, groups a `!` selector keeps the element out
+  of, which it then never inherits) and `violations` (`[{ rule, severity, exact, kind, edges: [[from, to]] }]`,
   node indices of this model). They never go into localStorage or an export, and a manual `assign`
-  entry wins over a `matched` entry on the same element (`decide()`).
+  entry wins over a `matched` entry on the same element (`decide()`, which mirrors
+  `Architecture.resolve()`).
 - The two template markers must stay in `viewer.html` exactly once each (`check.sh` enforces it).
 - Everything inserted with `innerHTML` goes through `esc()`. Names come from scanned code and
   user input — never interpolate them raw. The scanner's `js()` escapes `<`, `>` and `&` so the

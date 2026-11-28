@@ -217,13 +217,15 @@ expect 2 '--fail-on must be error, warning or never' --rules test/fixture-archit
 # FR-036: a name-based error violation from Kotlin code fails the check; FR-038: exact is false for it.
 python3 -I -c 'import json,sys; a=json.load(open("test/fixture-architecture.json")); v=a["views"][0]; v["groups"].append({"id": "notify", "name": "Notify", "color": "#3a86ff", "match": ["package:com.example.notify.**"]}); v["rules"]=[{"id": "notify-no-domain", "kind": "forbid", "from": "notify", "to": "dom"}]; json.dump(a,open(sys.argv[1],"w"))' "$R/kotlin.json"
 expect 1 'Notifications.kt:[0-9]*  error  notify-no-domain  notify -> dom' --rules "$R/kotlin.json" test/fixture
-./depviewer check --rules "$R/kotlin.json" --format json test/fixture > "$R/kotlin-report.json" 2>/dev/null || true
-./depviewer check --rules test/fixture-architecture.json --format json test/fixture > "$R/dir.json" 2>/dev/null || true
-./depviewer check --rules test/fixture-architecture.json --format json --model "$OUT/fixture.json" > "$R/model.json" 2>/dev/null || true
+# json <out> <check arguments...>: the JSON report, which must exit 1 like the text one.
+json() { o=$1; shift; set +e; ./depviewer check --format json "$@" > "$o" 2>/dev/null; got=$?; set -e; [ "$got" = 1 ] || fail "check --format json $*: exit $got, expected 1"; }
+json "$R/kotlin-report.json" --rules "$R/kotlin.json" test/fixture
+json "$R/dir.json" --rules test/fixture-architecture.json test/fixture
+json "$R/model.json" --rules test/fixture-architecture.json --model "$OUT/fixture.json"
 # FR-038: fingerprints ignore line numbers.
 variant moved
 python3 -I -c 'import sys; p=sys.argv[1]; s=open(p).read(); open(p,"w").write(s.replace("    // Deliberate upward", "\n    // Deliberate upward"))' "$R/moved/src/main/java/com/example/domain/Order.java"
-./depviewer check --rules test/fixture-architecture.json --format json "$R/moved" > "$R/moved.json" 2>/dev/null || true
+json "$R/moved.json" --rules test/fixture-architecture.json "$R/moved"
 python3 -I test/checks/rules.py "$R/dir.json" "$R/model.json" "$R/moved.json" "$R/kotlin-report.json"
 # FR-039: --update-baseline, then everything is baselined; a removed reference shows as resolved.
 expect 0 'wrote 3 fingerprints' --rules test/fixture-architecture.json --baseline "$R/baseline.json" --update-baseline test/fixture
@@ -231,8 +233,22 @@ expect 0 'errors: 0, warnings: 0, baselined: 3, resolved: 0' --rules test/fixtur
 grep -q '  error  layering  dom -> svc  baselined$' "$OUT/check.log" || { cat "$OUT/check.log"; fail "FR-039: layering violation not baselined"; }
 variant fixed
 python3 -I -c 'import sys; p=sys.argv[1]; s=open(p).read(); open(p,"w").write(s.replace("return PriceCalculator.gross(net);", "return net;"))' "$R/fixed/src/main/java/com/example/domain/Order.java"
-expect 0 'resolved  layers|layering|com.example.domain.Order.total()|com.example.service.PriceCalculator.gross(double)' --rules test/fixture-architecture.json --baseline "$R/baseline.json" "$R/fixed"
+expect 0 'resolved  layers|layering|T:fixture:com.example.domain.Order#total()|T:fixture:com.example.service.PriceCalculator#gross(double)' --rules test/fixture-architecture.json --baseline "$R/baseline.json" "$R/fixed"
 expect 2 '--update-baseline needs --baseline' --rules test/fixture-architecture.json --update-baseline test/fixture
+# A baseline holds all views: checking one view leaves the others' entries alone.
+python3 -I -c 'import json,sys; a=json.load(open("test/fixture-architecture.json")); w=json.loads(json.dumps(a["views"][0])); w["id"]="second"; a["views"].append(w); json.dump(a,open(sys.argv[1],"w"))' "$R/two.json"
+expect 0 'wrote 6 fingerprints' --rules "$R/two.json" --baseline "$R/two-baseline.json" --update-baseline test/fixture
+expect 0 'resolved: 0' --rules "$R/two.json" --view layers --baseline "$R/two-baseline.json" test/fixture
+expect 0 'wrote 3 fingerprints' --rules "$R/two.json" --view layers --baseline "$R/two-baseline.json" --update-baseline test/fixture
+[ "$(grep -c '"second|' "$R/two-baseline.json")" = 3 ] || { cat "$R/two-baseline.json"; fail "--update-baseline --view dropped another view's entries"; }
+# FR-037: a violation with several lines lists them all.
+rules "$R/lines.json" '[{"id": "svc-dom", "kind": "forbid", "from": "svc", "to": "dom"}]'
+expect 1 'OrderService.java:17,18  error  svc-dom  svc -> dom' --rules "$R/lines.json" test/fixture
+# A broken model is invalid input, not a failing check.
+for m in '{"nodes":[{"n":"x"}],"edges":[]}' '{"nodes":["a"],"edges":[]}' '{"nodes":[{"n":"x","k":"module"}],"edges":[[0,5,0,1]]}'; do
+  printf '%s' "$m" > "$R/bad-model.json"
+  expect 2 'not a depviewer model' --rules test/fixture-architecture.json --model "$R/bad-model.json"
+done
 # --out writes the viewer with the resolved view and its violations.
 expect 1 'layering' --rules test/fixture-architecture.json --out "$R/check.html" test/fixture
 grep -q '"violations":\[{"rule":"layering"' "$R/check.html" || fail "--out: violations not embedded"
@@ -310,9 +326,16 @@ else
   echo "skipped: no Chrome/Chromium found (set CHROME_BIN)"
 fi
 
+# An element a group excludes with "!" does not inherit that group from a manually assigned ancestor,
+# in check and in the viewer (the scanner embeds the exclusion).
+python3 -I -c 'import json,sys; a=json.load(open("test/fixture-architecture.json")); v=a["views"][0]; d=[g for g in v["groups"] if g["id"]=="dom"][0]; d["match"]=["!path:**/Status.java"]; v["assign"]["P:fixture:com.example.domain"]="dom"; v["rules"]=[{"id": "svc-dom", "kind": "forbid", "from": "svc", "to": "dom"}]; json.dump(a,open(sys.argv[1],"w"))' "$R/exclude.json"
+expect 1 'svc-dom' --rules "$R/exclude.json" test/fixture
+grep -q 'com.example.domain.Status\b' "$OUT/check.log" && { cat "$OUT/check.log"; fail "an excluded Status.java was checked as part of dom"; }
+
 step "UI scenarios (spec/wiki/quality-requirements/QR-010-every-delivered-viewer-requirement-has-an-automated-ui-scenario.md)"
 ./depviewer -o "$OUT/fixture-arch.html" --views test/fixture-architecture.json test/fixture 2>/dev/null
 ./depviewer -o "$OUT/fixture-forbid.html" --views "$R/forbid.json" test/fixture 2>/dev/null
+./depviewer -o "$OUT/fixture-exclude.html" --views "$R/exclude.json" test/fixture 2>/dev/null
 grep -q '"matched":{' "$OUT/fixture-arch.html" || fail "--views: pattern assignments not embedded"
 grep -q '"violations":\[{"rule":"layering"' "$OUT/fixture-arch.html" || fail "--views: violations not embedded"
 if command -v node >/dev/null 2>&1 && [ -d test/ui/node_modules/@playwright/test ]; then

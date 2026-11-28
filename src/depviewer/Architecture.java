@@ -244,6 +244,8 @@ final class Architecture {
     static final class Resolution {
         final String[] group;
         final List<Overlap> overlaps = new ArrayList<>();
+        /** Per group id: the nodes its {@code !} selectors keep out, which never inherit it. */
+        final Map<String, BitSet> excluded = new HashMap<>();
 
         Resolution(int n) { group = new String[n]; }
     }
@@ -277,6 +279,7 @@ final class Architecture {
         Map<?, ?> assign = view.get("assign") instanceof Map ? (Map<?, ?>) view.get("assign") : Map.of();
 
         Resolution r = new Resolution(n);
+        for (int g = 0; g < ids.size(); g++) r.excluded.put(ids.get(g), excluded.get(g));
         boolean[] byMatch = new boolean[n];   // the group came from a pattern, here or on the ancestor it was inherited from
         int[] parent = new int[n];
         String[] module = new String[n], key = new String[n];

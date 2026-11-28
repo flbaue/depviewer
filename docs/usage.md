@@ -56,7 +56,7 @@ rules prints `no rules` and exits 0.
 |---|---|
 | 0 | No failing violations. |
 | 1 | Failing violations. |
-| 2 | Invalid arguments, architecture file or model, for example a missing file, an unknown `version`, an unknown rule kind or a rule naming a group that does not exist. |
+| 2 | Invalid arguments, architecture file or model, for example a missing file, an unknown `version`, an unknown rule kind, a rule naming a group that does not exist, or a `--model` that is not a depviewer model. |
 
 ### Selectors
 
@@ -139,7 +139,8 @@ dependency kinds the rule looks at, default all: `uses`, `extends`, `implements`
 ### Reports
 
 The text report has one violation per rule and pair of innermost elements, sorted by file and line,
-then one line per reference with its kind. A use of a type and a call of one of its members from
+with all its lines after the path, then one line per reference with its kind. Files are named by
+their path. A use of a type and a call of one of its members from
 the same element are one violation, at the member:
 
 ```
@@ -164,16 +165,20 @@ can be wrong. It still fails the check. Accept a wrong one into the baseline, or
 ### Baseline
 
 A fingerprint is the view, the rule and the two elements (or the cycle's members, or the ungrouped
-element), without lines or dependency kinds, so it stays the same when code moves within a file:
+element), without lines or dependency kinds, so it stays the same when code moves within a file.
+An element is named by its view key, which includes the module, and a member by its type's key and
+its name:
 
 ```
-layers|layering|com.example.domain.Order.total()|com.example.service.PriceCalculator.gross(double)
+layers|layering|T:fixture:com.example.domain.Order#total()|T:fixture:com.example.service.PriceCalculator#gross(double)
 ```
 
 `--update-baseline --baseline baseline.json` writes the fingerprints of all current violations,
 sorted, as one JSON array to commit. With `--baseline baseline.json`, the violations in it are
 reported as `baselined` and never fail the check. Entries that no longer occur are reported as
-`resolved`: run `--update-baseline` again to drop them, so the baseline only shrinks.
+`resolved`: run `--update-baseline` again to drop them, so the baseline only shrinks. One baseline
+file can hold all views: with `--view`, entries of the other views are kept and never reported as
+`resolved`.
 
 ## What gets scanned
 

@@ -70,23 +70,24 @@ final class Report {
             String[] group = groups.get(v.view);
             String p = path(v, g);
             int l = line(v, g);
-            sb.append(p == null ? "-" : p).append(l > 0 ? ":" + l : "").append("  ").append(v.severity).append("  ").append(v.rule).append("  ");
+            String at = v.members == null && v.to >= 0 && !v.lines().isEmpty() ? ":" + lines(v.lines()) : l > 0 ? ":" + l : "";
+            sb.append(p == null ? "-" : p).append(at).append("  ").append(v.severity).append("  ").append(v.rule).append("  ");
             if (v.members != null) {
                 sb.append("cycle ");
-                for (int i = 0; i < v.members.size(); i++) sb.append(i > 0 ? ", " : "").append(g.q[v.members.get(i)]);
+                for (int i = 0; i < v.members.size(); i++) sb.append(i > 0 ? ", " : "").append(g.name(v.members.get(i)));
             } else if (v.to < 0) {
                 int i = v.from;
                 sb.append(Architecture.TYPE_KINDS.contains(g.kind[i]) ? "type" : g.kind[i]).append(' ')
-                        .append("file".equals(g.kind[i]) ? g.path(i) : g.q[i]).append(" is in no group");
+                        .append(g.name(i)).append(" is in no group");
             } else {
                 sb.append(label(v.from, g, group)).append(" -> ").append(label(v.to, g, group));
             }
             if (v.baselined) sb.append("  baselined");
             sb.append('\n');
             List<Rules.Ref> refs = new ArrayList<>(v.refs);
-            if (v.members != null) refs.sort(Comparator.comparing((Rules.Ref r) -> Objects.toString(g.path(r.from), "")).thenComparing(r -> g.q[r.from]).thenComparing(r -> g.q[r.to]));
+            if (v.members != null) refs.sort(Comparator.comparing((Rules.Ref r) -> Objects.toString(g.path(r.from), "")).thenComparing(r -> g.name(r.from)).thenComparing(r -> g.name(r.to)));
             for (Rules.Ref r : refs) {
-                sb.append("    ").append(g.q[r.from]).append(" -> ").append(g.q[r.to]).append(" (").append(r.kind).append(')');
+                sb.append("    ").append(g.name(r.from)).append(" -> ").append(g.name(r.to)).append(" (").append(r.kind).append(')');
                 if (v.members != null && g.path(r.from) != null) sb.append("  ").append(g.path(r.from)).append(r.lines.isEmpty() ? "" : ":" + lines(r.lines));
                 sb.append('\n');
             }
@@ -97,7 +98,7 @@ final class Report {
     static Map<String, Object> element(int i, Rules.Graph g, String[] group) {
         Map<String, Object> m = new LinkedHashMap<>();
         if (g.key[i] != null) m.put("key", g.key[i]);
-        m.put("q", g.q[i]);
+        m.put("q", g.name(i));
         if (g.path(i) != null) m.put("path", g.path(i));
         if (group != null && group[i] != null) m.put("group", group[i]);
         return m;
@@ -146,10 +147,10 @@ final class Report {
                 for (Rules.Ref ref : v.refs) {
                     Map<String, Object> x = new LinkedHashMap<>();
                     x.put("kind", ref.kind);
-                    if (v.members == null && ref.to != v.to) x.put("to", g.q[ref.to]);
+                    if (v.members == null && ref.to != v.to) x.put("to", g.name(ref.to));
                     if (v.members != null) {
-                        x.put("from", g.q[ref.from]);
-                        x.put("to", g.q[ref.to]);
+                        x.put("from", g.name(ref.from));
+                        x.put("to", g.name(ref.to));
                         if (g.path(ref.from) != null) x.put("path", g.path(ref.from));
                     }
                     List<Integer> ls = new ArrayList<>(ref.lines);
@@ -185,7 +186,12 @@ final class Report {
             for (Map.Entry<?, ?> e : ((Map<?, ?>) o).entrySet()) view.put(String.valueOf(e.getKey()), e.getValue());
             view.remove("matched");
             view.remove("violations");
-            if (hasPatterns(view)) view.put("matched", matched(view, nodes, g));
+            view.remove("excluded");
+            if (hasPatterns(view)) {
+                view.put("matched", matched(view, nodes, g));
+                Map<String, Object> ex = excluded(view, nodes, g);
+                if (!ex.isEmpty()) view.put("excluded", ex);
+            }
             List<Rules.Violation> list = violations.get(String.valueOf(view.get("id")));
             if (list != null) {
                 List<Object> vl = new ArrayList<>();
@@ -215,6 +221,20 @@ final class Report {
         for (Object gr : (List<?>) gs)
             if (gr instanceof Map && ((Map<?, ?>) gr).get("match") instanceof List && !((List<?>) ((Map<?, ?>) gr).get("match")).isEmpty()) return true;
         return false;
+    }
+
+    /** Per persisted view key: the groups whose {@code !} selectors keep the element out, so it never inherits them. */
+    static Map<String, Object> excluded(Map<?, ?> view, List<Object> nodes, Rules.Graph g) {
+        Architecture.Resolution r = Architecture.resolve(view, nodes);
+        Map<String, Object> out = new LinkedHashMap<>();
+        for (int i = 0; i < g.n; i++) {
+            if (Architecture.MEMBER_KINDS.contains(g.kind[i]) || Architecture.TYPE_KINDS.contains(g.kind[i]) || g.key[i] == null) continue;
+            List<String> gs = new ArrayList<>();
+            for (Map.Entry<String, java.util.BitSet> e : r.excluded.entrySet()) if (e.getValue().get(i)) gs.add(e.getKey());
+            gs.sort(null);
+            if (!gs.isEmpty()) out.put(g.key[i], gs);
+        }
+        return out;
     }
 
     /** Pattern assignments for the viewer: where the group from patterns alone differs from the nearest keyed ancestor's. */

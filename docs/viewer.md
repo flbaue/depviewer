@@ -67,7 +67,8 @@ Scanned with `--views architecture.json` (or `check --out`), a view with `match`
   (Kotlin). An arc with an error is drawn in the violation colour even when it points downward.
 - *Export views* writes `version`, `match` and `rules` back unchanged, with your manual assignments
   and without what the scanner resolved. Patterns, rules and violations always come from the
-  embedded file: browser storage only keeps your manual changes.
+  embedded file, and groups or views new in it are added: browser storage only keeps your own
+  groups and manual assignments.
 
 ## Large projects
 

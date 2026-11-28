@@ -155,7 +155,7 @@ public class DepScan {
         List<Map<?, ?>> patterned = new ArrayList<>(arch.viewsWithPatterns());
         patterned.retainAll(views);
         Set<String> baselineIn = new LinkedHashSet<>();
-        if (baseline != null && !updateBaseline) {
+        if (baseline != null && (!updateBaseline || Files.exists(baseline))) {
             try {
                 Object b = Json.parse(Files.readString(baseline));
                 if (!(b instanceof List)) return invalid(baseline + ": a baseline is a JSON array of fingerprints");
@@ -205,9 +205,15 @@ public class DepScan {
             byView.put(String.valueOf(view.get("id")), vs);
             all.addAll(vs);
         }
+        // A fingerprint starts with its view: entries of views this run does not check stay as they are.
+        Set<String> checkedIds = new HashSet<>();
+        for (Map<?, ?> v : checked) checkedIds.add(String.valueOf(v.get("id")));
+        java.util.function.Predicate<String> ours = f -> checkedIds.contains(f.substring(0, Math.max(0, f.indexOf('|'))));
         if (updateBaseline) {
             Set<String> fps = new java.util.TreeSet<>();
-            for (Rules.Violation v : all) fps.add(v.fingerprint);
+            for (String f : baselineIn) if (!ours.test(f)) fps.add(f);
+            int own = 0;
+            for (Rules.Violation v : all) if (fps.add(v.fingerprint)) own++;
             StringBuilder sb = new StringBuilder("[");
             int k = 0;
             for (String f : fps) sb.append(k++ > 0 ? "," : "").append("\n  ").append(Model.js(f));
@@ -217,7 +223,7 @@ public class DepScan {
             } catch (IOException e) {
                 return invalid(baseline + ": cannot write (" + e.getMessage() + ")");
             }
-            info.println("wrote " + fps.size() + " fingerprints to " + baseline);
+            info.println("wrote " + own + " fingerprints to " + baseline + (fps.size() > own ? " (kept " + (fps.size() - own) + " of other views)" : ""));
             return 0;
         }
         Set<String> current = new LinkedHashSet<>();
@@ -226,7 +232,7 @@ public class DepScan {
             current.add(v.fingerprint);
         }
         List<String> resolved = new ArrayList<>();
-        for (String f : baselineIn) if (!current.contains(f)) resolved.add(f);
+        for (String f : baselineIn) if (!current.contains(f) && ours.test(f)) resolved.add(f);
         resolved.sort(null);
 
         if (out != null) {
@@ -283,9 +289,37 @@ public class DepScan {
         } catch (IllegalArgumentException e) {
             throw new Failed(model + ": " + e.getMessage());
         }
-        if (!(root instanceof Map) || !(((Map<?, ?>) root).get("nodes") instanceof List) || !(((Map<?, ?>) root).get("edges") instanceof List))
-            throw new Failed(model + ": not a depviewer model");
+        String why = modelProblem(root);
+        if (why != null) throw new Failed(model + ": not a depviewer model (" + why + ")");
         return (Map<?, ?>) root;
+    }
+
+    /** What makes a parsed model unusable, or null: nodes with a name and kind, parents first, edges between nodes. */
+    static String modelProblem(Object root) {
+        if (!(root instanceof Map)) return "expected a JSON object";
+        Object ns = ((Map<?, ?>) root).get("nodes"), es = ((Map<?, ?>) root).get("edges");
+        if (!(ns instanceof List) || !(es instanceof List)) return "\"nodes\" and \"edges\" must be arrays";
+        List<?> nodes = (List<?>) ns;
+        for (int i = 0; i < nodes.size(); i++) {
+            Object o = nodes.get(i);
+            if (!(o instanceof Map)) return "node " + i + " is not an object";
+            Map<?, ?> m = (Map<?, ?>) o;
+            if (!(m.get("n") instanceof String) || !(m.get("k") instanceof String)) return "node " + i + " needs \"n\" and \"k\"";
+            Object p = m.get("p");
+            if (p != null && !(p instanceof Double && (Double) p >= 0 && (Double) p < i && (Double) p == Math.floor((Double) p)))
+                return "node " + i + " has no earlier parent " + p;
+        }
+        int n = 0;
+        for (Object o : (List<?>) es) {
+            if (!(o instanceof List) || ((List<?>) o).size() < 3) return "edge " + n + " is not [from, to, kind, ...]";
+            List<?> e = (List<?>) o;
+            for (int k = 0; k < Math.min(e.size(), 4); k++)
+                if (!(e.get(k) instanceof Double) || (Double) e.get(k) < 0 || (Double) e.get(k) != Math.floor((Double) e.get(k))) return "edge " + n + " has a bad number";
+            if ((Double) e.get(0) >= nodes.size() || (Double) e.get(1) >= nodes.size()) return "edge " + n + " names a node that does not exist";
+            if (e.size() > 4 && e.get(4) instanceof List) for (Object l : (List<?>) e.get(4)) if (!(l instanceof Double)) return "edge " + n + " has a bad line";
+            n++;
+        }
+        return null;
     }
 
     static int invalid(String msg) {

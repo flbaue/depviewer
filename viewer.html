@@ -308,16 +308,19 @@ function loadViews() {
   V = s && Array.isArray(s.views) ? s : { views: [], current: null };
   // Patterns, rules and what the scanner resolved from them come from the architecture file, not from
   // browser storage (spec/wiki/functional-requirements/FR-041-show-pattern-assignments-as-by-pattern.md).
+  // Views and groups new in the file are added; stored groups and manual assignments stay.
   if (emb && s !== emb) {
     if (emb.version != null) V.version = emb.version;
     for (const e of emb.views) {
       const v = V.views.find(x => x && x.id === e.id);
-      if (!v) continue;
-      for (const k of ['matched', 'violations', 'rules']) if (k in e) v[k] = e[k]; else delete v[k];
-      for (const g of v.groups || []) {
+      if (!v) { V.views.push(e); continue; }
+      for (const k of ['matched', 'excluded', 'violations', 'rules']) if (k in e) v[k] = e[k]; else delete v[k];
+      v.groups = v.groups || [];
+      for (const g of v.groups) {
         const eg = (e.groups || []).find(x => x.id === g.id);
         if (eg && 'match' in eg) g.match = eg.match; else delete g.match;
       }
+      for (const eg of e.groups || []) if (!v.groups.some(g => g.id === eg.id)) v.groups.push(eg);
     }
   }
   for (const v of V.views) { v.groups = v.groups || []; v.assign = v.assign || {}; v.matched = v.matched || {}; }
@@ -325,7 +328,7 @@ function loadViews() {
   renderViewSel();
 }
 // What the scanner resolved is tied to one scan (violations name edges by index), so it is not stored.
-const scanFree = x => { const c = Object.assign({}, x); delete c.matched; delete c.violations; return c; };
+const scanFree = x => { const c = Object.assign({}, x); delete c.matched; delete c.excluded; delete c.violations; return c; };
 function saveViews() { try { localStorage.setItem(storeKey(), JSON.stringify(Object.assign({}, V, { views: V.views.map(scanFree) }))); } catch (e) { /* storage unavailable */ } }
 const curView = () => V.views.find(v => v.id === V.current) || null;
 
@@ -405,18 +408,19 @@ function deleteGroup(gid) {
 const isOrigDesc = (d, o) => { for (let a = d; a; a = a.op) if (a === o) return true; return false; };
 // The group an element is in (null: ungrouped) and where that comes from: manual assignments win over
 // pattern assignments ("matched", resolved by the scanner) on the same element, the nearer element wins.
-function decide(v, o) {
-  for (let a = o; a; a = a.op) {
-    if (hasOwn(v.assign, a.okey)) return { gid: v.assign[a.okey] || null, from: 'manual', at: a };
-    if (hasOwn(v.matched, a.okey)) return { gid: v.matched[a.okey] || null, from: 'match', at: a };
+// An element a group's "!" selector keeps out ("excluded") never inherits that group, as in the scanner.
+function decide(v, o, ownManual = true) {
+  if (ownManual && hasOwn(v.assign, o.okey)) return { gid: v.assign[o.okey] || null, from: 'manual', at: o };
+  if (hasOwn(v.matched, o.okey)) return { gid: v.matched[o.okey] || null, from: 'match', at: o };
+  const ex = v.excluded && hasOwn(v.excluded, o.okey) ? v.excluded[o.okey] : null;
+  for (let p = o.op; p; p = p.op) {
+    const d = decide(v, p);
+    if (!d.gid || !ex || !ex.includes(d.gid)) return d;
   }
   return { gid: null, from: null, at: null };
 }
 // The group of `o` without its own manual assignment.
-function inherited(v, o) {
-  if (hasOwn(v.matched, o.okey)) return v.matched[o.okey] || null;
-  return o.op ? decide(v, o.op).gid : null;
-}
+const inherited = (v, o) => decide(v, o, false).gid;
 // The group patterns alone give `o`, or undefined when no pattern decides it.
 function byPattern(v, o) {
   for (let a = o; a; a = a.op) if (hasOwn(v.matched, a.okey)) return v.matched[a.okey] || null;

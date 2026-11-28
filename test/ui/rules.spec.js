@@ -77,3 +77,33 @@ test('FR-043: Export views writes match, rules and version back unchanged and no
   expect(v).not.toHaveProperty('matched');
   expect(v).not.toHaveProperty('violations');
 });
+
+test('FR-041: an element excluded with "!" stays out of a group assigned by hand to its package, as in check', async ({ page }) => {
+  // build/fixture-exclude.html: dom has only "!path:**/Status.java", and com.example.domain is assigned to dom by hand.
+  await page.goto(page_('fixture-exclude.html'));
+  await pick(page, 'Order.java');
+  await expect(page.locator('#pbody select[data-assign]')).toHaveValue('dom');
+  await pick(page, 'Status.java');
+  await expect(page.locator('#pbody select[data-assign]')).toHaveValue('');
+});
+
+test('FR-043: groups new in the architecture file show up over an older copy in browser storage', async ({ page }) => {
+  await page.goto(page_('fixture-arch.html'));
+  // An earlier visit stored the view (switching views saves) before the file gained the group infra.
+  await page.locator('#viewSel').selectOption('');
+  await page.locator('#viewSel').selectOption('layers');
+  await page.evaluate(() => {
+    const k = Object.keys(localStorage).find(x => x.startsWith('depviewer:views:'));
+    const s = JSON.parse(localStorage.getItem(k));
+    s.views[0].groups = s.views[0].groups.filter(g => g.id !== 'infra');
+    localStorage.setItem(k, JSON.stringify(s));
+  });
+  await page.reload();
+  await expect(row(page, 'Infrastructure')).toHaveCount(1);
+  await page.locator('#viewMenu summary').click();
+  const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#viewMenu button[data-m="export"]').click()]);
+  const out = JSON.parse(fs.readFileSync(await download.path(), 'utf8'));
+  const src = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../fixture-architecture.json'), 'utf8'));
+  expect(out.views[0].groups.map(g => g.id)).toEqual(src.views[0].groups.map(g => g.id));
+  expect(out.views[0].groups.find(g => g.id === 'infra').match).toEqual(['path:**/infra/**']);
+});

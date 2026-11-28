@@ -119,7 +119,7 @@ final class Rules {
         final List<Object> nodes;
         final int n;
         final int[] parent, file;   // file: nearest file ancestor-or-self, -1 for externals and containers
-        final String[] kind, q, key;
+        final String[] kind, q, key, id;   // id: unambiguous, for fingerprints (own key, or the type's key + "#" + member)
         final boolean[] test, ext;
         final int[][] edges;                 // {from, to, kind, count}
         final List<List<Integer>> lines = new ArrayList<>();
@@ -130,7 +130,7 @@ final class Rules {
             nodes = (List<Object>) model.get("nodes");
             n = nodes.size();
             parent = new int[n]; file = new int[n];
-            kind = new String[n]; q = new String[n]; key = new String[n];
+            kind = new String[n]; q = new String[n]; key = new String[n]; id = new String[n];
             test = new boolean[n]; ext = new boolean[n];
             String[] module = new String[n];
             for (int i = 0; i < n; i++) {
@@ -142,6 +142,7 @@ final class Rules {
                 module[i] = p >= 0 ? module[p] : (String) m.get("n");
                 String k = Architecture.key(m, module[i]);
                 key[i] = k != null ? k : p >= 0 ? key[p] : null;   // members: their type's key
+                id[i] = k != null ? k : (p >= 0 ? id[p] : "") + "#" + m.get("n");
                 file[i] = "file".equals(kind[i]) ? i : p >= 0 ? file[p] : -1;
                 test[i] = Boolean.TRUE.equals(m.get("t")) || m.get("t") instanceof Double && (Double) m.get("t") != 0 || p >= 0 && test[p] && file[p] >= 0;
                 ext[i] = kind[i].startsWith("ext");
@@ -159,6 +160,11 @@ final class Rules {
         }
 
         private static int num(List<?> a, int i) { return ((Double) a.get(i)).intValue(); }
+
+        /** How reports name an element: a file by its path, everything else by its qualified name. */
+        String name(int i) {
+            return "file".equals(kind[i]) && path(i) != null ? path(i) : q[i];
+        }
 
         String path(int i) {
             int f = file[i];
@@ -256,11 +262,11 @@ final class Rules {
         StringBuilder sb = new StringBuilder(v.view).append('|').append(v.rule).append('|');
         if (v.members != null) {
             sb.append("cycle");
-            for (int i = 0; i < v.members.size(); i++) sb.append(i == 0 ? ":" : ",").append(g.q[v.members.get(i)]);
+            for (int i = 0; i < v.members.size(); i++) sb.append(i == 0 ? ":" : ",").append(g.id[v.members.get(i)]);
         } else if (v.to < 0) {
-            sb.append(g.key[v.from] != null ? g.key[v.from] : g.q[v.from]);
+            sb.append(g.id[v.from]);
         } else {
-            sb.append(g.q[v.from]).append('|').append(g.q[v.to]);
+            sb.append(g.id[v.from]).append('|').append(g.id[v.to]);
         }
         return sb.toString();
     }
@@ -424,7 +430,7 @@ final class Rules {
                 Set<Integer> members = new HashSet<>(comp);
                 Violation v = new Violation(viewId, rule);
                 v.members = new ArrayList<>(comp);
-                v.members.sort(Comparator.comparing((Integer i) -> g.q[i]).thenComparing(i -> g.key[i] == null ? "" : g.key[i]));
+                v.members.sort(Comparator.comparing((Integer i) -> g.name(i)).thenComparing(i -> g.id[i]));
                 for (int u : v.members)
                     for (Map.Entry<Integer, List<Integer>> to : adj.get(u).entrySet())
                         if (members.contains(to.getKey()))
