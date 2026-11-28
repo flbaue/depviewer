@@ -1,5 +1,6 @@
 {
   "name": "depviewer-typescript-extractor",
+  "version": "1.0.0",
   "private": true,
   "description": "Reads TypeScript/JavaScript sources with the TypeScript compiler API and prints a depviewer fragment (spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md).",
   "type": "module",

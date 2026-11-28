@@ -120,7 +120,7 @@ final class Report {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("title", model.get("title"));
         m.put("generated", model.get("generated"));
-        m.put("analysis", model.get("analysis"));   // null until the scanner records provenance (FR-011)
+        m.put("analysis", model.get("analysis"));   // provenance (FR-011); null for models from before it
         r.put("model", m);
         Map<String, Object> sum = new LinkedHashMap<>();
         sum.put("error", vs.stream().filter(v -> !v.baselined && v.severity.equals("error")).count());

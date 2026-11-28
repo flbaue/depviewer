@@ -29,6 +29,9 @@ Reference for the viewer's features. For a guided first tour see the
 - Click a row for its details: kind, location, size, level, and everything it depends on and is
   used by, grouped by the visible row on the other side. Click an arc for the individual
   references (kind and `file:line`). Click a reference to jump to its element.
+- The header lists the scanned languages; one resolved by name (Kotlin) is marked *approximate*.
+  A module's details show, per language, the tool and version, where it came from (override,
+  the project, the `PATH` or pinned), the extractor and its version.
 - **Find…** highlights matching rows; **Enter** / **Shift+Enter** jump to the next/previous match
   and expand the tree as needed. **Esc** clears the selection.
 - Toggles: **Tests**, **External** (JDK and library types; external types nothing visible uses are

@@ -12,7 +12,7 @@ stereotype: container
 parent: "[[DN-001-developer-machine]]"
 hosts: ["[[BB-010-dart-extractor]]"]
 connects: []
-technology: "Dart SDK 3.x, pinned analyzer"
+technology: "Dart SDK 3.11+, pinned analyzer"
 drivers: []
 decisions: []
 state: current

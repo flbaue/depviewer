@@ -55,6 +55,8 @@ final class Model {
     static final List<Node> nodes = new ArrayList<>();
     static final Map<String, Node> byId = new HashMap<>();
     static final Map<String, Edge> edges = new LinkedHashMap<>();
+    /** Provenance (spec FR-011): one entry per language and set of modules, in scan order. */
+    static final List<Map<String, Object>> analysis = new ArrayList<>();
     static final List<Object[]> javaToKotlin = new ArrayList<>();   // {Raw, typeIdx}: Java member references on Kotlin types
 
     // ---------------------------------------------------------------- nodes
@@ -111,6 +113,14 @@ final class Model {
         return t.idx;
     }
 
+    /** Several references at once, as an extractor that aggregates them reports them (spec CC-002). */
+    static void addEdges(int from, int to, int kind, int count, List<Integer> lines) {
+        if (from < 0 || to < 0 || from == to) return;
+        Edge e = edges.computeIfAbsent(from + ">" + to + ">" + kind, x -> new Edge(from, to, kind));
+        e.count += count;
+        for (int line : lines) if (line > 0 && e.lines.size() < 30 && !e.lines.contains(line)) e.lines.add(line);
+    }
+
     static void addEdge(int from, int to, int kind, int line) {
         if (from < 0 || to < 0 || from == to) return;
         Edge e = edges.computeIfAbsent(from + ">" + to + ">" + kind, x -> new Edge(from, to, kind));
@@ -118,6 +128,23 @@ final class Model {
         if (line > 0 && e.lines.size() < 30 && !e.lines.contains(line)) e.lines.add(line);
     }
 
+
+    /** Records which tool analysed a language in some modules, and whether it resolves references exactly. */
+    static void provenance(String language, List<String> modules, String tool, String version, String source, boolean exact,
+                           String extractor, String extractorVersion) {
+        Map<String, Object> a = new LinkedHashMap<>();
+        a.put("language", language);
+        a.put("modules", new ArrayList<Object>(modules));
+        a.put("tool", tool);
+        a.put("version", version);
+        a.put("source", source);
+        a.put("exact", exact);
+        Map<String, Object> x = new LinkedHashMap<>();
+        x.put("name", extractor);
+        x.put("version", extractorVersion);
+        a.put("extractor", x);
+        analysis.add(a);
+    }
 
     static String qual(String pkg, String name) { return pkg == null || pkg.isEmpty() ? name : pkg + "." + name; }
 
@@ -149,6 +176,7 @@ final class Model {
         m.put("title", title);
         m.put("generated", generated);
         m.put("errors", (double) errors);
+        m.put("analysis", Json.parse(Json.write(analysis)));
         m.put("edgeKinds", new ArrayList<Object>(EDGE_KINDS));
         List<Object> ns = new ArrayList<>(nodes.size());
         for (Node n : nodes) {
@@ -186,6 +214,7 @@ final class Model {
         sb.append("{\"title\":").append(js(title))
                 .append(",\"generated\":").append(js(generated))
                 .append(",\"errors\":").append(errors)
+                .append(",\"analysis\":").append(Json.write(analysis))
                 .append(",\"edgeKinds\":[").append(EDGE_KINDS.stream().map(Model::js).collect(Collectors.joining(","))).append("]")
                 .append(",\"nodes\":[");
         for (int i = 0; i < nodes.size(); i++) {

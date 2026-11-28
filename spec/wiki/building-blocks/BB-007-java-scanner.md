@@ -8,7 +8,7 @@ updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-009-supported-languages]]"]
 related: ["[[ISS-008-moving-java-and-kotlin-into-the-jvm-extractor-can-change-the-output]]"]
 tags: [building-block]
-parent: "[[BB-002-scanner-core]]"
+parent: "[[BB-011-jvm-extractor]]"
 drivers: ["[[FR-003-analyse-java-with-the-jdk-compiler]]", "[[FR-008-resolve-library-types-from-the-classpath]]", "[[QR-004-no-dependency-is-invented]]"]
 decisions: ["[[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]"]
 uses: ["[[BB-004-model-and-json-writer]]", "[[EIF-002-jdk]]"]
@@ -23,7 +23,7 @@ superseded-by:
 
 ## Purpose / Responsibility
 
-`JavaScanner`: parses and attributes Java sources with the javac Trees API inside the scanner process and adds the exact dependencies to the model. Moves into [[BB-011-jvm-extractor]] ([[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]).
+`JavaScanner`: parses and attributes Java sources with the javac Trees API inside the [[BB-011-jvm-extractor]] process and adds the exact dependencies to its model ([[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]).
 
 ## Interfaces
 

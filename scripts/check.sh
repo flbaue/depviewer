@@ -20,7 +20,7 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 step() { printf '\n== %s\n' "$*"; }
 
 step "compile scanner"
-javac -Xlint:all -Werror -d "$OUT/classes" src/depviewer/*.java
+javac -Xlint:all -Werror --release 17 -d "$OUT/classes" src/depviewer/*.java
 echo ok
 
 step "template markers"
@@ -52,6 +52,65 @@ step "scan fixture"
 
 step "model"
 python3 -I test/checks/jvm.py "$OUT/fixture.json"
+# Java and Kotlin run in the jvm extractor (spec/wiki/building-blocks/BB-011-jvm-extractor.md), whose JDK is chosen
+# like any toolchain: a broken DEPVIEWER_JAVA is reported and the next candidate is used.
+DEPVIEWER_JAVA="$OUT/no-such-java" ./depviewer -o "$OUT/fixture-java-next.json" test/fixture > "$OUT/fixture-java-next.log" 2>&1
+grep -q "^Java/Kotlin: JDK (override: $OUT/no-such-java) could not be run: .*, trying the next one$" "$OUT/fixture-java-next.log" \
+  || { cat "$OUT/fixture-java-next.log"; fail "a broken DEPVIEWER_JAVA is not reported"; }
+python3 -I test/checks/jvm.py "$OUT/fixture-java-next.json" >/dev/null
+# A working override is used and recorded as such.
+J="$(cd "$(dirname "$(command -v java)")" && pwd -P)/java"
+DEPVIEWER_JAVA="$J" ./depviewer -o "$OUT/fixture-java-override.json" test/fixture > "$OUT/fixture-java-override.log" 2>&1
+grep -q "^Java/Kotlin: java [0-9.]* (override: .*) for fixture$" "$OUT/fixture-java-override.log" \
+  || { cat "$OUT/fixture-java-override.log"; fail "DEPVIEWER_JAVA was not used"; }
+python3 -I -c 'import json,sys; a=json.load(open(sys.argv[1]))["analysis"]; sys.exit(not [x for x in a if x["language"] == "java" and x["source"] == "override"])' \
+  "$OUT/fixture-java-override.json" || fail "DEPVIEWER_JAVA is not recorded as source override"
+# A java on the PATH that cannot run the extractor: reported with its reason, then the JDK that runs depviewer.
+mkdir -p "$OUT/badjava" && printf '#!/bin/sh\necho "this java is broken" >&2\nexit 1\n' > "$OUT/badjava/java" && chmod +x "$OUT/badjava/java"
+PATH="$(pwd -P)/$OUT/badjava:$PATH" "$J" -cp "$OUT/classes" depviewer.DepScan --template viewer.html -o "$OUT/fixture-badjava.json" test/fixture > "$OUT/fixture-badjava.log" 2>&1 \
+  || { cat "$OUT/fixture-badjava.log"; fail "a broken java on the PATH stopped the scan"; }
+grep -qF "could not be run: this java is broken, trying the next one" "$OUT/fixture-badjava.log" || { cat "$OUT/fixture-badjava.log"; fail "the broken java on the PATH is not reported"; }
+python3 -I test/checks/jvm.py "$OUT/fixture-badjava.json" >/dev/null
+# If the jvm extractor fails, there is no model and check does not pass: Java and Kotlin are not optional.
+rm -rf "$OUT/fixture-badkt" && cp -R test/fixture "$OUT/fixture-badkt"
+printf 'package com.example.notify\n\377\376 broken\n' > "$OUT/fixture-badkt/src/main/kotlin/com/example/notify/Broken.kt"
+rm -f "$OUT/fixture-badkt.json"
+if ./depviewer -o "$OUT/fixture-badkt.json" "$OUT/fixture-badkt" > "$OUT/fixture-badkt.log" 2>&1; then cat "$OUT/fixture-badkt.log"; fail "a failed jvm extractor still exits 0"; fi
+grep -q "^depviewer: Java/Kotlin: extractor failed for fixture (exit code [0-9]*); no model written" "$OUT/fixture-badkt.log" || { cat "$OUT/fixture-badkt.log"; fail "a failed jvm extractor is not reported"; }
+[ ! -e "$OUT/fixture-badkt.json" ] || fail "a model was written although the jvm extractor failed"
+set +e; ./depviewer check --rules test/fixture-architecture.json "$OUT/fixture-badkt" > "$OUT/fixture-badkt-check.log" 2>&1; got=$?; set -e
+[ "$got" = 2 ] || { cat "$OUT/fixture-badkt-check.log"; fail "check with a failed jvm extractor: exit $got, expected 2"; }
+# Every other way the jvm extractor can fail stops the scan too: a stand-in first on the classpath.
+javac -Xlint:all -Werror --release 17 -d "$OUT/fakejvm" test/checks/fakejvm/JvmExtractor.java
+for c in "unsupported:no supported JDK found for fixture" "describe2:the extractor speaks another contract" \
+         "contract2:the extractor printed contract 2, this depviewer reads contract 1; fixture" \
+         "null:the extractor printed no fragment for fixture" "broken:the extractor printed a broken fragment for fixture (\"nodes\" is not a list)"; do
+  mode=${c%%:*} text=${c#*:}
+  rm -f "$OUT/fakejvm.json"
+  set +e
+  FAKE_JVM=$mode "$J" -cp "$OUT/fakejvm:$OUT/classes" depviewer.DepScan --template viewer.html -o "$OUT/fakejvm.json" test/fixture > "$OUT/fakejvm.log" 2>&1; scan=$?
+  FAKE_JVM=$mode "$J" -cp "$OUT/fakejvm:$OUT/classes" depviewer.DepScan check --rules test/fixture-architecture.json test/fixture > "$OUT/fakejvm-check.log" 2>&1; chk=$?
+  set -e
+  [ "$scan" = 1 ] && [ "$chk" = 2 ] && [ ! -e "$OUT/fakejvm.json" ] || { cat "$OUT/fakejvm.log" "$OUT/fakejvm-check.log"; fail "jvm $mode: scan exit $scan, check exit $chk, expected 1 and 2 with no model"; }
+  grep -qF "Java/Kotlin: $text" "$OUT/fakejvm.log" && grep -qF "Java/Kotlin: $text" "$OUT/fakejvm-check.log" \
+    || { cat "$OUT/fakejvm.log" "$OUT/fakejvm-check.log"; fail "jvm $mode: scan or check log lacks '$text'"; }
+done
+# The heap and stack options of depviewer's JVM reach the jvm extractor: a DEPVIEWER_JAVA that logs its arguments.
+printf '#!/bin/sh\necho "$@" >> "%s"\nexec "%s" "$@"\n' "$(pwd -P)/$OUT/java-args.log" "$J" > "$OUT/logjava" && chmod +x "$OUT/logjava"
+rm -f "$OUT/java-args.log"
+DEPVIEWER_JAVA="$(pwd -P)/$OUT/logjava" "$J" -Xmx300m -Xss4m -cp "$OUT/classes" depviewer.DepScan --template viewer.html -o "$OUT/fixture-heap.json" test/fixture > "$OUT/fixture-heap.log" 2>&1 \
+  || { cat "$OUT/fixture-heap.log"; fail "scan with heap options failed"; }
+grep -q -- "-Xmx300m -Xss4m -cp .* depviewer.JvmExtractor [^-]" "$OUT/java-args.log" || { cat "$OUT/java-args.log"; fail "heap options did not reach the jvm extractor"; }
+# A JRE cannot compile Java: it is reported as not supported and the next JDK is used.
+if command -v jlink >/dev/null 2>&1 && [ -d "$(dirname "$(dirname "$(readlink -f "$J")")")/jmods" ]; then
+  [ -x "$OUT/jre/bin/java" ] || { rm -rf "$OUT/jre"; jlink --add-modules java.se --output "$OUT/jre" >/dev/null; }
+  DEPVIEWER_JAVA="$(pwd -P)/$OUT/jre/bin/java" ./depviewer -o "$OUT/fixture-jre.json" test/fixture > "$OUT/fixture-jre.log" 2>&1 \
+    || { cat "$OUT/fixture-jre.log"; fail "a JRE in DEPVIEWER_JAVA stopped the scan"; }
+  grep -q "^Java/Kotlin: JDK [0-9.]* (override: .*) is not supported" "$OUT/fixture-jre.log" || { cat "$OUT/fixture-jre.log"; fail "the JRE is not reported"; }
+  python3 -I test/checks/jvm.py "$OUT/fixture-jre.json" >/dev/null
+else
+  echo "JRE case skipped: no jlink or jmods"
+fi
 
 step "TypeScript/JavaScript (spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md)"
 NODE_BIN=${DEPVIEWER_NODE:-node}
@@ -65,6 +124,97 @@ else
   HAVE_TS=
 fi
 
+step "TypeScript monorepo (spec/wiki/functional-requirements/FR-012-link-the-modules-of-a-monorepo.md)"
+if [ -n "$HAVE_TS" ]; then
+  # A copy with node_modules linking the workspace packages, as `npm install` would.
+  rm -rf "$OUT/fixture-ts-mono" && cp -R test/fixture-ts-mono "$OUT/fixture-ts-mono"
+  mkdir -p "$OUT/fixture-ts-mono/node_modules/@acme"
+  for p in core app; do ln -s "../../packages/$p" "$OUT/fixture-ts-mono/node_modules/@acme/$p"; done
+  ./depviewer -o "$OUT/fixture-ts-mono.json" "$OUT/fixture-ts-mono" 2> "$OUT/fixture-ts-mono.log" || { cat "$OUT/fixture-ts-mono.log"; fail "monorepo scan failed"; }
+  python3 -I test/checks/typescript_mono.py "$OUT/fixture-ts-mono.json"
+  [ "$(grep -c "^TypeScript/JavaScript: typescript .* for " "$OUT/fixture-ts-mono.log")" = 1 ] || { cat "$OUT/fixture-ts-mono.log"; fail "expected one extractor run for both packages"; }
+  # pnpm links typescript into each package's own node_modules: still one run for both.
+  M="$OUT/fixture-ts-pnpm"; rm -rf "$M" && cp -R "$OUT/fixture-ts-mono" "$M"
+  mkdir -p "$M/node_modules/.pnpm/typescript@5.9.3/node_modules"
+  ln -s "$(pwd -P)/extractors/typescript/node_modules/typescript" "$M/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript"
+  for p in core app; do
+    mkdir -p "$M/packages/$p/node_modules"
+    ln -s "../../../node_modules/.pnpm/typescript@5.9.3/node_modules/typescript" "$M/packages/$p/node_modules/typescript"
+  done
+  ./depviewer -o "$M.json" "$M" 2> "$M.log" || { cat "$M.log"; fail "pnpm monorepo scan failed"; }
+  python3 -I test/checks/typescript_mono.py "$M.json"
+  # One run: typescript_mono.py found the links between the packages and one analysis entry for both.
+  for p in app core; do
+    grep -qxF "TypeScript/JavaScript: typescript 5.9.3 (project: $(pwd -P)/$M/packages/$p/node_modules/typescript) for @acme/$p" "$M.log" \
+      || { cat "$M.log"; fail "pnpm: the log does not name the TypeScript of @acme/$p"; }
+  done
+  # One package has its own TypeScript, the other finds the same one through the PATH: one run,
+  # and each package's source is recorded (spec/wiki/functional-requirements/FR-011-record-the-provenance-of-every-language-and-module.md).
+  M="$OUT/fixture-ts-mixed"; rm -rf "$M" "$M-bin" && cp -R "$OUT/fixture-ts-mono" "$M" && mkdir -p "$M/packages/core/node_modules" "$M-bin"
+  ln -s "$(pwd -P)/extractors/typescript/node_modules/typescript" "$M/packages/core/node_modules/typescript"
+  ln -s "$(pwd -P)/extractors/typescript/node_modules/typescript/bin/tsc" "$M-bin/tsc"
+  PATH="$(pwd -P)/$M-bin:$PATH" ./depviewer -o "$M.json" "$M" 2> "$M.log" || { cat "$M.log"; fail "mixed monorepo scan failed"; }
+  python3 -I test/checks/typescript_mono.py "$M.json" @acme/app=path @acme/core=project
+  for want in "typescript 5.9.3 (path: $(pwd -P)/extractors/typescript/node_modules/typescript) for @acme/app" \
+              "typescript 5.9.3 (project: $(pwd -P)/$M/packages/core/node_modules/typescript) for @acme/core"; do
+    grep -qxF "TypeScript/JavaScript: $want" "$M.log" || { cat "$M.log"; fail "mixed monorepo: log lacks '$want'"; }
+  done
+  [ "$(grep -c "^typescript\|^TypeScript/JavaScript: typescript" "$M.log")" = 2 ] || { cat "$M.log"; fail "mixed monorepo: expected two log lines"; }
+else
+  echo "skipped: node not installed (set DEPVIEWER_NODE)"
+fi
+
+step "toolchain choice (spec/wiki/functional-requirements/FR-010-choose-the-toolchain-in-a-fixed-order.md)"
+if [ -n "$HAVE_TS" ]; then
+  T="$(pwd -P)/$OUT/toolchain"; rm -rf "$T"; mkdir -p "$T"
+  PINNED="$(pwd -P)/extractors/typescript/node_modules/typescript"
+  # tc <copy> <text in the log> [VAR=value...]: scan a copy of the TypeScript fixture, check its model and log
+  tc() {
+    name=$1 want=$2; shift 2
+    env "$@" ./depviewer -o "$T/$name.json" "$T/$name" > "$T/$name.log" 2>&1 || { cat "$T/$name.log"; fail "scan of $name failed"; }
+    grep -qF -- "$want" "$T/$name.log" || { cat "$T/$name.log"; fail "$name: log lacks '$want'"; }
+    python3 -I test/checks/typescript.py "$T/$name.json" >/dev/null
+  }
+  for c in plain project old; do cp -R test/fixture-ts "$T/$c"; done
+  ln -s "$PINNED" "$T/project/node_modules/typescript"
+  mkdir -p "$T/old/node_modules/typescript"
+  printf '{"name": "typescript", "version": "3.9.7"}' > "$T/old/node_modules/typescript/package.json"
+  # The project's own supported TypeScript is used.
+  tc project "typescript 5.9.3 (project: $T/project/node_modules/typescript) for shop-web"
+  # ... and recorded in the model (spec/wiki/functional-requirements/FR-011-record-the-provenance-of-every-language-and-module.md).
+  python3 -I -c 'import json, sys; a = json.load(open(sys.argv[1]))["analysis"]; sys.exit(not (len(a) == 1 and a[0]["source"] == "project" and a[0]["version"] == "5.9.3" and "path" not in a[0]))' \
+    "$T/project.json" || fail "the project's TypeScript is not recorded as source project"
+  # The pinned TypeScript is installed only when it is reached: with no pinned copy at all, the
+  # project's own TypeScript is used and npm ci never runs.
+  H="$T/no-pinned"; mkdir -p "$H/extractors/typescript"
+  cp extractors/typescript/extract.mjs extractors/typescript/package.json "$H/extractors/typescript/"
+  DEPVIEWER_HOME="$H" java -cp "$OUT/classes" depviewer.DepScan --template viewer.html -o "$H.json" "$T/project" > "$H.log" 2>&1 \
+    || { cat "$H.log"; fail "scan without a pinned TypeScript failed"; }
+  grep -q "npm ci" "$H.log" && { cat "$H.log"; fail "npm ci ran although the project has a supported TypeScript"; }
+  grep -qF "typescript 5.9.3 (project: $T/project/node_modules/typescript) for shop-web" "$H.log" || { cat "$H.log"; fail "no-pinned: the project's TypeScript was not used"; }
+  [ ! -e "$H/extractors/typescript/node_modules" ] || fail "the pinned TypeScript was installed"
+  # An unsupported project version is reported and the next candidate is tried.
+  tc old "TypeScript 3.9.7 (project: $T/old/node_modules/typescript) is not supported (needs >=5.0.0 <7.0.0), trying the next one"
+  grep "for shop-web" "$T/old.log" | grep -q "(project:" && fail "the unsupported project TypeScript was used"
+  # The override comes first; an unsupported override is reported and the project's own is used.
+  tc project "typescript 5.9.3 (override: $PINNED) for shop-web" DEPVIEWER_TYPESCRIPT="$PINNED"
+  tc project "TypeScript 3.9.7 (override: $T/old/node_modules/typescript) is not supported" DEPVIEWER_TYPESCRIPT="$T/old/node_modules/typescript"
+  grep -qF "typescript 5.9.3 (project: $T/project/node_modules/typescript) for shop-web" "$T/project.log" || fail "no fallback to the project's TypeScript"
+  # Then the tsc on the PATH, then the extractor's pinned copy.
+  mkdir -p "$T/bin" "$T/nobin"
+  ln -s "$PINNED/bin/tsc" "$T/bin/tsc"
+  tc plain "typescript 5.9.3 (path: $PINNED) for shop-web" PATH="$T/bin:$PATH"
+  for tool in java javac node; do ln -s "$(command -v "$tool")" "$T/nobin/$tool"; done
+  if PATH="$T/nobin:/usr/bin:/bin" sh -c 'command -v tsc' >/dev/null; then
+    echo "pinned case skipped: /usr/bin or /bin has a tsc"
+  else
+    tc plain "typescript 5.9.3 (pinned: $PINNED) for shop-web" PATH="$T/nobin:/usr/bin:/bin"
+  fi
+  echo ok
+else
+  echo "skipped: node not installed (set DEPVIEWER_NODE)"
+fi
+
 step "Dart (spec/wiki/functional-requirements/FR-006-analyse-dart-with-the-dart-analyzer.md)"
 DART_BIN=${DEPVIEWER_DART:-dart}
 if command -v "$DART_BIN" >/dev/null 2>&1; then
@@ -72,6 +222,17 @@ if command -v "$DART_BIN" >/dev/null 2>&1; then
   ./depviewer -o "$OUT/fixture-dart.json" test/fixture-dart 2> "$OUT/fixture-dart.log" || { cat "$OUT/fixture-dart.log"; fail "Dart scan failed"; }
   cat "$OUT/fixture-dart.log"
   python3 -I test/checks/dart.py "$OUT/fixture-dart.json"
+  grep -q "^Dart: dart [0-9.]* (\(override\|path\): .*) for shop_app, shop_core" "$OUT/fixture-dart.log" || fail "the chosen Dart SDK is not reported"
+  # FR-010: a broken override is reported and the next candidate is tried.
+  DEPVIEWER_DART="$OUT/no-such-dart" ./depviewer -o "$OUT/fixture-dart-next.json" test/fixture-dart > "$OUT/fixture-dart-next.log" 2>&1
+  grep -qF "Dart: Dart SDK (override: $OUT/no-such-dart) could not be run, trying the next one" "$OUT/fixture-dart-next.log" \
+    || { cat "$OUT/fixture-dart-next.log"; fail "a broken DEPVIEWER_DART is not reported"; }
+  # An SDK below the analyzer's range, if one is given (CI has none): reported as not supported.
+  if [ -n "${DEPVIEWER_OLD_DART:-}" ]; then
+    DEPVIEWER_DART="$DEPVIEWER_OLD_DART" ./depviewer -o "$OUT/fixture-dart-old.json" test/fixture-dart > "$OUT/fixture-dart-old.log" 2>&1
+    grep -q "^Dart: Dart SDK [0-9.]* (override: .*) is not supported (needs >=3.11.0 <4.0.0), trying the next one" "$OUT/fixture-dart-old.log" \
+      || { cat "$OUT/fixture-dart-old.log"; fail "an unsupported DEPVIEWER_OLD_DART is not reported"; }
+  fi
   # FR-067: one note per module for the files analysis_options.yaml excludes.
   for m in shop_app shop_core; do
     [ "$(grep -c "^dart: $m: 1 file(s) skipped - excluded" "$OUT/fixture-dart.log")" = 1 ] || fail "no exclude note for module $m"
@@ -82,6 +243,81 @@ else
   echo "skipped: dart not installed (set DEPVIEWER_DART)"
   HAVE_DART=
 fi
+
+step "extractor contract (spec/wiki/crosscutting-concepts/CC-002-extractor-contract.md)"
+# Every extractor run of a scan, checked as DEPVIEWER_FRAGMENTS keeps it: request and raw fragment.
+C="$OUT/contract"; rm -rf "$C"; mkdir -p "$C/frag"
+DEPVIEWER_FRAGMENTS="$C/frag" ./depviewer -o "$C/all.json" test/fixture ${HAVE_TS:+test/fixture-ts} ${HAVE_DART:+test/fixture-dart} > "$C/scan.log" 2>&1 \
+  || { cat "$C/scan.log"; fail "scan with DEPVIEWER_FRAGMENTS failed"; }
+runs=0
+for r in "$C"/frag/*.request.json; do
+  [ -e "$r" ] || break
+  python3 -I test/checks/contract.py "$r" "${r%.request.json}.fragment.json"
+  runs=$((runs + 1))
+done
+want=1; [ -n "$HAVE_TS" ] && want=$((want + 1)); [ -n "$HAVE_DART" ] && want=$((want + 1))
+[ "$runs" -ge "$want" ] || fail "expected $want extractor runs in $C/frag, found $runs"
+# The checker must catch a broken fragment before it vouches for the real ones.
+if [ "$runs" -gt 0 ]; then
+  for R in "$C"/frag/jvm-1.request.json $(ls "$C"/frag/*.request.json | grep -v /jvm- | head -1); do   # jvm and one other
+  F="${R%.request.json}.fragment.json"
+  broken() {   # broken <name> <text the checker must report> <python statement on the fragment f>
+    python3 -I -c 'import json,sys; f=json.load(open(sys.argv[1])); exec(sys.argv[3]); json.dump(f,open(sys.argv[2],"w"))' "$F" "$C/$1.json" "$3"
+    out=$(python3 -I test/checks/contract.py "$R" "$C/$1.json" || true)
+    case $out in *"$2"*) ;; *) echo "$out"; fail "contract.py missed a fragment with $1" ;; esac
+  }
+  broken no-contract "contract None, expected 1" 'del f["contract"]'
+  broken duplicate-id "duplicate id" 'f["nodes"].append(dict(f["nodes"][-1]))'
+  broken child-first "missing or after its child" 'f["nodes"].reverse()'
+  broken bad-package "package entry" 'f["nodes"].insert(0, {"kind": "package", "module": "nobody", "package": "x"})'
+  broken bad-kind "is not allowed" 'next(n for n in f["nodes"] if n["kind"] not in ("file", "package"))["kind"] = "widget"'
+  broken bad-endpoint "is neither a node nor an external" 'f["edges"][0]["to"] = "nowhere"'
+  broken bad-edge-kind "kind 'imports'" 'f["edges"][0]["kind"] = "imports"'
+  broken outside "outside its file" 'n = next(n for n in f["nodes"] if n["kind"] not in ("file", "package")); n["line"] = 100000'
+  broken unknown-module "unknown module" 'next(n for n in f["nodes"] if n["kind"] == "file")["module"] = "nobody"'
+  broken no-path "no path" 'next(n for n in f["nodes"] if n["kind"] == "file").pop("path")'
+  broken bad-lines "is not a list" 'f["edges"][0]["lines"] = 7'
+  done
+fi
+# An extractor that speaks another major version is rejected, and the scan goes on without it.
+if [ -n "$HAVE_TS" ]; then
+  H="$C/home"; mkdir -p "$H/extractors/typescript"
+  cat > "$H/extractors/typescript/extract.mjs" <<'JS'
+const v = +(process.env.FAKE_CONTRACT || 1), describe = process.argv[2] === "--describe";
+if (!describe && process.env.FAKE_NULL) { console.log("null"); process.exit(0); }
+if (!describe && process.env.FAKE_PARTIAL) {   // valid nodes, then edges that are broken or null
+  console.log(JSON.stringify({ contract: 1, language: "typescript", errors: 0, externals: [], edges: process.env.FAKE_PARTIAL === "null" ? null : ["oops"],
+    nodes: [{ id: "f", kind: "file", path: "src/model/cart.ts", package: "src/model", loc: 9 },
+            { id: "g", kind: "class", name: "Ghost", parent: "f", line: 1, loc: 1 }] }));
+  process.exit(0);
+}
+console.log(JSON.stringify(describe
+  ? { name: "fake", version: "0", contract: describe && process.env.FAKE_DESCRIBE ? 2 : 1, languages: ["typescript"],
+      toolchain: { tool: "typescript", version: "5.9.3", source: process.argv[4], path: process.argv[3], supported: true } }
+  : { contract: v, language: "typescript", errors: 0, nodes: [], externals: [], edges: [] }));
+JS
+  printf '{"name": "fake", "version": "0"}' > "$H/extractors/typescript/package.json"
+  # DEPVIEWER_TYPESCRIPT gives the fake a candidate on every machine; without it, a machine with no
+  # tsc on the PATH would try the pinned copy, which the fake home lacks, and never reach the fake.
+  fake() { rm -f "$C/fake.json"; env DEPVIEWER_HOME="$H" DEPVIEWER_TYPESCRIPT="$H/extractors/typescript" "$@" java -cp "$OUT/classes" depviewer.DepScan --template viewer.html -o "$C/fake.json" test/fixture-ts > "$C/fake.log" 2>&1 || true; }
+  fake FAKE_CONTRACT=2
+  grep -q "^TypeScript/JavaScript: the extractor printed contract 2, this depviewer reads contract 1; shop-web, skipped$" "$C/fake.log" \
+    || { cat "$C/fake.log"; fail "a fragment of contract 2 was not rejected"; }
+  fake FAKE_NULL=1   # a fragment that is no object skips the run, it does not stop the scan
+  grep -q "^TypeScript/JavaScript: the extractor printed no fragment for shop-web, skipped$" "$C/fake.log" && [ -s "$C/fake.json" ] \
+    || { cat "$C/fake.log"; fail "a fragment that is no object was not skipped"; }
+  for partial in list null; do   # a broken fragment leaves nothing behind, not even its valid nodes
+    fake FAKE_PARTIAL=$partial
+    grep -q "^TypeScript/JavaScript: the extractor printed a broken fragment for shop-web (.*), skipped$" "$C/fake.log" && [ -s "$C/fake.json" ] \
+      || { cat "$C/fake.log"; fail "a broken fragment ($partial) was not skipped"; }
+    if grep -q '"Ghost"' "$C/fake.json"; then fail "a skipped fragment ($partial) left nodes in the model"; fi
+  done
+  fake FAKE_DESCRIBE=1
+  grep -q "^TypeScript/JavaScript: extractor fake 0 speaks contract 2, this depviewer speaks contract 1; skipped$" "$C/fake.log" \
+    || { cat "$C/fake.log"; fail "an extractor of contract 2 was not rejected"; }
+  grep -q "npm ci\|for shop-web" "$C/fake.log" && { cat "$C/fake.log"; fail "after a contract mismatch no other toolchain may be tried"; }
+fi
+echo ok
 
 step "generated html"
 grep -q '/\*DEPS_DATA\*/null' "$OUT/fixture.html" && fail "data was not embedded"
@@ -240,7 +476,10 @@ json "$R/model.json" --rules test/fixture-architecture.json --model "$OUT/fixtur
 variant moved
 python3 -I -c 'import sys; p=sys.argv[1]; s=open(p).read(); open(p,"w").write(s.replace("    // Deliberate upward", "\n    // Deliberate upward"))' "$R/moved/src/main/java/com/example/domain/Order.java"
 json "$R/moved.json" --rules test/fixture-architecture.json "$R/moved"
-python3 -I test/checks/rules.py "$R/dir.json" "$R/model.json" "$R/moved.json" "$R/kotlin-report.json"
+# FR-011: exact follows the model's provenance, here a Kotlin entry that claims exact resolution.
+python3 -I -c 'import json,sys; m=json.load(open(sys.argv[1])); [a.update(exact=True) for a in m["analysis"] if a["language"] == "kotlin"]; json.dump(m,open(sys.argv[2],"w"))' "$OUT/fixture.json" "$R/kotlin-exact-model.json"
+json "$R/kotlin-exact.json" --rules "$R/kotlin.json" --model "$R/kotlin-exact-model.json"
+python3 -I test/checks/rules.py "$R/dir.json" "$R/model.json" "$R/moved.json" "$R/kotlin-report.json" "$R/kotlin-exact.json"
 # FR-039: --update-baseline, then everything is baselined; a removed reference shows as resolved.
 expect 0 'wrote 3 fingerprints' --rules test/fixture-architecture.json --baseline "$R/baseline.json" --update-baseline test/fixture
 expect 0 'errors: 0, warnings: 0, baselined: 3, resolved: 0' --rules test/fixture-architecture.json --baseline "$R/baseline.json" test/fixture

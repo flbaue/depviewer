@@ -18,7 +18,7 @@ lane: backbone
 order: 4
 goal: []
 delivery: implemented
-delivery-checked: "2026-11-28T08:27:38Z"
+delivery-checked: "2026-11-28T19:36:14Z"
 ---
 
 # Analyse TypeScript and JavaScript with the TypeScript compiler
@@ -29,7 +29,7 @@ Frontend and Node code should be as exact as Java.
 
 ## Requirement
 
-Files `.ts .tsx .mts .cts .js .jsx .mjs .cjs` below each `package.json` are analysed with the TypeScript compiler API and type checker, respecting `tsconfig.json`/`jsconfig.json`. The project's own `typescript` package is used if installed, else the extractor's pinned copy. Test files (`*.test.*`, `*.spec.*`, `__tests__/`, `test/`, `tests/`) are flagged.
+Files `.ts .tsx .mts .cts .js .jsx .mjs .cjs` below each `package.json` are analysed with the TypeScript compiler API and type checker, respecting `tsconfig.json`/`jsconfig.json`. The `typescript` package is chosen as [[FR-010-choose-the-toolchain-in-a-fixed-order]] says, and the modules that use the same one are analysed together ([[FR-012-link-the-modules-of-a-monorepo]]). Test files (`*.test.*`, `*.spec.*`, `__tests__/`, `test/`, `tests/`) are flagged.
 
 ## Acceptance criteria
 

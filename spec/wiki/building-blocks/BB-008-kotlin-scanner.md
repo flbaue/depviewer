@@ -8,7 +8,7 @@ updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-012-spec-kotlin-support]]"]
 related: ["[[ISS-008-moving-java-and-kotlin-into-the-jvm-extractor-can-change-the-output]]"]
 tags: [building-block]
-parent: "[[BB-002-scanner-core]]"
+parent: "[[BB-011-jvm-extractor]]"
 drivers: ["[[FR-004-analyse-kotlin-by-name]]", "[[CON-001-the-scanner-core-needs-only-a-jdk-17]]", "[[QR-004-no-dependency-is-invented]]"]
 decisions: ["[[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]"]
 uses: ["[[BB-004-model-and-json-writer]]"]
@@ -23,7 +23,7 @@ superseded-by:
 
 ## Purpose / Responsibility
 
-`KotlinScanner`: built-in lexer and parser for `.kt` files with name-based resolution, plus the matching of javac's errors for references from Java to Kotlin. Moves into [[BB-011-jvm-extractor]] ([[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]).
+`KotlinScanner`: built-in lexer and parser for `.kt` files with name-based resolution, plus the matching of javac's errors for references from Java to Kotlin. Runs inside the [[BB-011-jvm-extractor]] process ([[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]).
 
 ## Interfaces
 

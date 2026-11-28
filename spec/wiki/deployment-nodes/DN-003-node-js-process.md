@@ -25,4 +25,4 @@ superseded-by:
 
 ## Purpose
 
-Runs the TypeScript extractor, one process per module today.
+Runs the TypeScript extractor, one process per scan and chosen TypeScript ([[FR-012-link-the-modules-of-a-monorepo]]).

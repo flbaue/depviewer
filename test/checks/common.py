@@ -24,6 +24,20 @@ class Checker:
     def qname(n):
         return n.get("q", n.get("path", n["n"]))
 
+    def analysis(self, language, modules, tool, exact, extractor):
+        """The provenance entry of a language (spec FR-011), checked field by field."""
+        entries = [a for a in self.data.get("analysis") or [] if a.get("language") == language]
+        self.check(len(entries) == 1, f"analysis: expected one {language} entry, found {len(entries)}")
+        a = entries[0] if entries else {}
+        self.check(sorted(a.get("modules", [])) == sorted(modules), f"analysis {language}: modules {a.get('modules')}")
+        self.check(a.get("tool") == tool, f"analysis {language}: tool {a.get('tool')}")
+        self.check(isinstance(a.get("version"), str) and a["version"][:1].isdigit(), f"analysis {language}: version {a.get('version')}")
+        self.check(a.get("source") in ("override", "project", "path", "pinned"), f"analysis {language}: source {a.get('source')}")
+        self.check(a.get("exact") is exact, f"analysis {language}: exact should be {exact}")
+        x = a.get("extractor") or {}
+        self.check(x.get("name") == extractor and isinstance(x.get("version"), str), f"analysis {language}: extractor {x}")
+        return a
+
     def check(self, cond, msg):
         if not cond:
             self.failures.append(msg)

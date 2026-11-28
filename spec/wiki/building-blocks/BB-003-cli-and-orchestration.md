@@ -11,7 +11,7 @@ tags: [building-block]
 parent: "[[BB-002-scanner-core]]"
 drivers: ["[[FR-002-find-modules-by-their-build-markers]]", "[[FR-009-write-the-viewer-or-the-model]]", "[[FR-036-provide-the-check-command-and-its-exit-codes]]"]
 decisions: []
-uses: ["[[BB-004-model-and-json-writer]]", "[[BB-006-toolchain-runner]]", "[[BB-007-java-scanner]]", "[[BB-008-kotlin-scanner]]", "[[BB-012-architecture-checker]]", "[[BB-014-query-commands]]", "[[BB-013-viewer]]", "[[EIF-001-scanned-code-base]]"]
+uses: ["[[BB-004-model-and-json-writer]]", "[[BB-006-toolchain-runner]]", "[[BB-012-architecture-checker]]", "[[BB-014-query-commands]]", "[[BB-013-viewer]]", "[[EIF-001-scanned-code-base]]"]
 location: src/depviewer/DepScan.java
 state: current
 superseded-by:

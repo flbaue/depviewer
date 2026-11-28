@@ -1,8 +1,12 @@
 // depviewer extractor for Dart (spec/wiki/functional-requirements/FR-006-analyse-dart-with-the-dart-analyzer.md).
 //
-// Usage: dart --packages=<extractor>/.dart_tool/package_config.json extract.dart <input.json>
-//   input: { "root": "/abs/package", "module": "name", "files": [{ "path": "lib/a.dart", "test": false }] }
+// Usage: dart --packages=<extractor>/.dart_tool/package_config.json extract.dart <request.json>
+//        dart --packages=... extract.dart --describe [<source>]
+//   request: { "root": "/abs/package", "module": "name", "files": [{ "path": "lib/a.dart", "test": false }] }
 // Prints a depviewer fragment (spec/wiki/crosscutting-concepts/CC-009-fragment-format.md) to stdout; diagnostics go to stderr.
+//
+// --describe prints the extractor's name, version and contract and whether the Dart SDK running it
+// is supported (describe.dart, which the core runs on its own: it also works on SDKs too old for this file).
 //
 // Uses the Dart analyzer (resolved ASTs and the element model), so references are resolved exactly.
 
@@ -18,7 +22,9 @@ import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:analyzer/source/line_info.dart';
 import 'package:path/path.dart' as p;
 
-final out = <String, Object>{'language': 'dart', 'errors': 0, 'nodes': <Object>[], 'externals': <Object>[], 'edges': <Object>[]};
+import 'describe.dart';
+
+final out = <String, Object>{'contract': 1, 'language': 'dart', 'errors': 0, 'nodes': <Object>[], 'externals': <Object>[], 'edges': <Object>[]};
 final nodes = out['nodes'] as List<Object>;
 final edges = out['edges'] as List<Object>;
 final externals = out['externals'] as List<Object>;
@@ -30,6 +36,10 @@ final externalIds = <String>{};
 late Set<String> ourFiles;                 // absolute paths
 
 Future<void> main(List<String> args) async {
+  if (args.isNotEmpty && args.first == '--describe') {
+    stdout.writeln(jsonEncode(describe(args.length > 1 ? args[1] : 'path')));
+    return;
+  }
   final input = jsonDecode(File(args.first).readAsStringSync()) as Map<String, dynamic>;
   final defaultRoot = p.normalize(p.absolute(input['root'] as String));
   // One run may cover several packages (all Dart packages of a scan): each file names its module and root.

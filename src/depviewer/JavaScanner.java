@@ -24,6 +24,9 @@ import static depviewer.Model.*;
 /** Java: parsed and attributed by the JDK compiler (javac Trees API), so references are resolved exactly. */
 final class JavaScanner {
 
+    /** Name and version of this built-in extractor in the provenance (spec FR-011). */
+    static final String EXTRACTOR = "depviewer-java", VERSION = "1.0.0";
+
     /** A reference recorded during the scan, resolved once all declarations are known. */
     static final class Raw {
         final int from, kind, line;
@@ -67,7 +70,7 @@ final class JavaScanner {
         try {
             task.analyze();
         } catch (Throwable t) {
-            System.err.println("warning: analysis stopped early: " + t);
+            System.err.println("java: warning: analysis stopped early: " + t);
         }
         trees = Trees.instance(task);
         elements = task.getElements();

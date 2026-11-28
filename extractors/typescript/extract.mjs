@@ -1,8 +1,13 @@
 // depviewer extractor for TypeScript and JavaScript (spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md).
 //
-// Usage: node extract.mjs <input.json>
-//   input: { "root": "/abs/project", "module": "name", "files": [{ "path": "src/a.ts", "test": false }] }
+// Usage: node extract.mjs <request.json>
+//        node extract.mjs --describe [<typescript package folder> <source>]
+//   request: { "root": "/abs/project", "module": "name", "typescript": "/abs/node_modules/typescript",
+//              "files": [{ "path": "src/a.ts", "test": false, "module": "name", "root": "/abs/project" }] }
+//   One run covers several modules: each file names its module and that module's folder.
 // Prints a depviewer fragment (spec/wiki/crosscutting-concepts/CC-009-fragment-format.md) to stdout; diagnostics go to stderr.
+// --describe prints the extractor's name, version and contract and whether the given TypeScript is
+// supported (spec/wiki/functional-requirements/FR-010-choose-the-toolchain-in-a-fixed-order.md).
 //
 // Uses the TypeScript compiler API and its type checker, so references are resolved exactly:
 // imports, re-exports and default exports are followed to the original declaration.
@@ -12,25 +17,65 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
-const input = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
-const root = path.resolve(input.root);
+const here = path.dirname(fileURLToPath(import.meta.url));
+const manifest = JSON.parse(fs.readFileSync(path.join(here, "package.json"), "utf8"));
+/** TypeScript versions whose compiler API this extractor uses: 5.x and 6.x (7 has no JavaScript API). */
+const RANGE = { min: [5, 0, 0], below: [7, 0, 0], text: ">=5.0.0 <7.0.0" };
 
-/** The project's own TypeScript (same version it is built with), else the extractor's pinned copy. */
-function loadTypeScript() {
-  for (const base of [path.join(root, "package.json"), fileURLToPath(import.meta.url)]) {
+const parseVersion = (v) => (/^(\d+)\.(\d+)\.(\d+)/.exec(v || "") || []).slice(1).map(Number);
+const compare = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+const inRange = (v) => v.length === 3 && compare(v, RANGE.min) >= 0 && compare(v, RANGE.below) < 0;
+
+/** The TypeScript package in `dir` (its folder), or the extractor's pinned copy. */
+function loadTypeScript(dir) {
+  return createRequire(path.join(here, "extract.mjs"))(dir || "typescript");
+}
+
+if (process.argv[2] === "--describe") {
+  const dir = process.argv[3] ? path.resolve(process.argv[3]) : path.join(here, "node_modules", "typescript");
+  const toolchain = { tool: "typescript", version: null, source: process.argv[4] || "pinned", path: dir, supported: false, range: RANGE.text };
+  try {
+    toolchain.version = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8")).version || null;
+  } catch {
+    toolchain.problem = "no TypeScript package";
+  }
+  if (toolchain.version && !inRange(parseVersion(toolchain.version))) toolchain.problem = "version not supported";
+  else if (toolchain.version) {
     try {
-      return createRequire(base)("typescript");
-    } catch {
-      /* try the next one */
+      const ts = loadTypeScript(dir);
+      if (typeof ts.createProgram !== "function") toolchain.problem = "no compiler API";
+      else toolchain.supported = true;
+    } catch (e) {
+      toolchain.problem = "could not be loaded";
     }
   }
-  throw new Error("typescript package not found (run 'npm ci' in extractors/typescript)");
+  const describe = { name: manifest.name, version: manifest.version, contract: 1, languages: ["typescript", "javascript"], exact: true, toolchain };
+  process.stdout.write(JSON.stringify(describe) + "\n");
+  process.exit(0);
 }
-const ts = loadTypeScript();
 
-// ------------------------------------------------------------------ program
+const input = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+const ts = loadTypeScript(input.toolchain?.path ?? input.typescript);
 
-function compilerOptions() {
+// ------------------------------------------------------------------ programs
+
+// One run covers all modules (package.json folders) of a scan, so an import of a sibling
+// workspace package links to its declarations (spec/wiki/functional-requirements/FR-012-link-the-modules-of-a-monorepo.md).
+// Each module gets its own program with its own tsconfig.json; declarations are matched across
+// programs by file and position, as each program has its own syntax trees.
+
+const realPaths = new Map();
+/** The real path of a file: workspace packages are symlinked into node_modules, and TypeScript follows the links. */
+function real(file) {
+  let r = realPaths.get(file);
+  if (r === undefined) {
+    try { r = fs.realpathSync.native(file); } catch { r = path.resolve(file); }
+    realPaths.set(file, r);
+  }
+  return r;
+}
+
+function compilerOptions(root) {
   for (const name of ["tsconfig.json", "jsconfig.json"]) {
     const file = path.join(root, name);
     if (!fs.existsSync(file)) continue;
@@ -41,24 +86,34 @@ function compilerOptions() {
   return { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, jsx: ts.JsxEmit.Preserve };
 }
 
-const options = { ...compilerOptions(), allowJs: true, checkJs: false, noEmit: true, skipLibCheck: true };
-const files = new Map(input.files.map((f) => [path.join(root, f.path), f]));
-const program = ts.createProgram([...files.keys()], options);
-const checker = program.getTypeChecker();
+const modules = new Map(); // module root -> { name, root, prefix, files: [absolute path] }
+const files = new Map(); // real path -> { path (relative to its module), test, module }
+for (const f of input.files) {
+  const root = path.resolve(f.root ?? input.root);
+  if (!modules.has(root)) modules.set(root, { name: f.module ?? input.module, root, prefix: `${modules.size}|`, files: [] });
+  const m = modules.get(root);
+  const abs = path.join(root, f.path);
+  m.files.push(abs);
+  files.set(real(abs), { path: f.path, test: !!f.test, module: m });
+}
+let program, checker; // of the module being read
 
 // ------------------------------------------------------------------ output
 
-const out = { language: "typescript", errors: 0, nodes: [], externals: [], edges: [] };
-const declId = new Map(); // ts.Node (declaration) -> fragment node id
+const out = { contract: 1, language: "typescript", errors: 0, nodes: [], externals: [], edges: [] };
+const declIds = new Map(); // "real path:pos:end:kind" of a declaration -> fragment node id
+const declKey = (node) => `${real(node.getSourceFile().fileName)}:${node.pos}:${node.end}:${node.kind}`;
+const declId = { set: (node, id) => declIds.set(declKey(node), id), get: (node) => declIds.get(declKey(node)) };
 const nodeKind = new Map(); // fragment id -> kind
 const externals = new Map(); // external id -> true
 
-const rel = (sf) => path.relative(root, sf.fileName).split(path.sep).join("/");
+/** Fragment ids start with the module's prefix, so equal paths in two modules stay apart; q leaves it out. */
+const qOf = (id) => id.slice(id.indexOf("|") + 1);
 const lineOf = (sf, pos) => sf.getLineAndCharacterOfPosition(pos).line + 1;
 
 function addNode(sf, decl, id, name, kind, parent, extra = {}) {
   const start = lineOf(sf, decl.getStart(sf));
-  out.nodes.push({ id, name, kind, parent, line: start, loc: lineOf(sf, decl.getEnd()) - start + 1, q: id, ...extra });
+  out.nodes.push({ id, name, kind, parent, line: start, loc: lineOf(sf, decl.getEnd()) - start + 1, q: qOf(id), ...extra });
   nodeKind.set(id, kind);
   declId.set(decl, id);
   return id;
@@ -86,10 +141,11 @@ const isFunctionInit = (init) => init && (ts.isArrowFunction(init) || ts.isFunct
 // ------------------------------------------------------------------ declarations
 
 function declareFile(sf) {
-  const info = files.get(sf.fileName);
-  const id = rel(sf);
-  const dir = id.includes("/") ? id.slice(0, id.lastIndexOf("/")) : "";
-  out.nodes.push({ id, kind: "file", path: id, package: dir, test: !!info.test, loc: sf.getLineAndCharacterOfPosition(sf.getEnd()).line + 1 });
+  const info = files.get(real(sf.fileName));
+  const id = info.module.prefix + info.path;
+  const dir = info.path.includes("/") ? info.path.slice(0, info.path.lastIndexOf("/")) : "";
+  out.nodes.push({ id, kind: "file", path: info.path, module: info.module.name, package: dir, test: info.test,
+    loc: sf.getLineAndCharacterOfPosition(sf.getEnd()).line + 1 });
   nodeKind.set(id, "file");
   declId.set(sf, id);
   declareStatements(sf, sf.statements, id, id + "#");
@@ -274,7 +330,7 @@ function reference(sf, id, owner) {
   if (!decl) return;
   const dsf = decl.getSourceFile();
   let target;
-  if (files.has(dsf.fileName)) {
+  if (files.has(real(dsf.fileName))) {
     target = ownerOf(decl);
     // `new X()`: the constructor when X declares one
     if (target && nodeKind.get(target) === "class") {
@@ -293,12 +349,29 @@ function reference(sf, id, owner) {
 
 // ------------------------------------------------------------------ run
 
-const sources = program.getSourceFiles().filter((sf) => files.has(sf.fileName));
-for (const sf of sources) declareFile(sf);
-for (const sf of sources) {
-  visitRefs(sf, sf, declId.get(sf));
-  out.errors += program.getSyntacticDiagnostics(sf).length + program.getSemanticDiagnostics(sf).length;
+// Each module's own files, read with its program: first all declarations, then the references,
+// which may point into any module. Only one program is alive at a time, so a monorepo with many
+// packages needs no more memory than its largest package; each program is built twice for that.
+let kept = null; // a single module keeps its program for both passes
+function load(m) {
+  if (kept?.m === m) return kept.sources;
+  program = ts.createProgram(m.files, { ...compilerOptions(m.root), allowJs: true, checkJs: false, noEmit: true, skipLibCheck: true });
+  checker = program.getTypeChecker();
+  const sources = program.getSourceFiles().filter((sf) => files.get(real(sf.fileName))?.module === m);
+  kept = modules.size === 1 ? { m, sources } : null;
+  return sources;
 }
-const missing = input.files.length - sources.length;
+for (const m of modules.values()) for (const sf of load(m)) declareFile(sf);
+let read = 0;
+for (const m of modules.values()) {
+  const sources = load(m);
+  for (const sf of sources) {
+    visitRefs(sf, sf, declId.get(sf));
+    out.errors += program.getSyntacticDiagnostics(sf).length + program.getSemanticDiagnostics(sf).length;
+  }
+  read += sources.length;
+}
+program = checker = null;
+const missing = input.files.length - read;
 if (missing > 0) console.error(`typescript: ${missing} file(s) could not be loaded`);
 process.stdout.write(JSON.stringify(out));

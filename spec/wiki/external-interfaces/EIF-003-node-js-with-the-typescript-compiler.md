@@ -21,7 +21,8 @@ flows:
 **Purpose.** Resolves TypeScript and JavaScript references exactly with the TypeScript type checker.
 
 **Flows.** The core starts `extractors/typescript/extract.mjs` with Node and reads a JSON fragment
-from stdout. The compiler is the project's own `node_modules/typescript` if present, else the
-extractor's pinned copy. Node comes from `DEPVIEWER_NODE` or the `PATH`.
+from stdout. The compiler is chosen as [[FR-010-choose-the-toolchain-in-a-fixed-order]]
+says: `DEPVIEWER_TYPESCRIPT`, the project's own `node_modules/typescript`, the `tsc` on the `PATH`,
+else the extractor's pinned copy. Node comes from `DEPVIEWER_NODE` or the `PATH`.
 
 **Belongs to.** [[CTX-001-depviewer-context]]

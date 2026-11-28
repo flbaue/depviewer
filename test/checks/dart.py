@@ -120,4 +120,7 @@ edge(PD + "Product.Product.free(ProductId)", PD + "Product", "uses", present=Fal
 edge("lib/src/util/money.dart", CD + "Cart", "uses", present=False)
 check(all(f != t for f, t, _ in c.edges), "self-dependency found")
 
+# --- provenance (spec FR-011)
+c.analysis("dart", ["shop_app", "shop_core"], "dart", True, "depviewer-dart-extractor")
+
 c.finish("dart")

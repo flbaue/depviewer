@@ -17,19 +17,19 @@ release: m2-extractor-contract
 lane: backbone
 order: 11
 goal: []
-delivery:
-delivery-checked:
+delivery: implemented
+delivery-checked: "2026-11-28T19:36:14Z"
 ---
 
 # Link the modules of a monorepo
 
 ## Rationale
 
-TypeScript runs once per module today, so references between packages of a monorepo point to `node_modules` or externals ([[SRC-020-github-issue-4-typescript-link-references-between-packages-of-a-monorepo|issue #4]]).
+TypeScript ran once per module, so references between packages of a monorepo point to `node_modules` or externals ([[SRC-020-github-issue-4-typescript-link-references-between-packages-of-a-monorepo|issue #4]]).
 
 ## Requirement
 
-Each extractor runs once per scan with all modules of its languages and reports the module of every file, so references between modules of one ecosystem resolve to the real declarations.
+Each extractor runs once per scan and chosen toolchain ([[FR-010-choose-the-toolchain-in-a-fixed-order]]) with all modules that use it and reports the module of every file, so references between modules of one ecosystem resolve to the real declarations.
 
 ## Acceptance criteria
 

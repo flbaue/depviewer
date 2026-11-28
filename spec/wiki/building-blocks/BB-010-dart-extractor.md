@@ -23,7 +23,7 @@ superseded-by:
 
 ## Purpose / Responsibility
 
-`bin/extract.dart` on `package:analyzer`. Analyses all Dart packages of a scan in one run and prints one fragment with the module of every file.
+`bin/extract.dart` on `package:analyzer`. Analyses all Dart packages of a scan that use the same Dart SDK in one run and prints one fragment with the module of every file. `bin/describe.dart` answers `--describe` and imports nothing, so an SDK too old for the analyzer can still be told so ([[FR-010-choose-the-toolchain-in-a-fixed-order]]).
 
 ## Interfaces
 

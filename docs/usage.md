@@ -56,7 +56,7 @@ rules prints `no rules` and exits 0.
 |---|---|
 | 0 | No failing violations. |
 | 1 | Failing violations. |
-| 2 | Invalid arguments, architecture file or model, for example a missing file, an unknown `version`, an unknown rule kind, a rule naming a group that does not exist, two views with one id, a view with rules but no id, a `|` in the id of a rule or of a view with rules, or a `--model` that is not a depviewer model. |
+| 2 | The scan failed, e.g. the jvm extractor (Java and Kotlin) could not run; or invalid arguments, architecture file or model, for example a missing file, an unknown `version`, an unknown rule kind, a rule naming a group that does not exist, two views with one id, a view with rules but no id, a `|` in the id of a rule or of a view with rules, or a `--model` that is not a depviewer model. |
 
 ### Selectors
 
@@ -150,16 +150,16 @@ src/main/java/com/example/domain/Order.java:25  error  layering  dom -> svc
 errors: 3, warnings: 0, baselined: 0, resolved: 0, overlaps: 0
 ```
 
-`--format json` prints `format: 1`, the model's `title`, `generated` and `analysis` (`null` until the
-scanner records which tool analysed each language, [FR-011](../spec/wiki/functional-requirements/FR-011-record-the-provenance-of-every-language-and-module.md)), a `summary` with the counts `error`, `warning`, `baselined`, `resolved` and
+`--format json` prints `format: 1`, the model's `title`, `generated` and `analysis` (which tool
+analysed each language, see [What gets scanned](#what-gets-scanned)), a `summary` with the counts `error`, `warning`, `baselined`, `resolved` and
 `overlaps`, the `violations` and the `resolved` fingerprints. A violation has `rule`, `view`,
 `severity`, `kind` (the rule's kind), `from` and `to` (`key`, `q`, `path`, `group`), `lines`, `count`,
 `exact`, `baselined`, `fingerprint` and `refs` (one per reference: `kind`, `lines`, `count`, and `to`
 when it is not the violation's `to`). A `no-cycles` violation has `members` instead of `from` and
 `to`, and its `refs` name `from`, `to` and `path`. A `no-ungrouped` violation has only `from`.
 
-`exact` is `false` for violations from Kotlin code, which is resolved by name: such a violation
-can be wrong. It still fails the check. Accept a wrong one into the baseline, or give the rule
+`exact` comes from the `analysis` entry of the source's language and module. It is `false` for
+violations from Kotlin code, which is resolved by name: such a violation can be wrong. It still fails the check. Accept a wrong one into the baseline, or give the rule
 `"severity": "warning"`.
 
 ### Baseline
@@ -193,7 +193,23 @@ output and VCS folders:
 
 A directory without any marker is scanned as a plain Java/Kotlin source root. Several markers in
 one tree (a monorepo, a Flutter app next to a backend) give several modules in one model. A
-language whose toolchain is missing is skipped with a note; the others are still scanned.
+language whose toolchain is missing is skipped with a note; the others are still scanned. Java and
+Kotlin are the exception: if their extractor cannot run, the scan stops with an error. Which
+toolchain each language uses is described in [languages](languages.md).
+
+The model records it in `analysis`, one entry per language and set of modules
+([FR-011](../spec/wiki/functional-requirements/FR-011-record-the-provenance-of-every-language-and-module.md)):
+
+```json
+{ "language": "typescript", "modules": ["shop-web"], "tool": "typescript", "version": "5.9.3",
+  "source": "project", "exact": true,
+  "extractor": { "name": "depviewer-typescript-extractor", "version": "1.0.0" } }
+```
+
+`source` is `override` (a `DEPVIEWER_<TOOL>` variable), `project` (the project's own), `path` or
+`pinned` (shipped with depviewer, like the Kotlin parser). Java is analysed by the JDK of the jvm
+extractor: `DEPVIEWER_JAVA` (`source: override`), else the `java` on the `PATH` or, failing that, the
+JDK that runs depviewer (both `source: path`). `exact` is `false` for a language resolved by name (Kotlin).
 
 ## Libraries and the classpath (Java, Kotlin)
 

@@ -8,7 +8,7 @@ updated: 2026-11-28
 sources: ["[[SRC-014-spec-dart-support]]", "[[SRC-009-supported-languages]]"]
 related: ["[[CTX-001-depviewer-context]]"]
 tags: [external-interface]
-partner: "Dart SDK 3.x and package:analyzer"
+partner: "Dart SDK 3.11+ and package:analyzer"
 tier:
 short_title: Dart SDK
 flows:
@@ -21,6 +21,6 @@ flows:
 **Purpose.** Resolves Dart and Flutter references exactly with `package:analyzer`.
 
 **Flows.** The core starts `extractors/dart/bin/extract.dart` once for all Dart packages of a scan
-and reads one JSON fragment from stdout. `dart` comes from `DEPVIEWER_DART` or the `PATH`.
+and reads one JSON fragment from stdout. `dart` is chosen as [[FR-010-choose-the-toolchain-in-a-fixed-order]] says: `DEPVIEWER_DART`, the project's Flutter SDK (FVM or `flutterRoot`), or the `PATH`.
 
 **Belongs to.** [[CTX-001-depviewer-context]]

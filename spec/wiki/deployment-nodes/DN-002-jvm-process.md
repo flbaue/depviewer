@@ -28,4 +28,4 @@ superseded-by:
 
 ## Purpose
 
-Runs the scanner core and all in-process language analysis. Target: runs only the [[BB-011-jvm-extractor]], started by [[DN-007-depviewer-process]].
+Runs the scanner core, and in a second process the [[BB-011-jvm-extractor]], which the core starts. Target: runs only the [[BB-011-jvm-extractor]], started by [[DN-007-depviewer-process]].

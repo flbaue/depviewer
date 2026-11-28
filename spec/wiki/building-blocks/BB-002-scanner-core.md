@@ -23,7 +23,7 @@ superseded-by: "[[BB-016-go-scanner-core]]"
 
 ## Purpose / Responsibility
 
-The Java program behind every command: discovers modules, runs the language analysis, merges the results into one model and writes the viewer or the JSON. Target: no language-specific analysis left in it ([[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]), then replaced by the [[BB-016-go-scanner-core]] ([[DR-002-the-scanner-core-is-a-static-go-binary]]).
+The Java program behind every command: discovers modules, runs the language analysis, merges the results into one model and writes the viewer or the JSON. No language-specific analysis runs in its process any more ([[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]); next it is replaced by the [[BB-016-go-scanner-core]] ([[DR-002-the-scanner-core-is-a-static-go-binary]]).
 
 ## Interfaces
 

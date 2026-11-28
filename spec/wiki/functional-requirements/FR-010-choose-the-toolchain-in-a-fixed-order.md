@@ -17,8 +17,8 @@ release: m2-extractor-contract
 lane: backbone
 order: 9
 goal: []
-delivery:
-delivery-checked:
+delivery: implemented
+delivery-checked: "2026-11-28T19:36:40Z"
 ---
 
 # Choose the toolchain in a fixed order
@@ -29,7 +29,7 @@ The same toolchain versions as the user's build understand the same syntax and s
 
 ## Requirement
 
-For each extractor the toolchain is chosen in this order: an override `DEPVIEWER_<TOOL>`, the project's own version, the tool on the `PATH`, a pinned download where one exists, else the language is skipped ([[FR-007-skip-a-language-whose-toolchain-is-missing]]). A candidate is used only if its version is in the extractor's supported range, which the extractor checks with `--describe`. Two machines can therefore pick different versions. Provenance ([[FR-011-record-the-provenance-of-every-language-and-module]]) shows it, and `DEPVIEWER_<TOOL>` pins one version in CI ([[ISS-009-results-can-differ-between-machines]]).
+For each extractor the toolchain is chosen in this order: an override `DEPVIEWER_<TOOL>`, the project's own version, the tool on the `PATH`, a pinned download where one exists, else the language is skipped ([[FR-007-skip-a-language-whose-toolchain-is-missing]]; Java and Kotlin stop the scan instead). For Java and Kotlin the last candidate is the JDK that runs depviewer, recorded as `source: path`. A candidate is used only if its version is in the extractor's supported range, which the extractor checks with `--describe`. Two machines can therefore pick different versions. Provenance ([[FR-011-record-the-provenance-of-every-language-and-module]]) shows it, and `DEPVIEWER_<TOOL>` pins one version in CI ([[ISS-009-results-can-differ-between-machines]]).
 
 ## Acceptance criteria
 
