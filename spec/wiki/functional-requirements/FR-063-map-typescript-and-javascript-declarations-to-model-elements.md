@@ -2,9 +2,9 @@
 id: FR-063
 type: functional-requirement
 title: "Map TypeScript and JavaScript declarations to model elements"
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-013-spec-typescript-and-javascript-support]]"]
 related: []
 tags: [functional-requirement]
@@ -18,7 +18,7 @@ lane: backbone
 order: 1
 goal: []
 delivery: implemented
-delivery-checked: "2026-11-27T22:09:29+01:00"
+delivery-checked: "2026-11-28T08:27:38Z"
 ---
 
 # Map TypeScript and JavaScript declarations to model elements

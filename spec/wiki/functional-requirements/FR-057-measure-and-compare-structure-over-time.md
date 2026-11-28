@@ -2,9 +2,9 @@
 id: FR-057
 type: functional-requirement
 title: Measure and compare structure over time
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]"]
 related: []
 tags: [functional-requirement]

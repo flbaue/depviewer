@@ -2,9 +2,9 @@
 id: RS-002
 type: runtime-scenario
 title: Check a change in CI against the baseline
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: []
 tags: [runtime-scenario]

@@ -2,9 +2,9 @@
 id: CON-004
 type: constraint
 title: The architecture file is JSON and a superset of the views format
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: ["[[ISS-002-does-the-json-reader-need-comment-support]]"]
 tags: [constraint]

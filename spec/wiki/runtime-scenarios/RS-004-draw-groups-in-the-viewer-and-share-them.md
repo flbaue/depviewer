@@ -2,9 +2,9 @@
 id: RS-004
 type: runtime-scenario
 title: Draw groups in the viewer and share them
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-010-viewer-reference]]", "[[SRC-008-usage-reference]]"]
 related: []
 tags: [runtime-scenario]

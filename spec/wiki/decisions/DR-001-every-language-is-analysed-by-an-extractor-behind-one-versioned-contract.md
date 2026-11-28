@@ -6,7 +6,7 @@ status: accepted
 created: 2026-11-27
 updated: 2026-11-27
 sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-025-github-issue-9-evaluate-the-architecture-for-adding-new-languages]]"]
-related: ["[[CC-002-extractor-contract]]", "[[FR-010-choose-the-toolchain-in-a-fixed-order]]", "[[FR-011-record-the-provenance-of-every-language-and-module]]", "[[FR-012-link-the-modules-of-a-monorepo]]", "[[FR-051-analyse-more-languages]]", "[[ISS-005-is-the-extractor-request-sent-on-stdin-or-in-a-file]]", "[[ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr]]", "[[SOL-002-each-language-is-analysed-by-its-own-toolchain]]"]
+related: ["[[CC-002-extractor-contract]]", "[[FR-010-choose-the-toolchain-in-a-fixed-order]]", "[[FR-011-record-the-provenance-of-every-language-and-module]]", "[[FR-012-link-the-modules-of-a-monorepo]]", "[[FR-051-analyse-more-languages]]", "[[ISS-005-is-the-extractor-request-sent-on-stdin-or-in-a-file]]", "[[ISS-014-does-this-wiki-replace-docs-specs-and-docs-adr]]", "[[SOL-002-each-language-is-analysed-by-its-own-toolchain]]", "[[DR-002-the-scanner-core-is-a-static-go-binary]]"]
 tags: [decision-record]
 aliases: [ADR-0001]
 kind: architecture

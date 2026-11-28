@@ -2,9 +2,9 @@
 id: CON-010
 type: constraint
 title: Extractors pin their dependencies
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-011-spec-multi-language-architecture]]", "[[SRC-003-adr-0001-architecture-for-language-support]]"]
 related: []
 tags: [constraint]

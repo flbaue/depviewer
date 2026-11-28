@@ -2,9 +2,9 @@
 id: FR-027
 type: functional-requirement
 title: Select code by patterns
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: []
 tags: [functional-requirement]
@@ -18,7 +18,7 @@ lane: backbone
 order: 2
 goal: []
 delivery: implemented
-delivery-checked: "2026-11-27T22:54:53+01:00"
+delivery-checked: "2026-11-28T08:27:38Z"
 ---
 
 # Select code by patterns

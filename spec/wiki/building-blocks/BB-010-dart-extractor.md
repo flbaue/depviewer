@@ -2,9 +2,9 @@
 id: BB-010
 type: building-block
 title: Dart extractor
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-014-spec-dart-support]]", "[[SRC-011-spec-multi-language-architecture]]"]
 related: []
 tags: [building-block]

@@ -2,9 +2,9 @@
 id: BB-008
 type: building-block
 title: Kotlin scanner
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-012-spec-kotlin-support]]"]
 related: ["[[ISS-008-moving-java-and-kotlin-into-the-jvm-extractor-can-change-the-output]]"]
 tags: [building-block]

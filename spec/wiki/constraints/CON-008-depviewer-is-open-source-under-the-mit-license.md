@@ -2,9 +2,9 @@
 id: CON-008
 type: constraint
 title: depviewer is open source under the MIT license
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-007-mit-license]]", "[[SRC-001-vision-and-goal-of-depviewer]]"]
 related: []
 tags: [constraint]

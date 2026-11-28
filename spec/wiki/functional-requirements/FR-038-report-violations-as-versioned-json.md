@@ -2,9 +2,9 @@
 id: FR-038
 type: functional-requirement
 title: Report violations as versioned JSON
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: ["[[ISS-004-should-name-based-violations-fail-the-build-by-default]]"]
 tags: [functional-requirement]
@@ -29,7 +29,7 @@ Agents and tools need a stable, parseable format ([[STK-003-ai-coding-agents]]).
 
 ## Requirement
 
-`--format json` writes `format: 1`, the model's title, date and `analysis`, a `summary` (error, warning, baselined, resolved, overlaps) and `violations` with rule, view, severity, kind, `from` and `to` (key, qualified name, path, group), lines, count, `exact`, `baselined` and a `fingerprint` without line numbers.
+`--format json` writes `format: 1`, the model's title, date and `analysis`, a `summary` (error, warning, baselined, resolved, overlaps) and `violations` with rule, view, severity, kind, `from` and `to` (key, qualified name, path, group), lines, count, `exact`, `baselined` and a [[DT-018-fingerprint|fingerprint]].
 
 ## Acceptance criteria
 

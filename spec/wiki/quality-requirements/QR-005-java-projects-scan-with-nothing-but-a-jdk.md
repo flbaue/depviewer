@@ -2,9 +2,9 @@
 id: QR-005
 type: quality-requirement
 title: Java projects scan with nothing but a JDK
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-005-readme-of-depviewer]]", "[[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]]"]
 related: ["[[QR-009-a-project-scans-with-the-depviewer-binary-and-its-own-toolchain]]"]
 tags: [quality-requirement]

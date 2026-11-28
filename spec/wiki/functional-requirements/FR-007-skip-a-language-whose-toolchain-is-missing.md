@@ -2,9 +2,9 @@
 id: FR-007
 type: functional-requirement
 title: Skip a language whose toolchain is missing
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-011-spec-multi-language-architecture]]", "[[SRC-008-usage-reference]]"]
 related: []
 tags: [functional-requirement]
@@ -18,7 +18,7 @@ lane: backbone
 order: 6
 goal: []
 delivery: implemented
-delivery-checked: "2026-11-27T21:56:32+01:00"
+delivery-checked: "2026-11-28T08:27:38Z"
 ---
 
 # Skip a language whose toolchain is missing

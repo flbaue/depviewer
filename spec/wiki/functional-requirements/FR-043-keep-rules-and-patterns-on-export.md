@@ -2,9 +2,9 @@
 id: FR-043
 type: functional-requirement
 title: Keep rules and patterns on export
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: []
 tags: [functional-requirement]

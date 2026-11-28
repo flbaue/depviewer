@@ -2,9 +2,9 @@
 id: QR-001
 type: quality-requirement
 title: The viewer stays responsive on large projects
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-016-spec-viewer-performance-on-large-projects]]", "[[SRC-018-github-issue-2-viewer-slow-to-expand-and-re-sort-with-tens-of-thousands-of-arcs]]"]
 related: []
 tags: [quality-requirement]

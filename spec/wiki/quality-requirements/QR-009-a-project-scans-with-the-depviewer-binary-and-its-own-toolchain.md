@@ -2,9 +2,9 @@
 id: QR-009
 type: quality-requirement
 title: A project scans with the depviewer binary and its own toolchain
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]]"]
 related: ["[[QR-005-java-projects-scan-with-nothing-but-a-jdk]]", "[[DR-002-the-scanner-core-is-a-static-go-binary]]"]
 tags: [quality-requirement]

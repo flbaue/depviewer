@@ -2,9 +2,9 @@
 id: DT-007
 type: domain-term
 title: Levelization
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-010-viewer-reference]]"]
 related: []
 tags: [domain-term]

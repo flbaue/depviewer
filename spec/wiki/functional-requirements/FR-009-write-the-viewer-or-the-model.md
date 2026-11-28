@@ -2,9 +2,9 @@
 id: FR-009
 type: functional-requirement
 title: Write the viewer or the model
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-008-usage-reference]]"]
 related: []
 tags: [functional-requirement]
@@ -18,7 +18,7 @@ lane: backbone
 order: 8
 goal: []
 delivery: implemented
-delivery-checked: "2026-11-27T21:56:32+01:00"
+delivery-checked: "2026-11-28T08:27:38Z"
 ---
 
 # Write the viewer or the model

@@ -2,9 +2,9 @@
 id: CC-008
 type: crosscutting-concept
 title: Themes and browser storage in the viewer
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-008-usage-reference]]"]
 related: []
 tags: [crosscutting-concept]

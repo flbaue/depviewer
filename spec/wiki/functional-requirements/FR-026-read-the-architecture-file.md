@@ -2,9 +2,9 @@
 id: FR-026
 type: functional-requirement
 title: Read the architecture file
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: ["[[ISS-001-should-check-find-architecture-json-on-its-own]]", "[[ISS-002-does-the-json-reader-need-comment-support]]"]
 tags: [functional-requirement]
@@ -18,7 +18,7 @@ lane: backbone
 order: 1
 goal: []
 delivery: implemented
-delivery-checked: "2026-11-27T22:44:21+01:00"
+delivery-checked: "2026-11-28T08:27:38Z"
 ---
 
 # Read the architecture file

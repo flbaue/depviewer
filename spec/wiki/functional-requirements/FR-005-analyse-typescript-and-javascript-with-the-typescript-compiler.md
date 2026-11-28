@@ -2,9 +2,9 @@
 id: FR-005
 type: functional-requirement
 title: Analyse TypeScript and JavaScript with the TypeScript compiler
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-013-spec-typescript-and-javascript-support]]", "[[SRC-009-supported-languages]]"]
 related: []
 tags: [functional-requirement]
@@ -18,7 +18,7 @@ lane: backbone
 order: 4
 goal: []
 delivery: implemented
-delivery-checked: "2026-11-27T22:09:29+01:00"
+delivery-checked: "2026-11-28T08:27:38Z"
 ---
 
 # Analyse TypeScript and JavaScript with the TypeScript compiler

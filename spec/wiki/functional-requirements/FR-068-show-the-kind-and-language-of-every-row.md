@@ -2,9 +2,9 @@
 id: FR-068
 type: functional-requirement
 title: "Show the kind and language of every row"
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-011-spec-multi-language-architecture]]", "[[SRC-012-spec-kotlin-support]]"]
 related: []
 tags: [functional-requirement]
@@ -18,7 +18,7 @@ lane: backbone
 order: 9
 goal: []
 delivery: implemented
-delivery-checked: "2026-11-27T22:09:29+01:00"
+delivery-checked: "2026-11-28T08:27:38Z"
 ---
 
 # Show the kind and language of every row

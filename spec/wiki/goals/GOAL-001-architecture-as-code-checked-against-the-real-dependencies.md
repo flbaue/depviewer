@@ -2,9 +2,9 @@
 id: GOAL-001
 type: goal
 title: "Architecture as code, checked against the real dependencies"
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-005-readme-of-depviewer]]"]
 related: ["[[ISS-015-the-vision-and-the-architecture-rules-spec-are-not-in-the-repository]]"]
 tags: [goal]

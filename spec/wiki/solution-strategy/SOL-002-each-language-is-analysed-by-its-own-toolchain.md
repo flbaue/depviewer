@@ -2,9 +2,9 @@
 id: SOL-002
 type: solution-strategy
 title: Each language is analysed by its own toolchain
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]"]
 related: ["[[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]]"]
 tags: [solution-strategy]

@@ -2,9 +2,9 @@
 id: CON-009
 type: constraint
 title: No new tooling or dependencies without the maintainer
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-006-contributing-guide]]", "[[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]]"]
 related: []
 tags: [constraint]

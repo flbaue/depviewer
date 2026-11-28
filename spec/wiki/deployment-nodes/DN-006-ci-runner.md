@@ -2,9 +2,9 @@
 id: DN-006
 type: deployment-node
 title: CI runner
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]"]
 related: []
 tags: [deployment-node]

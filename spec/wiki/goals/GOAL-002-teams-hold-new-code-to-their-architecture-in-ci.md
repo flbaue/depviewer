@@ -2,9 +2,9 @@
 id: GOAL-002
 type: goal
 title: Teams hold new code to their architecture in CI
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]"]
 related: ["[[ISS-011-how-long-may-the-check-take]]"]
 tags: [goal]

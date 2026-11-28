@@ -2,9 +2,9 @@
 id: EIF-003
 type: external-interface
 title: Node.js with the TypeScript compiler
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-013-spec-typescript-and-javascript-support]]", "[[SRC-009-supported-languages]]"]
 related: ["[[CTX-001-depviewer-context]]"]
 tags: [external-interface]

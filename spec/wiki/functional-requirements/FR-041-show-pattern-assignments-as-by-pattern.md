@@ -2,9 +2,9 @@
 id: FR-041
 type: functional-requirement
 title: Show pattern assignments as by pattern
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: []
 tags: [functional-requirement]
@@ -29,11 +29,11 @@ The viewer does not match patterns itself ([[CON-005-selectors-are-resolved-only
 
 ## Requirement
 
-The scanner resolves all `match` selectors and embeds them as assignments marked `"from": "match"`. The viewer shows them like manual ones, labelled "by pattern". They cannot be removed by drag, only overridden by a manual assignment.
+The scanner resolves all `match` selectors and embeds them as assignments marked `"from": "match"`. The viewer shows them like manual ones, labelled "by pattern". Dragging one, also to ungrouped, creates a manual assignment that overrides the pattern, labelled "manual (overrides pattern)". Removing that assignment brings back the pattern's group.
 
 ## Acceptance criteria
 
-- [ ] `OrderRepository` shows in Domain labelled "by pattern", and dragging it out of Domain is refused.
+- [ ] `OrderRepository` shows in Domain labelled "by pattern". Dragged to ungrouped, it shows as "manual (overrides pattern)", and removing that assignment shows it in Domain again.
 
 ## Hierarchy
 

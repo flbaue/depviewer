@@ -2,9 +2,9 @@
 id: EIF-004
 type: external-interface
 title: Dart SDK with the Dart analyzer
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-014-spec-dart-support]]", "[[SRC-009-supported-languages]]"]
 related: ["[[CTX-001-depviewer-context]]"]
 tags: [external-interface]

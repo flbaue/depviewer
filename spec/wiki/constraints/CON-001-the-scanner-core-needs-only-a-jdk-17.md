@@ -2,9 +2,9 @@
 id: CON-001
 type: constraint
 title: The scanner core needs only a JDK 17
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]]"]
 related: ["[[CON-013-the-scanner-core-is-go-with-the-standard-library-only]]", "[[DR-002-the-scanner-core-is-a-static-go-binary]]"]
 tags: [constraint]

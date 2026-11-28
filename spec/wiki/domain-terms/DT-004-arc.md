@@ -2,9 +2,9 @@
 id: DT-004
 type: domain-term
 title: Arc
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-010-viewer-reference]]", "[[SRC-015-spec-viewer-arc-geometry]]"]
 related: []
 tags: [domain-term]

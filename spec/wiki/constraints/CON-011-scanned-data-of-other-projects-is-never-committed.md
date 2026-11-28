@@ -2,9 +2,9 @@
 id: CON-011
 type: constraint
 title: Scanned data of other projects is never committed
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-008-usage-reference]]"]
 related: []
 tags: [constraint]

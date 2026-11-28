@@ -2,9 +2,9 @@
 id: STK-003
 type: stakeholder
 title: AI coding agents
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-004-guide-for-ai-coding-agents]]"]
 related: ["[[CTX-001-depviewer-context]]"]
 tags: [stakeholder]

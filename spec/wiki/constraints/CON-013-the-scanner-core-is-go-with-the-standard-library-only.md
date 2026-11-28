@@ -2,9 +2,9 @@
 id: CON-013
 type: constraint
 title: The scanner core is Go with the standard library only
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-036-chat-a-go-scanner-core-and-playwright-ui-tests-for-the-viewer]]"]
 related: ["[[CON-001-the-scanner-core-needs-only-a-jdk-17]]", "[[DR-002-the-scanner-core-is-a-static-go-binary]]"]
 tags: [constraint]

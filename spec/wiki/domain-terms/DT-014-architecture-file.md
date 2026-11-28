@@ -2,9 +2,9 @@
 id: DT-014
 type: domain-term
 title: Architecture file
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]", "[[SRC-001-vision-and-goal-of-depviewer]]"]
 related: []
 tags: [domain-term]

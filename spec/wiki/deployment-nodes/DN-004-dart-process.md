@@ -2,9 +2,9 @@
 id: DN-004
 type: deployment-node
 title: Dart process
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-014-spec-dart-support]]"]
 related: []
 tags: [deployment-node]

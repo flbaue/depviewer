@@ -2,9 +2,9 @@
 id: FR-004
 type: functional-requirement
 title: Analyse Kotlin by name
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-012-spec-kotlin-support]]", "[[SRC-009-supported-languages]]"]
 related: ["[[ISS-004-should-name-based-violations-fail-the-build-by-default]]", "[[ISS-010-name-based-kotlin-can-miss-or-misplace-violations]]"]
 tags: [functional-requirement]
@@ -18,7 +18,7 @@ lane: backbone
 order: 3
 goal: []
 delivery: implemented
-delivery-checked: "2026-11-27T21:56:32+01:00"
+delivery-checked: "2026-11-28T08:27:38Z"
 ---
 
 # Analyse Kotlin by name

@@ -2,9 +2,9 @@
 id: BB-014
 type: building-block
 title: Query commands
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]"]
 related: []
 tags: [building-block]

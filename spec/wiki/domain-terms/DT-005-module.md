@@ -2,9 +2,9 @@
 id: DT-005
 type: domain-term
 title: Module
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-008-usage-reference]]", "[[SRC-011-spec-multi-language-architecture]]"]
 related: []
 tags: [domain-term]

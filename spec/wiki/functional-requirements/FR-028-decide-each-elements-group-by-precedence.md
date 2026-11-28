@@ -2,7 +2,7 @@
 id: FR-028
 type: functional-requirement
 title: "Decide each element's group by precedence"
-status: draft
+status: accepted
 created: 2026-11-27
 updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
@@ -18,7 +18,7 @@ lane: backbone
 order: 3
 goal: []
 delivery: implemented
-delivery-checked: "2026-11-28T08:20:16+01:00"
+delivery-checked: "2026-11-28T08:27:38Z"
 ---
 
 # Decide each element's group by precedence

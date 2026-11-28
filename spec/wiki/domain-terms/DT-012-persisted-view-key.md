@@ -2,9 +2,9 @@
 id: DT-012
 type: domain-term
 title: Persisted view key
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: []
 tags: [domain-term]

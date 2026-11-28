@@ -2,9 +2,9 @@
 id: CON-002
 type: constraint
 title: The viewer is one self-contained HTML file
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-004-guide-for-ai-coding-agents]]", "[[SRC-005-readme-of-depviewer]]", "[[SRC-016-spec-viewer-performance-on-large-projects]]"]
 related: []
 tags: [constraint]

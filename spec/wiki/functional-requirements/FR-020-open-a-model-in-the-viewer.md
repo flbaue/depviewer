@@ -2,9 +2,9 @@
 id: FR-020
 type: functional-requirement
 title: Open a model in the viewer
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-034-quick-start-guide]]", "[[SRC-008-usage-reference]]"]
 related: []
 tags: [functional-requirement]
@@ -18,7 +18,7 @@ lane: backbone
 order: 7
 goal: []
 delivery: implemented
-delivery-checked: "2026-11-27T22:11:43+01:00"
+delivery-checked: "2026-11-28T08:27:38Z"
 ---
 
 # Open a model in the viewer

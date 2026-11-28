@@ -2,9 +2,9 @@
 id: EIF-005
 type: external-interface
 title: CI pipeline
-status: draft
+status: accepted
 created: 2026-11-27
-updated: 2026-11-27
+updated: 2026-11-28
 sources: ["[[SRC-001-vision-and-goal-of-depviewer]]", "[[SRC-002-spec-architecture-file-and-rule-checks]]"]
 related: ["[[CTX-001-depviewer-context]]"]
 tags: [external-interface]
