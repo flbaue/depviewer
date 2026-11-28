@@ -227,7 +227,7 @@ python3 -I -c 'import sys; p=sys.argv[1]; s=open(p).read(); open(p,"w").write(s.
 python3 -I test/checks/rules.py "$R/dir.json" "$R/model.json" "$R/moved.json" "$R/kotlin-report.json"
 # FR-039: --update-baseline, then everything is baselined; a removed reference shows as resolved.
 expect 0 'wrote 3 fingerprints' --rules test/fixture-architecture.json --baseline "$R/baseline.json" --update-baseline test/fixture
-expect 0 'baselined' --rules test/fixture-architecture.json --baseline "$R/baseline.json" test/fixture
+expect 0 'errors: 0, warnings: 0, baselined: 3, resolved: 0' --rules test/fixture-architecture.json --baseline "$R/baseline.json" test/fixture
 grep -q '  error  layering  dom -> svc  baselined$' "$OUT/check.log" || { cat "$OUT/check.log"; fail "FR-039: layering violation not baselined"; }
 variant fixed
 python3 -I -c 'import sys; p=sys.argv[1]; s=open(p).read(); open(p,"w").write(s.replace("return PriceCalculator.gross(net);", "return net;"))' "$R/fixed/src/main/java/com/example/domain/Order.java"

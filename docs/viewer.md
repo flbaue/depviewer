@@ -54,6 +54,21 @@ Views are stored in the browser (localStorage, per project title). *⋯ › Expo
 JSON, which can be imported again or embedded when scanning with `depviewer --views views.json …`,
 so a team can share one agreed architecture next to the code.
 
+## Architecture files
+
+Scanned with `--views architecture.json` (or `check --out`), a view with `match` patterns and
+`rules` shows what `depviewer check` sees ([usage](usage.md#checking-the-architecture)):
+
+- An element placed by a pattern says **by pattern** next to its group in the details. Dragging it
+  elsewhere, also onto an ungrouped row, is a manual assignment and says **manual (overrides
+  pattern)**. Its **✕** removes the manual assignment, and the pattern applies again. The viewer
+  does not edit patterns or rules, and places a type matched on its own with its file.
+- An arc's details list the rule violations on it, with rule, severity and **exact** or **by name**
+  (Kotlin). An arc with an error is drawn in the violation colour even when it points downward.
+- *Export views* writes `version`, `match` and `rules` back unchanged, with your manual assignments
+  and without what the scanner resolved. Patterns, rules and violations always come from the
+  embedded file: browser storage only keeps your manual changes.
+
 ## Large projects
 
 Only the rows around the visible part of the tree, and the arcs that touch them, are drawn, so
