@@ -2,7 +2,7 @@
 id: FR-043
 type: functional-requirement
 title: Keep rules and patterns on export
-status: accepted
+status: review
 created: 2026-11-27
 updated: 2026-11-28
 sources: ["[[SRC-002-spec-architecture-file-and-rule-checks]]"]
@@ -18,7 +18,7 @@ lane: backbone
 order: 3
 goal: []
 delivery: implemented
-delivery-checked: "2026-11-28T09:08:23Z"
+delivery-checked: "2026-11-28T14:07:25Z"
 ---
 
 # Keep rules and patterns on export
@@ -29,7 +29,7 @@ The viewer may edit only manual assignments, but must not lose what it cannot ed
 
 ## Requirement
 
-*Export views* writes `match`, `rules` and `version` back unchanged and leaves out the resolved `"from": "match"` assignments.
+*Export views* writes `match`, `rules` and `version` back unchanged and leaves out what the scanner resolved ([[FR-041-show-pattern-assignments-as-by-pattern]]).
 
 ## Acceptance criteria
 
