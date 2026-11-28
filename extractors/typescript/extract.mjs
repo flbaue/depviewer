@@ -55,7 +55,7 @@ if (process.argv[2] === "--describe") {
 }
 
 const input = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
-const ts = loadTypeScript(input.typescript);
+const ts = loadTypeScript(input.toolchain?.path ?? input.typescript);
 
 // ------------------------------------------------------------------ programs
 
@@ -100,7 +100,7 @@ let program, checker; // of the module being read
 
 // ------------------------------------------------------------------ output
 
-const out = { language: "typescript", errors: 0, nodes: [], externals: [], edges: [] };
+const out = { contract: 1, language: "typescript", errors: 0, nodes: [], externals: [], edges: [] };
 const declIds = new Map(); // "real path:pos:end:kind" of a declaration -> fragment node id
 const declKey = (node) => `${real(node.getSourceFile().fileName)}:${node.pos}:${node.end}:${node.kind}`;
 const declId = { set: (node, id) => declIds.set(declKey(node), id), get: (node) => declIds.get(declKey(node)) };

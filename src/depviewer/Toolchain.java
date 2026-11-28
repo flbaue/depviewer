@@ -70,6 +70,12 @@ final class Toolchain {
     private final Map<String, Choice> described = new HashMap<>();
     private final Set<String> reported = new HashSet<>();
     private Boolean pinnedReady;
+    private int kept;
+    private boolean incompatible;                           // the extractor speaks another contract                                       // runs kept for DEPVIEWER_FRAGMENTS
+    /** Language-specific request options, e.g. the classpath of the jvm extractor. */
+    final Map<String, Object> options = new LinkedHashMap<>();
+    /** The version of the extractor contract this core speaks (spec CC-002). */
+    static final int CONTRACT = 1;
     private final Map<String, Boolean> pubGet = new HashMap<>();   // Dart: dart executable -> extractor dependencies installed
 
     Toolchain(String language, String label, Path home) {
@@ -113,21 +119,7 @@ final class Toolchain {
         Path input = Files.createTempFile("depviewer-" + language, ".json");
         try {
             Module first = run.get(0);
-            StringBuilder sb = new StringBuilder("{\"root\":").append(js(first.dir.toString()))
-                    .append(",\"module\":").append(js(first.name));
-            if (language.equals("typescript")) sb.append(",\"typescript\":").append(js(choice.path));
-            sb.append(",\"files\":[");
-            boolean firstFile = true;
-            for (Module m : run) {
-                for (String[] f : m.files) {
-                    if (!tests && f[1].equals("1")) continue;
-                    if (!firstFile) sb.append(',');
-                    firstFile = false;
-                    sb.append("{\"path\":").append(js(f[0])).append(",\"test\":").append(f[1].equals("1"))
-                            .append(",\"module\":").append(js(m.name)).append(",\"root\":").append(js(m.dir.toString())).append('}');
-                }
-            }
-            Files.writeString(input, sb.append("]}").toString());
+            Files.writeString(input, Json.write(request(run, choice, tests)));
             List<String> cmd = new ArrayList<>(choice.command);
             cmd.add(input.toString());
             try {
@@ -136,13 +128,17 @@ final class Toolchain {
                 String out;
                 try (InputStream in = p.getInputStream()) { out = new String(in.readAllBytes(), StandardCharsets.UTF_8); }
                 int code = p.waitFor();
+                keep(input, out);
                 if (code != 0) { System.err.printf("%s: extractor failed for %s (exit code %d), skipped%n", label, names, code); return; }
-                merge(first.name, Json.parse(out));
-                for (List<Module> ms : bySource.values()) {
-                    Choice c = chosen.get(ms.get(0));
-                    provenance(language, ms.stream().map(m -> m.name).collect(java.util.stream.Collectors.toList()), c.tool,
-                            c.version, c.source, c.exact, c.extractor, c.extractorVersion);
+                Map<?, ?> frag = (Map<?, ?>) Json.parse(out);
+                Object contract = frag.get("contract");
+                if (!(contract instanceof Number) || ((Number) contract).intValue() != CONTRACT) {
+                    System.err.printf("%s: the extractor printed contract %s, this depviewer reads contract %d; %s skipped%n",
+                            label, contract == null ? "(none)" : Json.write(contract), CONTRACT, names);
+                    return;
                 }
+                merge(first.name, frag);
+                for (List<Module> ms : bySource.values()) record(frag, ms, chosen.get(ms.get(0)));
             } catch (IOException | IllegalArgumentException | ClassCastException e) {
                 System.err.printf("%s: extractor failed for %s (%s), skipped%n", label, names, e.getMessage());
             }
@@ -153,10 +149,75 @@ final class Toolchain {
 
     static String names(List<Module> ms) { return ms.stream().map(m -> m.name).collect(java.util.stream.Collectors.joining(", ")); }
 
+    /** The request of one run (spec CC-002): modules, files with their module and test flag, options, the toolchain. */
+    private Map<String, Object> request(List<Module> run, Choice choice, boolean tests) {
+        Map<String, Object> r = new LinkedHashMap<>();
+        r.put("contract", CONTRACT);
+        r.put("language", language);
+        r.put("root", run.get(0).dir.toString());   // the first module, for extractors that read one module
+        r.put("module", run.get(0).name);
+        Map<String, Object> tc = new LinkedHashMap<>();
+        tc.put("tool", choice.tool);
+        tc.put("version", choice.version);
+        tc.put("path", choice.path);
+        r.put("toolchain", tc);
+        Map<String, Object> opts = new LinkedHashMap<>();
+        opts.put("tests", tests);
+        opts.putAll(options);
+        r.put("options", opts);
+        List<Object> ms = new ArrayList<>(), fs = new ArrayList<>();
+        for (Module m : run) {
+            ms.add(new LinkedHashMap<>(Map.of("name", m.name, "root", m.dir.toString())));
+            for (String[] f : m.files) {
+                if (!tests && f[1].equals("1")) continue;
+                Map<String, Object> o = new LinkedHashMap<>();
+                o.put("path", f[0]);
+                o.put("test", f[1].equals("1"));
+                o.put("module", m.name);
+                o.put("root", m.dir.toString());
+                for (int i = 2; i + 1 < f.length; i += 2) o.put(f[i], f[i + 1]);   // language-specific fields
+                fs.add(o);
+            }
+        }
+        r.put("modules", ms);
+        r.put("files", fs);
+        return r;
+    }
+
+    /** Provenance of a run's modules from one source: the fragment's `languages`, else the run's language. */
+    private void record(Map<?, ?> frag, List<Module> ms, Choice c) {
+        List<String> names = ms.stream().map(m -> m.name).collect(java.util.stream.Collectors.toList());
+        if (!(frag.get("languages") instanceof List)) {
+            provenance(language, names, c.tool, c.version, c.source, c.exact, c.extractor, c.extractorVersion);
+            return;
+        }
+        for (Object o : (List<?>) frag.get("languages")) {
+            if (!(o instanceof Map)) continue;
+            Map<?, ?> a = (Map<?, ?>) o;
+            List<String> mods = new ArrayList<>(names);
+            if (a.get("modules") instanceof List) mods.retainAll((List<?>) a.get("modules"));
+            if (mods.isEmpty()) continue;
+            provenance(str(a.get("language")), mods, a.get("tool") != null ? str(a.get("tool")) : c.tool,
+                    a.get("version") != null ? str(a.get("version")) : c.version, a.get("source") != null ? str(a.get("source")) : c.source,
+                    !Boolean.FALSE.equals(a.get("exact")), c.extractor, c.extractorVersion);
+        }
+    }
+
+    /** DEPVIEWER_FRAGMENTS names a folder that keeps every run's request and raw fragment, for test/checks/contract.py. */
+    private void keep(Path request, String fragment) throws IOException {
+        String dir = System.getenv("DEPVIEWER_FRAGMENTS");
+        if (dir == null || dir.isEmpty()) return;
+        Files.createDirectories(Path.of(dir));
+        String name = language + "-" + (++kept);
+        Files.copy(request, Path.of(dir, name + ".request.json"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        Files.writeString(Path.of(dir, name + ".fragment.json"), fragment);
+    }
+
     // ------------------------------------------------ choosing the toolchain (spec FR-010)
 
     /** The first candidate whose version the extractor supports, or null (the module is skipped). */
     Choice choose(Module m) throws IOException, InterruptedException {
+        if (incompatible) return null;
         String tool = language.equals("dart") ? "Dart SDK" : "TypeScript";
         for (Candidate c : candidates(m)) {
             String key = c.source() + " " + c.location();
@@ -166,6 +227,14 @@ final class Toolchain {
             if (c.source().equals("pinned") && language.equals("typescript") && !pinnedTypeScript()) continue;
             Object d = describe(c);
             Map<?, ?> t = d instanceof Map && ((Map<?, ?>) d).get("toolchain") instanceof Map ? (Map<?, ?>) ((Map<?, ?>) d).get("toolchain") : null;
+            Object contract = d instanceof Map ? ((Map<?, ?>) d).get("contract") : null;
+            if (t != null && (!(contract instanceof Number) || ((Number) contract).intValue() != CONTRACT)) {
+                // The extractor itself does not fit, whatever the toolchain: the language is skipped.
+                System.err.printf("%s: extractor %s %s speaks contract %s, this depviewer speaks contract %d; skipped%n",
+                        label, ((Map<?, ?>) d).get("name"), ((Map<?, ?>) d).get("version"), contract == null ? "(none)" : Json.write(contract), CONTRACT);
+                incompatible = true;
+                return null;
+            }
             if (t != null && Boolean.TRUE.equals(t.get("supported"))) {
                 List<String> command = extractorCommand(c);
                 if (command == null) continue;   // reported by extractorCommand
@@ -337,9 +406,16 @@ final class Toolchain {
     // ------------------------------------------------ merging
 
     @SuppressWarnings("unchecked")
-    void merge(String module, Object parsed) {
+    void merge(String module, Map<?, ?> parsed) {
         Map<String, Object> frag = (Map<String, Object>) parsed;
         errors += intOf(frag.get("errors"));
+        // Packages are '/' paths (folders) unless the fragment says '.', as for Java and Kotlin.
+        boolean dotted = ".".equals(frag.get("packageSep"));
+        for (Object o : (List<Object>) frag.getOrDefault("packages", List.of())) {   // optional: their order in the model
+            Map<String, Object> p = (Map<String, Object>) o;
+            String m = str(p.get("module")), pkg = str(p.get("package"));
+            if (m != null && pkg != null) { if (dotted) packageNode(m, pkg); else folderPackage(m, pkg); }
+        }
         String prefix = "L:" + language + ":" + module + ":";
         Map<String, Integer> ids = new HashMap<>();
         Set<String> dropped = new HashSet<>();
@@ -351,7 +427,9 @@ final class Toolchain {
                 String path = str(n.get("path"));
                 String pkg = str(n.getOrDefault("package", ""));
                 String fileModule = n.get("module") != null ? str(n.get("module")) : module;   // multi-module runs
-                Node f = node("F:" + fileModule + ":" + path, path.substring(path.lastIndexOf('/') + 1), "file", folderPackage(fileModule, pkg == null ? "" : pkg));
+                pkg = pkg == null ? "" : pkg;
+                Node f = node("F:" + fileModule + ":" + path, path.substring(path.lastIndexOf('/') + 1), "file",
+                        dotted ? packageNode(fileModule, pkg) : folderPackage(fileModule, pkg));
                 f.path = path;
                 f.test = Boolean.TRUE.equals(n.get("test"));
                 f.line = 1;
@@ -374,7 +452,8 @@ final class Toolchain {
             Map<String, Object> x = (Map<String, Object>) o;
             String pkg = str(x.get("package")), name = str(x.get("name"));
             if (pkg == null || name == null) continue;
-            ids.put(str(x.get("id")), external(pkg, pkg + "." + name, name, null));
+            String q = x.get("q") != null ? str(x.get("q")) : pkg + "." + name;
+            ids.put(str(x.get("id")), external(pkg, q, name, str(x.get("kind"))));
         }
         int missing = 0;
         for (Object o : (List<Object>) frag.getOrDefault("edges", List.of())) {
@@ -382,7 +461,13 @@ final class Toolchain {
             Integer from = ids.get(str(e.get("from"))), to = ids.get(str(e.get("to")));
             int kind = EDGE_KINDS.indexOf(str(e.get("kind")));
             if (from == null || to == null || kind < 0) { missing++; continue; }
-            addEdge(from, to, kind, intOf(e.get("line")));
+            if (e.get("lines") instanceof List) {   // aggregated: count and lines of several references
+                List<Integer> ls = new ArrayList<>();
+                for (Object l : (List<?>) e.get("lines")) ls.add(intOf(l));
+                addEdges(from, to, kind, Math.max(1, intOf(e.getOrDefault("count", ls.size()))), ls);
+            } else {
+                addEdge(from, to, kind, intOf(e.get("line")));
+            }
         }
         if (!dropped.isEmpty() || missing > 0) {
             System.err.printf("%s: warning: %d node(s) and %d dependencies of %s had unknown references and were dropped%n",

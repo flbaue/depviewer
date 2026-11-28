@@ -66,5 +66,8 @@ of other packages resolve. Details: [spec](../spec/wiki/functional-requirements/
 ## How the languages fit together
 
 All languages produce the same model (module › package › file › type › member, plus dependencies),
-so the viewer, views and groups work the same for every language.
+so the viewer, views and groups work the same for every language. Each external language is read by
+an extractor that speaks one versioned contract ([spec](../spec/wiki/crosscutting-concepts/CC-002-extractor-contract.md)).
+To see what an extractor received and printed, set `DEPVIEWER_FRAGMENTS` to a folder: every run's
+request and raw fragment are kept there.
 Architecture: [spec](../spec/wiki/decisions/DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract.md).

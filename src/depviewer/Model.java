@@ -113,6 +113,14 @@ final class Model {
         return t.idx;
     }
 
+    /** Several references at once, as an extractor that aggregates them reports them (spec CC-002). */
+    static void addEdges(int from, int to, int kind, int count, List<Integer> lines) {
+        if (from < 0 || to < 0 || from == to) return;
+        Edge e = edges.computeIfAbsent(from + ">" + to + ">" + kind, x -> new Edge(from, to, kind));
+        e.count += count;
+        for (int line : lines) if (line > 0 && e.lines.size() < 30 && !e.lines.contains(line)) e.lines.add(line);
+    }
+
     static void addEdge(int from, int to, int kind, int line) {
         if (from < 0 || to < 0 || from == to) return;
         Edge e = edges.computeIfAbsent(from + ">" + to + ">" + kind, x -> new Edge(from, to, kind));

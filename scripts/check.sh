@@ -185,6 +185,58 @@ else
   HAVE_DART=
 fi
 
+step "extractor contract (spec/wiki/crosscutting-concepts/CC-002-extractor-contract.md)"
+# Every extractor run of a scan, checked as DEPVIEWER_FRAGMENTS keeps it: request and raw fragment.
+C="$OUT/contract"; rm -rf "$C"; mkdir -p "$C/frag"
+DEPVIEWER_FRAGMENTS="$C/frag" ./depviewer -o "$C/all.json" test/fixture ${HAVE_TS:+test/fixture-ts} ${HAVE_DART:+test/fixture-dart} > "$C/scan.log" 2>&1 \
+  || { cat "$C/scan.log"; fail "scan with DEPVIEWER_FRAGMENTS failed"; }
+runs=0
+for r in "$C"/frag/*.request.json; do
+  [ -e "$r" ] || break
+  python3 -I test/checks/contract.py "$r" "${r%.request.json}.fragment.json"
+  runs=$((runs + 1))
+done
+want=0; [ -n "$HAVE_TS" ] && want=$((want + 1)); [ -n "$HAVE_DART" ] && want=$((want + 1))
+[ "$runs" -ge "$want" ] || fail "expected $want extractor runs in $C/frag, found $runs"
+# The checker must catch a broken fragment before it vouches for the real ones.
+if [ "$runs" -gt 0 ]; then
+  R=$(ls "$C"/frag/*.request.json | head -1); F="${R%.request.json}.fragment.json"
+  broken() {   # broken <name> <text the checker must report> <python statement on the fragment f>
+    python3 -I -c 'import json,sys; f=json.load(open(sys.argv[1])); exec(sys.argv[3]); json.dump(f,open(sys.argv[2],"w"))' "$F" "$C/$1.json" "$3"
+    out=$(python3 -I test/checks/contract.py "$R" "$C/$1.json" || true)
+    case $out in *"$2"*) ;; *) echo "$out"; fail "contract.py missed a fragment with $1" ;; esac
+  }
+  broken no-contract "contract None, expected 1" 'del f["contract"]'
+  broken duplicate-id "duplicate id" 'f["nodes"].append(dict(f["nodes"][-1]))'
+  broken child-first "missing or after its child" 'f["nodes"].reverse()'
+  broken bad-kind "is not allowed" 'next(n for n in f["nodes"] if n["kind"] != "file")["kind"] = "widget"'
+  broken bad-endpoint "is neither a node nor an external" 'f["edges"][0]["to"] = "nowhere"'
+  broken bad-edge-kind "kind 'imports'" 'f["edges"][0]["kind"] = "imports"'
+  broken outside "outside its file" 'n = next(n for n in f["nodes"] if n["kind"] != "file"); n["line"] = 100000'
+  broken unknown-module "unknown module" 'next(n for n in f["nodes"] if n["kind"] == "file")["module"] = "nobody"'
+fi
+# An extractor that speaks another major version is rejected, and the scan goes on without it.
+if [ -n "$HAVE_TS" ]; then
+  H="$C/home"; mkdir -p "$H/extractors/typescript"
+  cat > "$H/extractors/typescript/extract.mjs" <<'JS'
+const v = +(process.env.FAKE_CONTRACT || 1), describe = process.argv[2] === "--describe";
+console.log(JSON.stringify(describe
+  ? { name: "fake", version: "0", contract: describe && process.env.FAKE_DESCRIBE ? 2 : 1, languages: ["typescript"],
+      toolchain: { tool: "typescript", version: "5.9.3", source: process.argv[4], path: process.argv[3], supported: true } }
+  : { contract: v, language: "typescript", errors: 0, nodes: [], externals: [], edges: [] }));
+JS
+  printf '{"name": "fake", "version": "0"}' > "$H/extractors/typescript/package.json"
+  fake() { env DEPVIEWER_HOME="$H" "$@" java -cp "$OUT/classes" depviewer.DepScan --template viewer.html -o "$C/fake.json" test/fixture-ts > "$C/fake.log" 2>&1 || true; }
+  fake FAKE_CONTRACT=2
+  grep -q "^TypeScript/JavaScript: the extractor printed contract 2, this depviewer reads contract 1; shop-web skipped" "$C/fake.log" \
+    || { cat "$C/fake.log"; fail "a fragment of contract 2 was not rejected"; }
+  fake FAKE_DESCRIBE=1
+  grep -q "^TypeScript/JavaScript: extractor fake 0 speaks contract 2, this depviewer speaks contract 1; skipped$" "$C/fake.log" \
+    || { cat "$C/fake.log"; fail "an extractor of contract 2 was not rejected"; }
+  grep -q "npm ci\|for shop-web" "$C/fake.log" && { cat "$C/fake.log"; fail "after a contract mismatch no other toolchain may be tried"; }
+fi
+echo ok
+
 step "generated html"
 grep -q '/\*DEPS_DATA\*/null' "$OUT/fixture.html" && fail "data was not embedded"
 grep -q '/\*DEPS_VIEWS\*/null' "$OUT/fixture.html" && fail "views were not embedded"

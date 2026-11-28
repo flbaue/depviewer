@@ -22,10 +22,10 @@ superseded-by: "[[CC-002-extractor-contract]]"
 
 ## Concept
 
-Today's [[DT-019-extractor]] is started per run with the project folder and module name and writes one JSON [[DT-020-fragment]] to stdout, diagnostics to stderr:
+A [[DT-019-extractor]] is started per run with a request file ([[CC-002-extractor-contract]]) and writes one JSON [[DT-020-fragment]] to stdout, diagnostics to stderr:
 
 ```jsonc
-{ "language": "typescript", "errors": 0,
+{ "contract": 1, "language": "typescript", "errors": 0,
   "nodes": [ { "id": "src/app/cart.ts", "kind": "file", "path": "src/app/cart.ts",
                "package": "src/app", "test": false, "loc": 42 },
              { "id": "src/app/cart.ts#Cart", "kind": "class", "name": "Cart",
@@ -42,4 +42,4 @@ Today's [[DT-019-extractor]] is started per run with the project folder and modu
 - `package` is a `/` path (`""` for the root). The core builds one package node per segment, marked so the viewer joins chains with `/`.
 - Unknown fields are ignored. A missing parent or edge endpoint drops that node or edge with a warning.
 
-[[CC-002-extractor-contract]] version 1 extends this format.
+[[CC-002-extractor-contract]] version 1 extends this format with `contract`, `packageSep`, `packages`, `languages`, qualified externals and aggregated edges.

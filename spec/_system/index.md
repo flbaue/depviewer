@@ -210,7 +210,7 @@ every capture (`_system/workflows/capture.md`, step 7).
 ## Crosscutting concepts
 
 - [[CC-001-the-model-as-the-contract-between-scanner-and-viewer]] The model as the contract between scanner and viewer (current, accepted)
-- [[CC-002-extractor-contract]] Extractor contract (target, accepted)
+- [[CC-002-extractor-contract]] Extractor contract (target, review)
 - [[CC-003-persisted-view-keys]] Persisted view keys (current, accepted)
 - [[CC-004-names-from-scanned-code-are-untrusted]] Names from scanned code are untrusted (current, accepted)
 - [[CC-005-spec-first-then-test-driven]] Spec first, then test-driven (current, accepted)

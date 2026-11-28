@@ -24,7 +24,7 @@ import 'package:path/path.dart' as p;
 
 import 'describe.dart';
 
-final out = <String, Object>{'language': 'dart', 'errors': 0, 'nodes': <Object>[], 'externals': <Object>[], 'edges': <Object>[]};
+final out = <String, Object>{'contract': 1, 'language': 'dart', 'errors': 0, 'nodes': <Object>[], 'externals': <Object>[], 'edges': <Object>[]};
 final nodes = out['nodes'] as List<Object>;
 final edges = out['edges'] as List<Object>;
 final externals = out['externals'] as List<Object>;
