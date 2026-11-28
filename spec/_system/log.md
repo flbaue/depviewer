@@ -218,3 +218,7 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 
 ## [2026-11-28] review | m2-extractor-contract, third fresh session
 - Third review in a fresh session found no bug in the fixes. Fixed what it found besides: the Dart minimum reads 3.11 in the skip note, `docs/languages.md`, `docs/quick-start.md`, [[DN-001-developer-machine]], [[DN-004-dart-process]] and [[EIF-004-dart-sdk-with-the-dart-analyzer]]; [[CC-002-extractor-contract]] and [[DT-019-extractor]] say one run per scan and chosen toolchain; the log names every place a shared toolchain was found; `check.sh` checks the log lines and every field of each `analysis` entry in the mixed monorepo case. No behaviour of the model changed, so no further review round.
+
+## [2026-11-28] clarify | FR-005, FR-006 and FR-012 follow the toolchain choice
+- [[FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler]] now refers to [[FR-010-choose-the-toolchain-in-a-fixed-order]] for the choice of `typescript`, [[FR-006-analyse-dart-with-the-dart-analyzer]] runs the packages that use the same Dart SDK together, and [[FR-012-link-the-modules-of-a-monorepo]] runs once per scan and chosen toolchain, with its Rationale in the past tense. That is the behaviour built in m2-extractor-contract.
+- All three go back to `review`, for the maintainer to accept. `delivery.py` marked them `outdated`. Their acceptance criteria pass again (`test/checks/typescript.py`, `dart.py`, `typescript_mono.py` in `scripts/check.sh`); `implemented` is restored once the maintainer confirms the change.

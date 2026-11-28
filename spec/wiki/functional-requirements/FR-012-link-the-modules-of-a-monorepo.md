@@ -2,7 +2,7 @@
 id: FR-012
 type: functional-requirement
 title: Link the modules of a monorepo
-status: accepted
+status: review
 created: 2026-11-27
 updated: 2026-11-28
 sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-020-github-issue-4-typescript-link-references-between-packages-of-a-monorepo]]", "[[SRC-027-github-issue-11-run-extractors-once-per-scan-typescript-monorepo-links]]"]
@@ -17,7 +17,7 @@ release: m2-extractor-contract
 lane: backbone
 order: 11
 goal: []
-delivery: implemented
+delivery: outdated
 delivery-checked: "2026-11-28T15:38:14Z"
 ---
 
@@ -25,11 +25,11 @@ delivery-checked: "2026-11-28T15:38:14Z"
 
 ## Rationale
 
-TypeScript runs once per module today, so references between packages of a monorepo point to `node_modules` or externals ([[SRC-020-github-issue-4-typescript-link-references-between-packages-of-a-monorepo|issue #4]]).
+TypeScript ran once per module, so references between packages of a monorepo point to `node_modules` or externals ([[SRC-020-github-issue-4-typescript-link-references-between-packages-of-a-monorepo|issue #4]]).
 
 ## Requirement
 
-Each extractor runs once per scan with all modules of its languages and reports the module of every file, so references between modules of one ecosystem resolve to the real declarations.
+Each extractor runs once per scan and chosen toolchain ([[FR-010-choose-the-toolchain-in-a-fixed-order]]) with all modules that use it and reports the module of every file, so references between modules of one ecosystem resolve to the real declarations.
 
 ## Acceptance criteria
 

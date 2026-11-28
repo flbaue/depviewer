@@ -2,7 +2,7 @@
 id: FR-006
 type: functional-requirement
 title: Analyse Dart with the Dart analyzer
-status: accepted
+status: review
 created: 2026-11-27
 updated: 2026-11-28
 sources: ["[[SRC-014-spec-dart-support]]", "[[SRC-009-supported-languages]]"]
@@ -17,7 +17,7 @@ release: delivered
 lane: backbone
 order: 5
 goal: []
-delivery: implemented
+delivery: outdated
 delivery-checked: "2026-11-28T08:27:38Z"
 ---
 
@@ -29,7 +29,7 @@ Dart and Flutter apps should be as exact as Java.
 
 ## Requirement
 
-Dart packages are analysed with the official analyzer, all packages of a scan in one run, so references between them (pub workspaces, `path:` dependencies) link to the real declarations. Without `.dart_tool/package_config.json` the scan still runs, imports of other packages count as errors and a hint is printed.
+Dart packages are analysed with the official analyzer, all packages of a scan that use the same Dart SDK ([[FR-010-choose-the-toolchain-in-a-fixed-order]]) in one run, so references between them (pub workspaces, `path:` dependencies) link to the real declarations. Without `.dart_tool/package_config.json` the scan still runs, imports of other packages count as errors and a hint is printed.
 
 ## Acceptance criteria
 

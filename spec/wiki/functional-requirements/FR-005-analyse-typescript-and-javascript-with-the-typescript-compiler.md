@@ -2,7 +2,7 @@
 id: FR-005
 type: functional-requirement
 title: Analyse TypeScript and JavaScript with the TypeScript compiler
-status: accepted
+status: review
 created: 2026-11-27
 updated: 2026-11-28
 sources: ["[[SRC-013-spec-typescript-and-javascript-support]]", "[[SRC-009-supported-languages]]"]
@@ -17,7 +17,7 @@ release: delivered
 lane: backbone
 order: 4
 goal: []
-delivery: implemented
+delivery: outdated
 delivery-checked: "2026-11-28T08:27:38Z"
 ---
 
@@ -29,7 +29,7 @@ Frontend and Node code should be as exact as Java.
 
 ## Requirement
 
-Files `.ts .tsx .mts .cts .js .jsx .mjs .cjs` below each `package.json` are analysed with the TypeScript compiler API and type checker, respecting `tsconfig.json`/`jsconfig.json`. The project's own `typescript` package is used if installed, else the extractor's pinned copy. Test files (`*.test.*`, `*.spec.*`, `__tests__/`, `test/`, `tests/`) are flagged.
+Files `.ts .tsx .mts .cts .js .jsx .mjs .cjs` below each `package.json` are analysed with the TypeScript compiler API and type checker, respecting `tsconfig.json`/`jsconfig.json`. The `typescript` package is chosen as [[FR-010-choose-the-toolchain-in-a-fixed-order]] says, and the modules that use the same one are analysed together ([[FR-012-link-the-modules-of-a-monorepo]]). Test files (`*.test.*`, `*.spec.*`, `__tests__/`, `test/`, `tests/`) are flagged.
 
 ## Acceptance criteria
 
