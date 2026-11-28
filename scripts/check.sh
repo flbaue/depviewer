@@ -85,6 +85,13 @@ if [ -n "$HAVE_TS" ]; then
   ./depviewer -o "$M.json" "$M" 2> "$M.log" || { cat "$M.log"; fail "pnpm monorepo scan failed"; }
   python3 -I test/checks/typescript_mono.py "$M.json"
   grep -q "^TypeScript/JavaScript: typescript 5.9.3 (project: .*) for @acme/app, @acme/core$" "$M.log" || { cat "$M.log"; fail "expected one run for both pnpm packages"; }
+  # One package has its own TypeScript, the other finds the same one through the PATH: one run,
+  # and each package's source is recorded (spec/wiki/functional-requirements/FR-011-record-the-provenance-of-every-language-and-module.md).
+  M="$OUT/fixture-ts-mixed"; rm -rf "$M" "$M-bin" && cp -R "$OUT/fixture-ts-mono" "$M" && mkdir -p "$M/packages/core/node_modules" "$M-bin"
+  ln -s "$(pwd -P)/extractors/typescript/node_modules/typescript" "$M/packages/core/node_modules/typescript"
+  ln -s "$(pwd -P)/extractors/typescript/node_modules/typescript/bin/tsc" "$M-bin/tsc"
+  PATH="$(pwd -P)/$M-bin:$PATH" ./depviewer -o "$M.json" "$M" 2> "$M.log" || { cat "$M.log"; fail "mixed monorepo scan failed"; }
+  python3 -I test/checks/typescript_mono.py "$M.json" @acme/app=path @acme/core=project
 else
   echo "skipped: node not installed (set DEPVIEWER_NODE)"
 fi
@@ -109,6 +116,15 @@ if [ -n "$HAVE_TS" ]; then
   # ... and recorded in the model (spec/wiki/functional-requirements/FR-011-record-the-provenance-of-every-language-and-module.md).
   python3 -I -c 'import json, sys; a = json.load(open(sys.argv[1]))["analysis"]; sys.exit(not (len(a) == 1 and a[0]["source"] == "project" and a[0]["version"] == "5.9.3" and "path" not in a[0]))' \
     "$T/project.json" || fail "the project's TypeScript is not recorded as source project"
+  # The pinned TypeScript is installed only when it is reached: with no pinned copy at all, the
+  # project's own TypeScript is used and npm ci never runs.
+  H="$T/no-pinned"; mkdir -p "$H/extractors/typescript"
+  cp extractors/typescript/extract.mjs extractors/typescript/package.json "$H/extractors/typescript/"
+  DEPVIEWER_HOME="$H" java -cp "$OUT/classes" depviewer.DepScan --template viewer.html -o "$H.json" "$T/project" > "$H.log" 2>&1 \
+    || { cat "$H.log"; fail "scan without a pinned TypeScript failed"; }
+  grep -q "npm ci" "$H.log" && { cat "$H.log"; fail "npm ci ran although the project has a supported TypeScript"; }
+  grep -qF "typescript 5.9.3 (project: $T/project/node_modules/typescript) for shop-web" "$H.log" || { cat "$H.log"; fail "no-pinned: the project's TypeScript was not used"; }
+  [ ! -e "$H/extractors/typescript/node_modules" ] || fail "the pinned TypeScript was installed"
   # An unsupported project version is reported and the next candidate is tried.
   tc old "TypeScript 3.9.7 (project: $T/old/node_modules/typescript) is not supported (needs >=5.0.0 <7.0.0), trying the next one"
   grep "for shop-web" "$T/old.log" | grep -q "(project:" && fail "the unsupported project TypeScript was used"

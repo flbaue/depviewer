@@ -17,7 +17,7 @@ steps:
   - {from: "[[BB-003-cli-and-orchestration]]", to: "[[BB-008-kotlin-scanner]]", message: "Kotlin files, javac errors for Kotlin names"}
   - {from: "[[BB-003-cli-and-orchestration]]", to: "[[BB-006-toolchain-runner]]", message: TypeScript modules and Dart packages}
   - {from: "[[BB-006-toolchain-runner]]", to: "[[BB-009-typescript-extractor]]", message: one run per toolchain for all TypeScript modules}
-  - {from: "[[BB-006-toolchain-runner]]", to: "[[BB-010-dart-extractor]]", message: one run for all Dart packages}
+  - {from: "[[BB-006-toolchain-runner]]", to: "[[BB-010-dart-extractor]]", message: one run per Dart SDK for all Dart packages}
   - {from: "[[BB-006-toolchain-runner]]", to: "[[BB-004-model-and-json-writer]]", message: merge fragments}
   - {from: "[[BB-003-cli-and-orchestration]]", to: "[[BB-013-viewer]]", message: "replace /*DEPS_DATA*/ with the model"}
 realizes: ["[[FR-001-scan-a-code-base-into-one-model]]", "[[FR-009-write-the-viewer-or-the-model]]"]

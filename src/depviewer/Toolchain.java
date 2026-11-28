@@ -91,20 +91,23 @@ final class Toolchain {
         // The toolchain is chosen per module (spec FR-010), and each extractor runs once per toolchain
         // with all its modules, so references between them (workspaces, path dependencies) resolve
         // to the real declarations (spec FR-012).
-        Map<String, List<Module>> runs = new LinkedHashMap<>();
-        Map<String, Choice> choices = new HashMap<>();
+        Map<String, Map<Module, Choice>> runs = new LinkedHashMap<>();
         for (Module m : modules) {
             Choice c = choose(m);
-            if (c == null) continue;
-            choices.put(c.key(), c);
-            runs.computeIfAbsent(c.key(), k -> new ArrayList<>()).add(m);
+            if (c != null) runs.computeIfAbsent(c.key(), k -> new LinkedHashMap<>()).put(m, c);
         }
-        for (Map.Entry<String, List<Module>> e : runs.entrySet()) run(e.getValue(), choices.get(e.getKey()), tests);
+        for (Map<Module, Choice> run : runs.values()) run(run, tests);
     }
 
-    private void run(List<Module> run, Choice choice, boolean tests) throws IOException, InterruptedException {
-        String names = run.stream().map(m -> m.name).collect(java.util.stream.Collectors.joining(", "));
-        System.err.printf("%s: %s for %s%n", label, choice, names);
+    /** One extractor run. Its modules share one toolchain, but may have found it in different places. */
+    private void run(Map<Module, Choice> chosen, boolean tests) throws IOException, InterruptedException {
+        List<Module> run = new ArrayList<>(chosen.keySet());
+        Choice choice = chosen.get(run.get(0));
+        // One log line and provenance entry per source, so each module's source is recorded (spec FR-011).
+        Map<String, List<Module>> bySource = new LinkedHashMap<>();
+        for (Map.Entry<Module, Choice> e : chosen.entrySet()) bySource.computeIfAbsent(e.getValue().source, k -> new ArrayList<>()).add(e.getKey());
+        for (List<Module> ms : bySource.values()) System.err.printf("%s: %s for %s%n", label, chosen.get(ms.get(0)), names(ms));
+        String names = names(run);
         Path input = Files.createTempFile("depviewer-" + language, ".json");
         try {
             Module first = run.get(0);
@@ -133,8 +136,11 @@ final class Toolchain {
                 int code = p.waitFor();
                 if (code != 0) { System.err.printf("%s: extractor failed for %s (exit code %d), skipped%n", label, names, code); return; }
                 merge(first.name, Json.parse(out));
-                provenance(language, run.stream().map(m -> m.name).collect(java.util.stream.Collectors.toList()), choice.tool,
-                        choice.version, choice.source, choice.exact, choice.extractor, choice.extractorVersion);
+                for (List<Module> ms : bySource.values()) {
+                    Choice c = chosen.get(ms.get(0));
+                    provenance(language, ms.stream().map(m -> m.name).collect(java.util.stream.Collectors.toList()), c.tool,
+                            c.version, c.source, c.exact, c.extractor, c.extractorVersion);
+                }
             } catch (IOException | IllegalArgumentException | ClassCastException e) {
                 System.err.printf("%s: extractor failed for %s (%s), skipped%n", label, names, e.getMessage());
             }
@@ -142,6 +148,8 @@ final class Toolchain {
             Files.deleteIfExists(input);
         }
     }
+
+    static String names(List<Module> ms) { return ms.stream().map(m -> m.name).collect(java.util.stream.Collectors.joining(", ")); }
 
     // ------------------------------------------------ choosing the toolchain (spec FR-010)
 
@@ -244,7 +252,8 @@ final class Toolchain {
         } else {
             // describe.dart imports nothing, so an SDK too old for the analyzer can still say which version it is.
             if (!works(c.location(), "--version")) return null;
-            cmd.addAll(List.of(c.location(), home.resolve("extractors/dart/bin/describe.dart").toString()));
+            cmd.addAll(List.of(c.location(), "--packages=" + home.resolve("extractors/dart/describe_packages.json"),
+                    home.resolve("extractors/dart/bin/describe.dart").toString()));
         }
         cmd.add(c.source());
         try {

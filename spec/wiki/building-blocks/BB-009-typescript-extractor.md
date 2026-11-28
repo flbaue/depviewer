@@ -23,7 +23,7 @@ superseded-by:
 
 ## Purpose / Responsibility
 
-`extract.mjs` on the TypeScript compiler API. Analyses the TypeScript and JavaScript files of all modules of a scan in one run, one program per module with its own `tsconfig.json`, and prints one fragment, so an import of a sibling workspace package links to its declarations ([[FR-012-link-the-modules-of-a-monorepo]]).
+`extract.mjs` on the TypeScript compiler API. Analyses the TypeScript and JavaScript files of all modules of a scan that use the same TypeScript in one run, one program per module with its own `tsconfig.json`, and prints one fragment, so an import of a sibling workspace package links to its declarations ([[FR-012-link-the-modules-of-a-monorepo]]).
 
 ## Interfaces
 

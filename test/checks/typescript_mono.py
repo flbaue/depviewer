@@ -3,7 +3,9 @@
 
 check.sh scans a copy whose node_modules links the workspace packages, as `npm install` would.
 
-Usage: python3 -I test/checks/typescript_mono.py <deps.json>
+Usage: python3 -I test/checks/typescript_mono.py <deps.json> [<module>=<source> ...]
+  With sources: the packages found the same TypeScript in different places, so one run gives
+  one analysis entry per source (spec FR-011).
 """
 import os
 import sys
@@ -35,7 +37,13 @@ edge(C + ".add(Price)", P + ".add(Price)", "call")
 ext = [c.qname(n) for n in nodes if n["k"].startswith("ext") and ("acme" in c.qname(n) or "(other)" in c.qname(n))]
 check(not ext, f"workspace packages must not show up as externals: {ext}")
 
-an = c.analysis("typescript", ["@acme/app", "@acme/core"], "typescript", True, "depviewer-typescript-extractor")
-check(len(c.data.get("analysis") or []) == 1, "one extractor run, one analysis entry")
+sources = dict(a.split("=", 1) for a in sys.argv[2:])
+if not sources:
+    c.analysis("typescript", ["@acme/app", "@acme/core"], "typescript", True, "depviewer-typescript-extractor")
+    check(len(c.data.get("analysis") or []) == 1, "one extractor run, one analysis entry")
+else:
+    got = {m: a.get("source") for a in c.data.get("analysis") or [] for m in a.get("modules", [])}
+    check(got == sources, f"analysis sources: expected {sources}, got {got}")
+    check(len(c.data["analysis"]) == len(set(sources.values())), "one analysis entry per source")
 
 c.finish("typescript monorepo")

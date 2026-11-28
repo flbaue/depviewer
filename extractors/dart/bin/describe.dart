@@ -1,8 +1,10 @@
 // --describe of the depviewer Dart extractor (spec/wiki/functional-requirements/FR-010-choose-the-toolchain-in-a-fixed-order.md).
 //
-// Usage: dart describe.dart [<source>]
+// Usage: dart --packages=<extractor>/describe_packages.json describe.dart [<source>]
 // Prints the extractor's name, version and contract and whether the Dart SDK running it is
 // supported. It imports nothing, so an SDK too old for the analyzer can still run it and be told so.
+// The core runs it with describe_packages.json, an empty package config: as part of no package, it
+// gets the SDK's own language version instead of the package's minimum, which an old SDK rejects.
 
 import 'dart:convert';
 import 'dart:io';

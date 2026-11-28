@@ -54,8 +54,8 @@ machines can therefore choose different versions; set `DEPVIEWER_TYPESCRIPT` in 
 
 ## Dart
 
-Analysed with the official Dart analyzer; all packages of a scan are analysed together, so
-references between them link to the real declarations. The Dart SDK is chosen in this order:
+Analysed with the official Dart analyzer; all packages of a scan that use the same Dart SDK are
+analysed together, so references between them link to the real declarations. The Dart SDK is chosen in this order:
 `DEPVIEWER_DART`, the project's Flutter SDK (FVM's `.fvm/flutter_sdk`, or `flutterRoot` in
 `.dart_tool/package_config.json`), then `dart` on the `PATH` (Flutter's bundled `dart` works). There
 is no pinned SDK. Dart 3.11 or later before 4 is used, as the pinned analyzer needs; another version is reported and the next one
