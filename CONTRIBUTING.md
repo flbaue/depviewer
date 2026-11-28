@@ -19,7 +19,9 @@ the backlog, and the issue is closed with a link to its requirement.
    (structure, data model, invariants, conventions).
 3. For a feature or behaviour change, write or update the requirements in the
    [wiki under `spec/`](spec/) first, then add
-   tests that fail, then implement (see "Workflow" in AGENTS.md). Make a focused change; no new
+   tests that fail, then implement (see "Workflow" in AGENTS.md). The maintainer selects which
+   requirement gets built and approves the plan; AI-assisted changes also get a review in a fresh
+   agent session before the PR. Make a focused change; no new
    dependencies or build tooling without discussing it first.
 4. Run `scripts/check.sh` (needs JDK 17+ and python3; Node.js, the Dart SDK and Chrome enable the
    TypeScript, Dart and browser checks - CI runs all of them).
