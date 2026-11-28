@@ -31,6 +31,10 @@ The spec in `spec/` drives every change, and its workflows are the process. Do n
 here or work around them. Paths in `spec/AGENTS.md`, its workflows and its skills are relative to
 `spec/`; run their scripts from there.
 
+Every change goes on a feature branch and into a PR that the maintainer merges, wiki changes
+included ([commit policy](spec/AGENTS.md#commit-policy)). A branch name set by your harness or a
+fork replaces `implement/<id>-<slug>`.
+
 - **A new idea or changed behaviour** becomes requirements with the `capture` skill
   ([capture.md](spec/_system/workflows/capture.md); grill-gated, see
   [spec/AGENTS.md](spec/AGENTS.md)). Its source goes into `spec/raw/`, which the human owns. Write

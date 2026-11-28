@@ -147,23 +147,22 @@ never block or silently rewrite. The human decides.
 
 ## Commit policy
 
-The `status` field carries a page's maturity, so a commit to `main` does not mean
-"agreed". Delivery follows the status the content is entering. Keep one commit per
-capture or inspect run, with a message naming it, so `git revert` stays clean; the
-`_system/log.md` entry is the review trail.
+Every change goes on a feature branch and into a PR, wiki changes included. The
+human merges; you never merge your own PR. The `status` field still carries a
+page's maturity, so a merge to `main` does not mean "agreed". Keep one commit
+per capture or inspect run, with a message naming it, so `git revert` stays
+clean; the `_system/log.md` entry is the review trail.
 
 | Change | Delivery |
 |--------|----------|
-| New or edited `wiki/` pages at `draft` or `review` | Commit to `main` |
-| Raising an Issue | Commit to `main` |
-| Resolving an Issue (`resolved`, `wontfix`) | Commit to `main`; PR only if it also promotes content to `accepted` or changes the schema |
-| Promoting a page to `accepted`, or demoting to `deprecated` | **PR** — only the human promotes; you never merge your own promotion |
-| Substantive edit to an `accepted` page | Set it back to `review` and commit to `main`, or open a PR |
-| `AGENTS.md`, `CLAUDE.md`, `.agents/skills/`, `_templates/`, `_system/` (workflows, anchors, scripts, apps) | **PR** |
-| `raw/` | Outside this policy — human-owned |
+| New or edited `wiki/` pages at `draft` or `review`, raising or resolving an Issue | PR |
+| Promoting a page to `accepted`, or demoting to `deprecated` | PR; only the human promotes |
+| Substantive edit to an `accepted` page | Set it back to `review`, in a PR |
+| `AGENTS.md`, `CLAUDE.md`, `.agents/skills/`, `_templates/`, `_system/` (workflows, anchors, scripts, apps) | PR |
+| `raw/` | Human-owned; the human adds sources, and a capture PR may carry the source it captures |
 
-Review of `draft` content happens in the grilling passes and by status promotion,
-not in a PR. Anything that reads `main` (reports, exports) must filter on `status`.
+Review of `draft` content happens in the grilling passes, by status promotion
+and in the PR. Anything that reads `main` (reports, exports) must filter on `status`.
 
 ## Harnesses and skills
 
