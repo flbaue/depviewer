@@ -32,6 +32,17 @@ echo ok
 step "viewer contrast (spec/wiki/quality-requirements/QR-008-the-viewer-reads-well-in-light-dark-and-on-a-narrow-screen.md)"
 python3 -I test/checks/viewer_contrast.py viewer.html
 
+step "wiki IDs (spec/AGENTS.md, Commit policy)"
+# The check must catch a planted duplicate before it vouches for the real wiki.
+D="$OUT/wiki-ids/wiki/functional-requirements"
+rm -rf "$OUT/wiki-ids" && mkdir -p "$D"
+printf -- '---\nid: FR-001\n---\n' > "$D/FR-001-a.md"
+printf -- '---\nid: FR-001\n---\n' > "$D/FR-001-b.md"
+if python3 -I test/checks/wiki_ids.py "$OUT/wiki-ids" >/dev/null; then
+  fail "wiki_ids.py missed a planted duplicate ID"
+fi
+python3 -I test/checks/wiki_ids.py spec
+
 step "scan fixture"
 ./depviewer -o "$OUT/fixture.json" test/fixture
 ./depviewer -o "$OUT/fixture.html" --views test/fixture-views.json test/fixture 2>/dev/null

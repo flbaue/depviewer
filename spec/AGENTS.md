@@ -161,6 +161,9 @@ on each `origin/*` branch (`git ls-tree -r --name-only <branch> -- wiki` and
 human asks you to update the PR, update it from `main` and renumber any ID taken
 in the meantime: the filename, the `id:` field, every link to it, its
 `_system/index.md` entry, the source's `ingested-pages:` and your log entry.
+The repository's `scripts/check.sh` fails on a duplicate ID or an `id:` that
+does not match its filename. CI runs it on every PR and again on `main` after
+each merge, which is where a duplicate from two parallel PRs shows up.
 
 | Change | Delivery |
 |--------|----------|
