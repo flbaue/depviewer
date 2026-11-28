@@ -31,11 +31,12 @@ Details: [spec](../spec/wiki/functional-requirements/FR-004-analyse-kotlin-by-na
 ## TypeScript / JavaScript
 
 Files `.ts .tsx .mts .cts .js .jsx .mjs .cjs` below each `package.json`, analysed with the
-TypeScript compiler API, respecting each module's `tsconfig.json`. All modules of a scan are
-analysed in one run, so in a monorepo an import of a sibling workspace package (linked into
+TypeScript compiler API, respecting each module's `tsconfig.json`. All modules that use the same
+TypeScript are analysed in one run (also when pnpm links it into every package), so in a monorepo an import of a sibling workspace package (linked into
 `node_modules` by npm, yarn or pnpm) links to its declarations
 ([spec](../spec/wiki/functional-requirements/FR-012-link-the-modules-of-a-monorepo.md)). A package
-whose types point to built `.d.ts` files instead of its sources still shows up as an external. Node is found as `node` on the
+whose types point to built `.d.ts` files instead of its sources still shows up as an external, and
+so do references between packages that use different TypeScript versions. Node is found as `node` on the
 `PATH`, or set `DEPVIEWER_NODE`. Details: [spec](../spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md).
 
 The `typescript` package is chosen per module, in this order
@@ -57,7 +58,7 @@ Analysed with the official Dart analyzer; all packages of a scan are analysed to
 references between them link to the real declarations. The Dart SDK is chosen in this order:
 `DEPVIEWER_DART`, the project's Flutter SDK (FVM's `.fvm/flutter_sdk`, or `flutterRoot` in
 `.dart_tool/package_config.json`), then `dart` on the `PATH` (Flutter's bundled `dart` works). There
-is no pinned SDK. Dart 3.5 or later before 4 is used; another version is reported and the next one
+is no pinned SDK. Dart 3.11 or later before 4 is used, as the pinned analyzer needs; another version is reported and the next one
 is tried. The extractor's dependencies are installed with
 `dart pub get` on first use. Run `dart pub get` / `flutter pub get` in your project first so imports
 of other packages resolve. Details: [spec](../spec/wiki/functional-requirements/FR-006-analyse-dart-with-the-dart-analyzer.md).

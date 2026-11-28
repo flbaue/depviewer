@@ -48,7 +48,14 @@ final class Toolchain {
             this.command = command;
         }
 
-        String key() { return source + " " + path; }
+        /** Modules whose toolchain is the same folder run together, also through symlinks (pnpm links it into every package). */
+        String key() {
+            try {
+                return Path.of(path).toRealPath().toString();
+            } catch (IOException | RuntimeException e) {
+                return path;
+            }
+        }
 
         @Override public String toString() { return tool + " " + version + " (" + source + ": " + path + ")"; }
     }
@@ -63,6 +70,7 @@ final class Toolchain {
     private final Map<String, Choice> described = new HashMap<>();
     private final Set<String> reported = new HashSet<>();
     private Boolean pinnedReady;
+    private final Map<String, Boolean> pubGet = new HashMap<>();   // Dart: dart executable -> extractor dependencies installed
 
     Toolchain(String language, String label, Path home) {
         this.language = language;
@@ -144,10 +152,14 @@ final class Toolchain {
             String key = c.source() + " " + c.location();
             Choice known = described.get(key);
             if (known != null) return known;
+            if (reported.contains(key)) continue;   // unsupported, already reported
+            if (c.source().equals("pinned") && language.equals("typescript") && !pinnedTypeScript()) continue;
             Object d = describe(c);
             Map<?, ?> t = d instanceof Map && ((Map<?, ?>) d).get("toolchain") instanceof Map ? (Map<?, ?>) ((Map<?, ?>) d).get("toolchain") : null;
             if (t != null && Boolean.TRUE.equals(t.get("supported"))) {
-                Choice choice = new Choice((Map<?, ?>) d, extractorCommand(c));
+                List<String> command = extractorCommand(c);
+                if (command == null) continue;   // reported by extractorCommand
+                Choice choice = new Choice((Map<?, ?>) d, command);
                 described.put(key, choice);
                 return choice;
             }
@@ -178,7 +190,7 @@ final class Toolchain {
                 Path pkg = tsc.toRealPath().getParent().getParent();   // <package>/bin/tsc
                 if (pkg != null && Files.isRegularFile(pkg.resolve("package.json"))) list.add(new Candidate("path", pkg.toString()));
             }
-            if (pinnedTypeScript()) list.add(new Candidate("pinned", home.resolve("extractors/typescript/node_modules/typescript").toString()));
+            list.add(new Candidate("pinned", home.resolve("extractors/typescript/node_modules/typescript").toString()));   // npm ci when reached
         } else {
             String override = System.getenv("DEPVIEWER_DART");
             if (override != null && !override.isEmpty()) list.add(new Candidate("override", override));
@@ -226,10 +238,14 @@ final class Toolchain {
 
     /** The extractor's --describe output for a candidate, or null if it could not run. */
     Object describe(Candidate c) throws IOException, InterruptedException {
-        List<String> cmd = extractorCommand(c);
-        if (cmd == null) return null;
-        cmd.add("--describe");
-        if (language.equals("typescript")) cmd.add(c.location());
+        List<String> cmd = new ArrayList<>();
+        if (language.equals("typescript")) {
+            cmd.addAll(List.of(node, home.resolve("extractors/typescript/extract.mjs").toString(), "--describe", c.location()));
+        } else {
+            // describe.dart imports nothing, so an SDK too old for the analyzer can still say which version it is.
+            if (!works(c.location(), "--version")) return null;
+            cmd.addAll(List.of(c.location(), home.resolve("extractors/dart/bin/describe.dart").toString()));
+        }
         cmd.add(c.source());
         try {
             Process p = new ProcessBuilder(cmd).redirectError(ProcessBuilder.Redirect.DISCARD).start();
@@ -245,16 +261,15 @@ final class Toolchain {
     List<String> extractorCommand(Candidate c) throws IOException, InterruptedException {
         if (language.equals("typescript")) return new ArrayList<>(List.of(node, home.resolve("extractors/typescript/extract.mjs").toString()));
         String dart = c.location();
-        if (!works(dart, "--version")) return null;
         Path dir = home.resolve("extractors/dart");
         Path config = dir.resolve(".dart_tool/package_config.json");
-        if (!Files.exists(config)) {
+        if (!Files.exists(config) && pubGet.get(dart) == null) {
             System.err.println(label + ": installing the extractor's dependencies (dart pub get, one time)...");
-            if (run(dir, List.of(dart, "pub", "get"), null) != 0) {
-                System.err.println(label + ": 'dart pub get' failed in " + dir);
-                return null;
-            }
+            boolean ok = run(dir, List.of(dart, "pub", "get"), null) == 0;
+            pubGet.put(dart, ok);
+            if (!ok) System.err.println(label + ": 'dart pub get' failed in " + dir + ", trying the next Dart SDK");
         }
+        if (Boolean.FALSE.equals(pubGet.get(dart))) return null;
         return new ArrayList<>(List.of(dart, "--packages=" + config, dir.resolve("bin/extract.dart").toString()));
     }
 

@@ -74,6 +74,17 @@ if [ -n "$HAVE_TS" ]; then
   ./depviewer -o "$OUT/fixture-ts-mono.json" "$OUT/fixture-ts-mono" 2> "$OUT/fixture-ts-mono.log" || { cat "$OUT/fixture-ts-mono.log"; fail "monorepo scan failed"; }
   python3 -I test/checks/typescript_mono.py "$OUT/fixture-ts-mono.json"
   [ "$(grep -c "^TypeScript/JavaScript: typescript .* for " "$OUT/fixture-ts-mono.log")" = 1 ] || { cat "$OUT/fixture-ts-mono.log"; fail "expected one extractor run for both packages"; }
+  # pnpm links typescript into each package's own node_modules: still one run for both.
+  M="$OUT/fixture-ts-pnpm"; rm -rf "$M" && cp -R "$OUT/fixture-ts-mono" "$M"
+  mkdir -p "$M/node_modules/.pnpm/typescript@5.9.3/node_modules"
+  ln -s "$(pwd -P)/extractors/typescript/node_modules/typescript" "$M/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript"
+  for p in core app; do
+    mkdir -p "$M/packages/$p/node_modules"
+    ln -s "../../../node_modules/.pnpm/typescript@5.9.3/node_modules/typescript" "$M/packages/$p/node_modules/typescript"
+  done
+  ./depviewer -o "$M.json" "$M" 2> "$M.log" || { cat "$M.log"; fail "pnpm monorepo scan failed"; }
+  python3 -I test/checks/typescript_mono.py "$M.json"
+  grep -q "^TypeScript/JavaScript: typescript 5.9.3 (project: .*) for @acme/app, @acme/core$" "$M.log" || { cat "$M.log"; fail "expected one run for both pnpm packages"; }
 else
   echo "skipped: node not installed (set DEPVIEWER_NODE)"
 fi
@@ -132,6 +143,12 @@ if command -v "$DART_BIN" >/dev/null 2>&1; then
   DEPVIEWER_DART="$OUT/no-such-dart" ./depviewer -o "$OUT/fixture-dart-next.json" test/fixture-dart > "$OUT/fixture-dart-next.log" 2>&1
   grep -qF "Dart: Dart SDK (override: $OUT/no-such-dart) could not be run, trying the next one" "$OUT/fixture-dart-next.log" \
     || { cat "$OUT/fixture-dart-next.log"; fail "a broken DEPVIEWER_DART is not reported"; }
+  # An SDK below the analyzer's range, if one is given (CI has none): reported as not supported.
+  if [ -n "${DEPVIEWER_OLD_DART:-}" ]; then
+    DEPVIEWER_DART="$DEPVIEWER_OLD_DART" ./depviewer -o "$OUT/fixture-dart-old.json" test/fixture-dart > "$OUT/fixture-dart-old.log" 2>&1
+    grep -q "^Dart: Dart SDK [0-9.]* (override: .*) is not supported (needs >=3.11.0 <4.0.0), trying the next one" "$OUT/fixture-dart-old.log" \
+      || { cat "$OUT/fixture-dart-old.log"; fail "an unsupported DEPVIEWER_OLD_DART is not reported"; }
+  fi
   # FR-067: one note per module for the files analysis_options.yaml excludes.
   for m in shop_app shop_core; do
     [ "$(grep -c "^dart: $m: 1 file(s) skipped - excluded" "$OUT/fixture-dart.log")" = 1 ] || fail "no exclude note for module $m"

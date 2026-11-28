@@ -350,21 +350,28 @@ function reference(sf, id, owner) {
 // ------------------------------------------------------------------ run
 
 // Each module's own files, read with its program: first all declarations, then the references,
-// which may point into any module.
-const runs = [...modules.values()].map((m) => {
-  const p = ts.createProgram(m.files, { ...compilerOptions(m.root), allowJs: true, checkJs: false, noEmit: true, skipLibCheck: true });
-  return { program: p, checker: p.getTypeChecker(), sources: p.getSourceFiles().filter((sf) => files.get(real(sf.fileName))?.module === m) };
-});
-for (const r of runs) for (const sf of r.sources) declareFile(sf);
+// which may point into any module. Only one program is alive at a time, so a monorepo with many
+// packages needs no more memory than its largest package; each program is built twice for that.
+let kept = null; // a single module keeps its program for both passes
+function load(m) {
+  if (kept?.m === m) return kept.sources;
+  program = ts.createProgram(m.files, { ...compilerOptions(m.root), allowJs: true, checkJs: false, noEmit: true, skipLibCheck: true });
+  checker = program.getTypeChecker();
+  const sources = program.getSourceFiles().filter((sf) => files.get(real(sf.fileName))?.module === m);
+  kept = modules.size === 1 ? { m, sources } : null;
+  return sources;
+}
+for (const m of modules.values()) for (const sf of load(m)) declareFile(sf);
 let read = 0;
-for (const r of runs) {
-  ({ program, checker } = r);
-  for (const sf of r.sources) {
+for (const m of modules.values()) {
+  const sources = load(m);
+  for (const sf of sources) {
     visitRefs(sf, sf, declId.get(sf));
     out.errors += program.getSyntacticDiagnostics(sf).length + program.getSemanticDiagnostics(sf).length;
   }
-  read += r.sources.length;
+  read += sources.length;
 }
+program = checker = null;
 const missing = input.files.length - read;
 if (missing > 0) console.error(`typescript: ${missing} file(s) could not be loaded`);
 process.stdout.write(JSON.stringify(out));
