@@ -13,6 +13,8 @@ tooling allows; the [requirements wiki](../spec/) has the details and known limi
 ## Java
 
 Parsed and attributed by the JDK's own compiler, so references resolve the way `javac` sees them.
+Java and Kotlin are read together by the jvm extractor, a second Java process. Its JDK is
+`DEPVIEWER_JAVA` (a `java` executable) if set, else the `java` on the `PATH`; it needs 17 or later.
 Library types resolve when their jars are on the classpath; see [usage](usage.md#libraries-and-the-classpath-java-kotlin).
 
 ## Kotlin

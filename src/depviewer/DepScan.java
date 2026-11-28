@@ -393,30 +393,38 @@ public class DepScan {
         if (dartFiles > 0) what.append(what.length() > 0 ? ", " : "").append(String.format("%d Dart files in %d module(s)", dartFiles, dartModules.size()));
         System.err.println("Scanning " + what + "...");
 
-        // Kotlin declarations first, so that Java references to Kotlin types (unresolvable for
-        // javac) can be matched by name when the Java references are resolved.
-        KotlinScanner kotlin = new KotlinScanner();
-        for (Map.Entry<Path, Root> e : rootOfKt.entrySet()) kotlin.declare(e.getKey(), e.getValue());
-
-        int[] errors = {0};
-        List<String> firstErrors = new ArrayList<>();
-        JavaScanner java = new JavaScanner();
-        if (!rootOfFile.isEmpty()) java.scan(rootOfFile, roots, cp, errors, firstErrors);
-        java.resolve();
-        kotlin.resolveAll();
-        // Provenance (spec FR-011): javac is the JDK that runs depviewer, the Kotlin parser is built in.
-        List<String> javaModules = roots.stream().filter(rootOfFile::containsValue).map(r -> r.module).distinct().collect(Collectors.toList());
-        List<String> ktModules = roots.stream().filter(rootOfKt::containsValue).map(r -> r.module).distinct().collect(Collectors.toList());
-        if (!javaModules.isEmpty()) provenance("java", javaModules, "javac", System.getProperty("java.version"), "path", true,
-                JavaScanner.EXTRACTOR, JavaScanner.VERSION);
-        if (!ktModules.isEmpty()) provenance("kotlin", ktModules, KotlinScanner.EXTRACTOR, KotlinScanner.VERSION, "pinned", false,
-                KotlinScanner.EXTRACTOR, KotlinScanner.VERSION);
+        // Java and Kotlin: the jvm extractor, in its own process (spec BB-011, CC-002). Its modules are
+        // the project folders; each file names its source root, which the extractor needs.
         Path home = Paths.get(Toolchain.env("DEPVIEWER_HOME", template != null && template.toAbsolutePath().getParent() != null
                 ? template.toAbsolutePath().getParent().toString() : ".")).toAbsolutePath().normalize();
-        List<Toolchain> toolchains = List.of(new Toolchain("typescript", "TypeScript/JavaScript", home), new Toolchain("dart", "Dart", home));
-        int totalErrors = errors[0];
+        Toolchain jvm = new Toolchain("jvm", "Java/Kotlin", home);
+        List<Object> sourceRoots = new ArrayList<>();
+        for (Root r : roots) {
+            Map<String, Object> o = new LinkedHashMap<>();
+            o.put("dir", r.dir.toString());
+            o.put("project", r.projectDir.toString());
+            o.put("module", r.module);
+            o.put("test", r.test);
+            sourceRoots.add(o);
+        }
+        jvm.options.put("sourceRoots", sourceRoots);
+        if (cp != null) jvm.options.put("classpath", cp);
+        Map<Path, Toolchain.Module> jvmModules = new LinkedHashMap<>();
+        int order = 0;   // the request groups files by module; the extractor restores this order, which the model follows
+        for (Map<Path, Root> files : List.of(rootOfKt, rootOfFile)) {   // Kotlin first, as the extractor declares it first
+            for (Map.Entry<Path, Root> e : files.entrySet()) {
+                Root r = e.getValue();
+                Toolchain.Module m = jvmModules.computeIfAbsent(r.projectDir, d -> new Toolchain.Module(d, r.module));
+                m.files.add(new String[]{r.projectDir.relativize(e.getKey()).toString().replace('\\', '/'), r.test ? "1" : "0",
+                        "sourceRoot", String.valueOf(roots.indexOf(r)), "order", String.valueOf(order++)});
+            }
+        }
+        List<Toolchain> toolchains = List.of(jvm, new Toolchain("typescript", "TypeScript/JavaScript", home), new Toolchain("dart", "Dart", home));
+        int totalErrors = 0;
         for (Toolchain tc : toolchains) {
-            tc.scan(tc.language.equals("dart") ? dartModules : tsModules.stream().filter(m -> !m.files.isEmpty()).collect(Collectors.toList()), tests);
+            List<Toolchain.Module> ms = tc == jvm ? new ArrayList<>(jvmModules.values())
+                    : tc.language.equals("dart") ? dartModules : tsModules.stream().filter(m -> !m.files.isEmpty()).collect(Collectors.toList());
+            tc.scan(ms, tests);
             totalErrors += tc.errors;
         }
         String generated = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
@@ -431,14 +439,8 @@ public class DepScan {
         int depCount = edges.values().stream().mapToInt(e -> e.count).sum();
         System.err.printf("%d types, %d members, %d dependencies (%d distinct) -> %s%n",
                 typeCount, memberCount, depCount, edges.size(), out.toAbsolutePath().normalize());
-        if (errors[0] > 0) {
-            System.err.printf("note: %d Java compile errors; unresolved references are listed under External > (unresolved).%n", errors[0]);
-            System.err.println("      Missing libraries? Run 'mvn dependency:copy-dependencies' or pass --cp.");
-            if (!rootOfKt.isEmpty()) System.err.println("      (Java references to Kotlin code are expected here; they are matched by name.)");
-            firstErrors.forEach(e -> System.err.println("      " + e));
-        }
         for (Toolchain tc : toolchains) {
-            if (tc.errors > 0) System.err.printf("note: %d %s errors reported by the %s toolchain%s%n", tc.errors, tc.label, tc.label,
+            if (tc.errors > 0 && tc != jvm) System.err.printf("note: %d %s errors reported by the %s toolchain%s%n", tc.errors, tc.label, tc.label,
                     tc.language.equals("dart") ? " (unresolved imports? run 'dart pub get' / 'flutter pub get' in the project)" : "");
         }
     }

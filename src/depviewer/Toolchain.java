@@ -218,7 +218,7 @@ final class Toolchain {
     /** The first candidate whose version the extractor supports, or null (the module is skipped). */
     Choice choose(Module m) throws IOException, InterruptedException {
         if (incompatible) return null;
-        String tool = language.equals("dart") ? "Dart SDK" : "TypeScript";
+        String tool = language.equals("dart") ? "Dart SDK" : language.equals("jvm") ? "JDK" : "TypeScript";
         for (Candidate c : candidates(m)) {
             String key = c.source() + " " + c.location();
             Choice known = described.get(key);
@@ -250,13 +250,22 @@ final class Toolchain {
                     label, tool, t.get("version"), where, t.get("range"));
         }
         System.err.printf("%s: skipped %s - no supported %s found (%s).%n", label, m.name, tool,
-                language.equals("dart") ? "install Dart 3.11 or later or set DEPVIEWER_DART" : "add typescript to the project or set DEPVIEWER_TYPESCRIPT");
+                language.equals("dart") ? "install Dart 3.11 or later or set DEPVIEWER_DART"
+                        : language.equals("jvm") ? "install a JDK 17 or later or set DEPVIEWER_JAVA" : "add typescript to the project or set DEPVIEWER_TYPESCRIPT");
         return null;
     }
 
     /** Where to look, in this order: override, the project's own, the PATH, the pinned copy. */
     List<Candidate> candidates(Module m) throws IOException, InterruptedException {
         List<Candidate> list = new ArrayList<>();
+        if (language.equals("jvm")) {
+            String override = System.getenv("DEPVIEWER_JAVA");
+            if (override != null && !override.isEmpty()) list.add(new Candidate("override", override));
+            Path java = onPath("java");
+            // No project JDK yet. Without a java on the PATH, the JDK that runs depviewer, found the same way.
+            list.add(new Candidate("path", java != null ? java.toString() : Path.of(System.getProperty("java.home"), "bin", "java").toString()));
+            return list;
+        }
         if (language.equals("typescript")) {
             String override = System.getenv("DEPVIEWER_TYPESCRIPT");
             if (override != null && !override.isEmpty()) list.add(new Candidate("override", Path.of(override).toAbsolutePath().normalize().toString()));
@@ -318,7 +327,9 @@ final class Toolchain {
     /** The extractor's --describe output for a candidate, or null if it could not run. */
     Object describe(Candidate c) throws IOException, InterruptedException {
         List<String> cmd = new ArrayList<>();
-        if (language.equals("typescript")) {
+        if (language.equals("jvm")) {
+            cmd.addAll(List.of(c.location(), "-cp", System.getProperty("java.class.path"), "depviewer.JvmExtractor", "--describe"));
+        } else if (language.equals("typescript")) {
             cmd.addAll(List.of(node, home.resolve("extractors/typescript/extract.mjs").toString(), "--describe", c.location()));
         } else {
             // describe.dart imports nothing, so an SDK too old for the analyzer can still say which version it is.
@@ -339,6 +350,7 @@ final class Toolchain {
 
     /** The command that runs the extractor with a candidate's toolchain; null if it cannot be set up. */
     List<String> extractorCommand(Candidate c) throws IOException, InterruptedException {
+        if (language.equals("jvm")) return new ArrayList<>(List.of(c.location(), "-cp", System.getProperty("java.class.path"), "depviewer.JvmExtractor"));
         if (language.equals("typescript")) return new ArrayList<>(List.of(node, home.resolve("extractors/typescript/extract.mjs").toString()));
         String dart = c.location();
         Path dir = home.resolve("extractors/dart");
@@ -422,6 +434,11 @@ final class Toolchain {
         for (Object o : (List<Object>) frag.getOrDefault("nodes", List.of())) {
             Map<String, Object> n = (Map<String, Object>) o;
             String id = str(n.get("id")), kind = str(n.get("kind"));
+            if ("package".equals(kind)) {   // optional: creates a package at this place in the model's order
+                String m = str(n.get("module")), pkg = str(n.get("package"));
+                if (m != null && pkg != null) { if (dotted) packageNode(m, pkg); else folderPackage(m, pkg); }
+                continue;
+            }
             if (id == null || kind == null) continue;
             if (kind.equals("file")) {
                 String path = str(n.get("path"));

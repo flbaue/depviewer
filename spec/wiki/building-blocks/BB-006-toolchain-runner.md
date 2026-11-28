@@ -23,7 +23,7 @@ superseded-by:
 
 ## Purpose / Responsibility
 
-`Toolchain`: chooses a language's toolchain in a fixed order and asks the extractor with `--describe` whether it supports it ([[FR-010-choose-the-toolchain-in-a-fixed-order]]), installs the extractor's pinned dependencies on first use, runs the extractor, merges its fragment and records its provenance ([[FR-011-record-the-provenance-of-every-language-and-module]]).
+`Toolchain`: for Java and Kotlin ([[BB-011-jvm-extractor]]), TypeScript and Dart: chooses a language's toolchain in a fixed order and asks the extractor with `--describe` whether it supports it ([[FR-010-choose-the-toolchain-in-a-fixed-order]]), installs the extractor's pinned dependencies on first use, runs the extractor, merges its fragment and records its provenance ([[FR-011-record-the-provenance-of-every-language-and-module]]).
 
 ## Interfaces
 

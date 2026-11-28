@@ -52,6 +52,12 @@ step "scan fixture"
 
 step "model"
 python3 -I test/checks/jvm.py "$OUT/fixture.json"
+# Java and Kotlin run in the jvm extractor (spec/wiki/building-blocks/BB-011-jvm-extractor.md), whose JDK is chosen
+# like any toolchain: a broken DEPVIEWER_JAVA is reported and the next candidate is used.
+DEPVIEWER_JAVA="$OUT/no-such-java" ./depviewer -o "$OUT/fixture-java-next.json" test/fixture > "$OUT/fixture-java-next.log" 2>&1
+grep -qF "Java/Kotlin: JDK (override: $OUT/no-such-java) could not be run, trying the next one" "$OUT/fixture-java-next.log" \
+  || { cat "$OUT/fixture-java-next.log"; fail "a broken DEPVIEWER_JAVA is not reported"; }
+python3 -I test/checks/jvm.py "$OUT/fixture-java-next.json" >/dev/null
 
 step "TypeScript/JavaScript (spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md)"
 NODE_BIN=${DEPVIEWER_NODE:-node}
@@ -196,7 +202,7 @@ for r in "$C"/frag/*.request.json; do
   python3 -I test/checks/contract.py "$r" "${r%.request.json}.fragment.json"
   runs=$((runs + 1))
 done
-want=0; [ -n "$HAVE_TS" ] && want=$((want + 1)); [ -n "$HAVE_DART" ] && want=$((want + 1))
+want=1; [ -n "$HAVE_TS" ] && want=$((want + 1)); [ -n "$HAVE_DART" ] && want=$((want + 1))
 [ "$runs" -ge "$want" ] || fail "expected $want extractor runs in $C/frag, found $runs"
 # The checker must catch a broken fragment before it vouches for the real ones.
 if [ "$runs" -gt 0 ]; then
@@ -209,10 +215,11 @@ if [ "$runs" -gt 0 ]; then
   broken no-contract "contract None, expected 1" 'del f["contract"]'
   broken duplicate-id "duplicate id" 'f["nodes"].append(dict(f["nodes"][-1]))'
   broken child-first "missing or after its child" 'f["nodes"].reverse()'
-  broken bad-kind "is not allowed" 'next(n for n in f["nodes"] if n["kind"] != "file")["kind"] = "widget"'
+  broken bad-package "package entry" 'f["nodes"].insert(0, {"kind": "package", "module": "nobody", "package": "x"})'
+  broken bad-kind "is not allowed" 'next(n for n in f["nodes"] if n["kind"] not in ("file", "package"))["kind"] = "widget"'
   broken bad-endpoint "is neither a node nor an external" 'f["edges"][0]["to"] = "nowhere"'
   broken bad-edge-kind "kind 'imports'" 'f["edges"][0]["kind"] = "imports"'
-  broken outside "outside its file" 'n = next(n for n in f["nodes"] if n["kind"] != "file"); n["line"] = 100000'
+  broken outside "outside its file" 'n = next(n for n in f["nodes"] if n["kind"] not in ("file", "package")); n["line"] = 100000'
   broken unknown-module "unknown module" 'next(n for n in f["nodes"] if n["kind"] == "file")["module"] = "nobody"'
 fi
 # An extractor that speaks another major version is rejected, and the scan goes on without it.

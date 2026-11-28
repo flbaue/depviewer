@@ -55,6 +55,9 @@ for a in frag.get("languages") or []:
 ids, loc_of_file, file_of = {}, {}, {}
 for i, n in enumerate(frag.get("nodes") or []):
     nid, kind = n.get("id"), n.get("kind")
+    if kind == "package":   # creates a package at this place; it has no id and nothing refers to it
+        check(n.get("module") in modules and isinstance(n.get("package"), str), f"node {i}: package entry {n}")
+        continue
     if not check(isinstance(nid, str) and nid, f"node {i}: no id"):
         continue
     check(nid not in ids, f"node {nid}: duplicate id")

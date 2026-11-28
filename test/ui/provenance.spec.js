@@ -20,8 +20,8 @@ test('FR-011: a module row shows tool, version, source and extractor', async ({ 
   await page.locator('#viewSel').selectOption('');   // the physical structure: one row per module
   await row(page, 'fixture').click();
   const kv = page.locator('#pbody .kv');
-  await expect(kv).toContainText(/Java\s*javac \d[\w.+-]* · from the PATH · extractor depviewer-java \d/);
-  await expect(kv).toContainText(/Kotlin\s*depviewer-kotlin \d[\w.]* · pinned · extractor depviewer-kotlin \d[\w.]* · by name/);
+  await expect(kv).toContainText(/Java\s*javac \d[\w.+-]* · from the PATH · extractor depviewer-jvm-extractor \d/);
+  await expect(kv).toContainText(/Kotlin\s*depviewer-kotlin \d[\w.]* · pinned · extractor depviewer-jvm-extractor \d[\w.]* · by name/);
 });
 
 test('FR-011: a TypeScript module shows the chosen TypeScript', async ({ page }) => {

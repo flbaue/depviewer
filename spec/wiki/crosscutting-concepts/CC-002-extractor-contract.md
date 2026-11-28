@@ -22,7 +22,7 @@ superseded-by:
 
 ## Concept
 
-Every extractor speaks one versioned contract, version **1**, extending [[CC-009-fragment-format]] ([[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]], [[SRC-026-github-issue-10-extractor-contract-v1-versioned-spec-describe-handshake-and-confor|issue #10]]). `Toolchain` holds the core's side, `CONTRACT = 1`.
+Every extractor speaks one versioned contract, version **1**, extending [[CC-009-fragment-format]] ([[DR-001-every-language-is-analysed-by-an-extractor-behind-one-versioned-contract]], [[SRC-026-github-issue-10-extractor-contract-v1-versioned-spec-describe-handshake-and-confor|issue #10]]). `Toolchain` holds the core's side, `CONTRACT = 1`. All three extractors speak it: jvm ([[BB-011-jvm-extractor]]), TypeScript and Dart.
 
 **Handshake.** `<extractor> --describe <toolchain> <source>` prints one JSON object on stdout and exits 0: `name` and `version` of the extractor, `contract` (1), `languages`, `exact` (whether it resolves references exactly), and `toolchain`: `tool`, `version`, `source`, `path`, `supported`, `range`, and `problem` when it is not supported. The core asks it for every candidate toolchain ([[FR-010-choose-the-toolchain-in-a-fixed-order]]). An extractor whose `contract` is not 1 is reported and its language skipped.
 
@@ -42,8 +42,9 @@ The core computes the file lists and test flags; paths are relative to the file'
 **Output.** The fragment of [[CC-009-fragment-format]] on stdout, with `contract` (1). Optional additions of version 1:
 
 - `packageSep`: `"."` for dotted packages (Java, Kotlin); default `"/"` for folders.
-- `packages`: `[{module, package}]`, created in this order before the nodes, so an extractor decides the order of package nodes.
+- `packages`: `[{module, package}]`, created before the nodes, e.g. a package no file creates.
 - `languages`: `[{language, modules, tool, version, exact, source?}]` when one run covers several languages, e.g. Java and Kotlin; the core records each as provenance ([[FR-011-record-the-provenance-of-every-language-and-module]]). Without it, the run's language and toolchain are recorded.
+- A node of kind `package` with `module` and `package` (no id) creates that package at that place, so an extractor keeps the order of package nodes; otherwise a file creates its package.
 - An external may carry `q` (its qualified name) and `kind`.
 - An edge carries either `line` (one reference) or `count` and `lines` (several references, aggregated).
 
