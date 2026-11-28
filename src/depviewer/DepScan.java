@@ -398,6 +398,7 @@ public class DepScan {
         Path home = Paths.get(Toolchain.env("DEPVIEWER_HOME", template != null && template.toAbsolutePath().getParent() != null
                 ? template.toAbsolutePath().getParent().toString() : ".")).toAbsolutePath().normalize();
         Toolchain jvm = new Toolchain("jvm", "Java/Kotlin", home);
+        jvm.required = true;
         List<Object> sourceRoots = new ArrayList<>();
         for (Root r : roots) {
             Map<String, Object> o = new LinkedHashMap<>();

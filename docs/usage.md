@@ -206,8 +206,9 @@ The model records it in `analysis`, one entry per language and set of modules
 ```
 
 `source` is `override` (a `DEPVIEWER_<TOOL>` variable), `project` (the project's own), `path` or
-`pinned` (shipped with depviewer, like the Kotlin parser). Java is analysed by the JDK that runs
-depviewer (`source: path`). `exact` is `false` for a language resolved by name (Kotlin).
+`pinned` (shipped with depviewer, like the Kotlin parser). Java is analysed by the JDK of the jvm
+extractor: `DEPVIEWER_JAVA` (`source: override`), else the `java` on the `PATH` or, failing that, the
+JDK that runs depviewer (both `source: path`). `exact` is `false` for a language resolved by name (Kotlin).
 
 ## Libraries and the classpath (Java, Kotlin)
 

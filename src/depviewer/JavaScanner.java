@@ -70,7 +70,7 @@ final class JavaScanner {
         try {
             task.analyze();
         } catch (Throwable t) {
-            System.err.println("warning: analysis stopped early: " + t);
+            System.err.println("java: warning: analysis stopped early: " + t);
         }
         trees = Trees.instance(task);
         elements = task.getElements();

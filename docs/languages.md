@@ -14,7 +14,10 @@ tooling allows; the [requirements wiki](../spec/) has the details and known limi
 
 Parsed and attributed by the JDK's own compiler, so references resolve the way `javac` sees them.
 Java and Kotlin are read together by the jvm extractor, a second Java process. Its JDK is
-`DEPVIEWER_JAVA` (a `java` executable) if set, else the `java` on the `PATH`; it needs 17 or later.
+`DEPVIEWER_JAVA` (a `java` executable) if set, else the `java` on the `PATH`, else the JDK that runs
+depviewer; it needs 17 or later. A JDK that cannot run the extractor is reported with its reason and
+the next one is tried. If the extractor fails, the scan and `check` stop with an error instead of
+writing a model without Java and Kotlin.
 Library types resolve when their jars are on the classpath; see [usage](usage.md#libraries-and-the-classpath-java-kotlin).
 
 ## Kotlin

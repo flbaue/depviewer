@@ -71,7 +71,10 @@ final class Toolchain {
     private final Set<String> reported = new HashSet<>();
     private Boolean pinnedReady;
     private int kept;
-    private boolean incompatible;                           // the extractor speaks another contract                                       // runs kept for DEPVIEWER_FRAGMENTS
+    /** Whether a failure stops the scan instead of skipping the language (the jvm extractor). */
+    boolean required;
+    private boolean incompatible;
+    private String why;                                     // why the last --describe could not run                           // the extractor speaks another contract                                       // runs kept for DEPVIEWER_FRAGMENTS
     /** Language-specific request options, e.g. the classpath of the jvm extractor. */
     final Map<String, Object> options = new LinkedHashMap<>();
     /** The version of the extractor contract this core speaks (spec CC-002). */
@@ -129,22 +132,35 @@ final class Toolchain {
                 try (InputStream in = p.getInputStream()) { out = new String(in.readAllBytes(), StandardCharsets.UTF_8); }
                 int code = p.waitFor();
                 keep(input, out);
-                if (code != 0) { System.err.printf("%s: extractor failed for %s (exit code %d), skipped%n", label, names, code); return; }
-                Map<?, ?> frag = (Map<?, ?>) Json.parse(out);
+                if (code != 0) { skip(String.format("extractor failed for %s (exit code %d)", names, code)); return; }
+                Object parsed = Json.parse(out);
+                if (!(parsed instanceof Map)) { skip("the extractor printed no fragment for " + names); return; }
+                Map<?, ?> frag = (Map<?, ?>) parsed;
                 Object contract = frag.get("contract");
                 if (!(contract instanceof Number) || ((Number) contract).intValue() != CONTRACT) {
-                    System.err.printf("%s: the extractor printed contract %s, this depviewer reads contract %d; %s skipped%n",
-                            label, contract == null ? "(none)" : Json.write(contract), CONTRACT, names);
+                    skip(String.format("the extractor printed contract %s, this depviewer reads contract %d; %s",
+                            contract == null ? "(none)" : Json.write(contract), CONTRACT, names));
                     return;
                 }
                 merge(first.name, frag);
                 for (List<Module> ms : bySource.values()) record(frag, ms, chosen.get(ms.get(0)));
-            } catch (IOException | IllegalArgumentException | ClassCastException e) {
-                System.err.printf("%s: extractor failed for %s (%s), skipped%n", label, names, e.getMessage());
+            } catch (IOException | RuntimeException e) {
+                if (e instanceof DepScan.Failed) throw e;
+                skip(String.format("extractor failed for %s (%s)", names, e));
             }
         } finally {
             Files.deleteIfExists(input);
         }
+    }
+
+    /**
+     * A run or a module that cannot be analysed: skipped with a note (spec FR-007), except for a
+     * required language. Java and Kotlin are the core's own (spec QR-005): a scan or check without
+     * them would look clean, so their failure stops it.
+     */
+    private void skip(String what) {
+        if (required) DepScan.die(label + ": " + what + "; no model written");
+        System.err.printf("%s: %s, skipped%n", label, what);
     }
 
     static String names(List<Module> ms) { return ms.stream().map(m -> m.name).collect(java.util.stream.Collectors.joining(", ")); }
@@ -186,7 +202,7 @@ final class Toolchain {
 
     /** Provenance of a run's modules from one source: the fragment's `languages`, else the run's language. */
     private void record(Map<?, ?> frag, List<Module> ms, Choice c) {
-        List<String> names = ms.stream().map(m -> m.name).collect(java.util.stream.Collectors.toList());
+        List<String> names = ms.stream().map(m -> m.name).distinct().collect(java.util.stream.Collectors.toList());
         if (!(frag.get("languages") instanceof List)) {
             provenance(language, names, c.tool, c.version, c.source, c.exact, c.extractor, c.extractorVersion);
             return;
@@ -233,6 +249,7 @@ final class Toolchain {
                 System.err.printf("%s: extractor %s %s speaks contract %s, this depviewer speaks contract %d; skipped%n",
                         label, ((Map<?, ?>) d).get("name"), ((Map<?, ?>) d).get("version"), contract == null ? "(none)" : Json.write(contract), CONTRACT);
                 incompatible = true;
+                if (required) DepScan.die(label + ": the extractor speaks another contract; no model written");
                 return null;
             }
             if (t != null && Boolean.TRUE.equals(t.get("supported"))) {
@@ -244,14 +261,17 @@ final class Toolchain {
             }
             if (!reported.add(key)) continue;
             String where = c.source() + ": " + c.location();
-            if (t == null) System.err.printf("%s: %s (%s) could not be run, trying the next one%n", label, tool, where);
+            if (t == null) System.err.printf("%s: %s (%s) could not be run%s, trying the next one%n", label, tool, where,
+                    why == null ? "" : ": " + (why.length() > 160 ? why.substring(0, 160) + "..." : why));
             else if (t.get("version") == null) System.err.printf("%s: %s (%s): %s, trying the next one%n", label, tool, where, t.get("problem"));
             else System.err.printf("%s: %s %s (%s) is not supported (needs %s), trying the next one%n",
                     label, tool, t.get("version"), where, t.get("range"));
         }
-        System.err.printf("%s: skipped %s - no supported %s found (%s).%n", label, m.name, tool,
+        String hint = (
                 language.equals("dart") ? "install Dart 3.11 or later or set DEPVIEWER_DART"
                         : language.equals("jvm") ? "install a JDK 17 or later or set DEPVIEWER_JAVA" : "add typescript to the project or set DEPVIEWER_TYPESCRIPT");
+        if (required) DepScan.die(String.format("%s: no supported %s found for %s (%s); no model written", label, tool, m.name, hint));
+        System.err.printf("%s: skipped %s - no supported %s found (%s).%n", label, m.name, tool, hint);
         return null;
     }
 
@@ -262,8 +282,14 @@ final class Toolchain {
             String override = System.getenv("DEPVIEWER_JAVA");
             if (override != null && !override.isEmpty()) list.add(new Candidate("override", override));
             Path java = onPath("java");
-            // No project JDK yet. Without a java on the PATH, the JDK that runs depviewer, found the same way.
-            list.add(new Candidate("path", java != null ? java.toString() : Path.of(System.getProperty("java.home"), "bin", "java").toString()));
+            if (java != null) list.add(new Candidate("path", java.toString()));
+            // No project JDK yet. Last, the JDK that runs depviewer: the wrapper found it on the PATH too.
+            Path running = Path.of(System.getProperty("java.home"), "bin", "java");
+            try {
+                if (java == null || !java.toRealPath().equals(running.toRealPath())) list.add(new Candidate("path", running.toString()));
+            } catch (IOException e) {
+                list.add(new Candidate("path", running.toString()));
+            }
             return list;
         }
         if (language.equals("typescript")) {
@@ -326,6 +352,7 @@ final class Toolchain {
 
     /** The extractor's --describe output for a candidate, or null if it could not run. */
     Object describe(Candidate c) throws IOException, InterruptedException {
+        why = null;
         List<String> cmd = new ArrayList<>();
         if (language.equals("jvm")) {
             cmd.addAll(List.of(c.location(), "-cp", System.getProperty("java.class.path"), "depviewer.JvmExtractor", "--describe"));
@@ -339,11 +366,21 @@ final class Toolchain {
         }
         cmd.add(c.source());
         try {
-            Process p = new ProcessBuilder(cmd).redirectError(ProcessBuilder.Redirect.DISCARD).start();
-            String out;
-            try (InputStream in = p.getInputStream()) { out = new String(in.readAllBytes(), StandardCharsets.UTF_8); }
-            return p.waitFor() == 0 ? Json.parse(out.trim()) : null;
+            Path err = Files.createTempFile("depviewer-describe", ".err");
+            try {
+                Process p = new ProcessBuilder(cmd).redirectError(err.toFile()).start();
+                String out;
+                try (InputStream in = p.getInputStream()) { out = new String(in.readAllBytes(), StandardCharsets.UTF_8); }
+                if (p.waitFor() == 0) return Json.parse(out.trim());
+                // Why it could not run, e.g. a JDK too old for the classes: the first line that is not JVM chatter.
+                why = Files.readAllLines(err, StandardCharsets.ISO_8859_1).stream().map(String::trim)
+                        .filter(l -> !l.isEmpty() && !l.startsWith("Picked up ")).findFirst().orElse(null);
+                return null;
+            } finally {
+                Files.deleteIfExists(err);
+            }
         } catch (IOException | IllegalArgumentException e) {
+            why = e.getMessage();
             return null;
         }
     }
@@ -442,6 +479,7 @@ final class Toolchain {
             if (id == null || kind == null) continue;
             if (kind.equals("file")) {
                 String path = str(n.get("path"));
+                if (path == null || path.isEmpty()) { dropped.add(id); continue; }
                 String pkg = str(n.getOrDefault("package", ""));
                 String fileModule = n.get("module") != null ? str(n.get("module")) : module;   // multi-module runs
                 pkg = pkg == null ? "" : pkg;

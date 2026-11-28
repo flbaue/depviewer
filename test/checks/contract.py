@@ -64,6 +64,7 @@ for i, n in enumerate(frag.get("nodes") or []):
     if kind == "file":
         module = n.get("module", request.get("module"))
         check(module in modules, f"file {nid}: unknown module {module!r}")
+        check(isinstance(n.get("path"), str) and n["path"], f"file {nid}: no path")
         check((module, n.get("path")) in files, f"file {nid}: {n.get('path')!r} is not a file of the request")
         check(isinstance(n.get("package", ""), str), f"file {nid}: package is not a string")
         check(isinstance(n.get("test", False), bool), f"file {nid}: test is not a boolean")
@@ -96,6 +97,8 @@ for i, e in enumerate(frag.get("edges") or []):
     check(t in ids or t in externals, f"edge {i}: to {t!r} is neither a node nor an external")
     check(e.get("kind") in EDGE_KINDS, f"edge {i}: kind {e.get('kind')!r}")
     lines = e["lines"] if "lines" in e else [e.get("line")] if "line" in e else []
+    if not check(isinstance(lines, list), f"edge {i}: lines {lines!r} is not a list"):
+        continue
     if "count" in e:
         check(is_int(e["count"], 1), f"edge {i}: count {e['count']!r}")
     size = loc_of_file.get(file_of.get(f))

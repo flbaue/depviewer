@@ -20,7 +20,7 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 step() { printf '\n== %s\n' "$*"; }
 
 step "compile scanner"
-javac -Xlint:all -Werror -d "$OUT/classes" src/depviewer/*.java
+javac -Xlint:all -Werror --release 17 -d "$OUT/classes" src/depviewer/*.java
 echo ok
 
 step "template markers"
@@ -55,9 +55,31 @@ python3 -I test/checks/jvm.py "$OUT/fixture.json"
 # Java and Kotlin run in the jvm extractor (spec/wiki/building-blocks/BB-011-jvm-extractor.md), whose JDK is chosen
 # like any toolchain: a broken DEPVIEWER_JAVA is reported and the next candidate is used.
 DEPVIEWER_JAVA="$OUT/no-such-java" ./depviewer -o "$OUT/fixture-java-next.json" test/fixture > "$OUT/fixture-java-next.log" 2>&1
-grep -qF "Java/Kotlin: JDK (override: $OUT/no-such-java) could not be run, trying the next one" "$OUT/fixture-java-next.log" \
+grep -q "^Java/Kotlin: JDK (override: $OUT/no-such-java) could not be run: .*, trying the next one$" "$OUT/fixture-java-next.log" \
   || { cat "$OUT/fixture-java-next.log"; fail "a broken DEPVIEWER_JAVA is not reported"; }
 python3 -I test/checks/jvm.py "$OUT/fixture-java-next.json" >/dev/null
+# A working override is used and recorded as such.
+J="$(cd "$(dirname "$(command -v java)")" && pwd -P)/java"
+DEPVIEWER_JAVA="$J" ./depviewer -o "$OUT/fixture-java-override.json" test/fixture > "$OUT/fixture-java-override.log" 2>&1
+grep -q "^Java/Kotlin: java [0-9.]* (override: .*) for fixture$" "$OUT/fixture-java-override.log" \
+  || { cat "$OUT/fixture-java-override.log"; fail "DEPVIEWER_JAVA was not used"; }
+python3 -I -c 'import json,sys; a=json.load(open(sys.argv[1]))["analysis"]; sys.exit(not [x for x in a if x["language"] == "java" and x["source"] == "override"])' \
+  "$OUT/fixture-java-override.json" || fail "DEPVIEWER_JAVA is not recorded as source override"
+# A java on the PATH that cannot run the extractor: reported with its reason, then the JDK that runs depviewer.
+mkdir -p "$OUT/badjava" && printf '#!/bin/sh\necho "this java is broken" >&2\nexit 1\n' > "$OUT/badjava/java" && chmod +x "$OUT/badjava/java"
+PATH="$(pwd -P)/$OUT/badjava:$PATH" "$J" -cp "$OUT/classes" depviewer.DepScan --template viewer.html -o "$OUT/fixture-badjava.json" test/fixture > "$OUT/fixture-badjava.log" 2>&1 \
+  || { cat "$OUT/fixture-badjava.log"; fail "a broken java on the PATH stopped the scan"; }
+grep -qF "could not be run: this java is broken, trying the next one" "$OUT/fixture-badjava.log" || { cat "$OUT/fixture-badjava.log"; fail "the broken java on the PATH is not reported"; }
+python3 -I test/checks/jvm.py "$OUT/fixture-badjava.json" >/dev/null
+# If the jvm extractor fails, there is no model and check does not pass: Java and Kotlin are not optional.
+rm -rf "$OUT/fixture-badkt" && cp -R test/fixture "$OUT/fixture-badkt"
+printf 'package com.example.notify\n\377\376 broken\n' > "$OUT/fixture-badkt/src/main/kotlin/com/example/notify/Broken.kt"
+rm -f "$OUT/fixture-badkt.json"
+if ./depviewer -o "$OUT/fixture-badkt.json" "$OUT/fixture-badkt" > "$OUT/fixture-badkt.log" 2>&1; then cat "$OUT/fixture-badkt.log"; fail "a failed jvm extractor still exits 0"; fi
+grep -q "^depviewer: Java/Kotlin: extractor failed for fixture (exit code [0-9]*); no model written" "$OUT/fixture-badkt.log" || { cat "$OUT/fixture-badkt.log"; fail "a failed jvm extractor is not reported"; }
+[ ! -e "$OUT/fixture-badkt.json" ] || fail "a model was written although the jvm extractor failed"
+set +e; ./depviewer check --rules test/fixture-architecture.json "$OUT/fixture-badkt" > "$OUT/fixture-badkt-check.log" 2>&1; got=$?; set -e
+[ "$got" = 2 ] || { cat "$OUT/fixture-badkt-check.log"; fail "check with a failed jvm extractor: exit $got, expected 2"; }
 
 step "TypeScript/JavaScript (spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md)"
 NODE_BIN=${DEPVIEWER_NODE:-node}
@@ -206,7 +228,8 @@ want=1; [ -n "$HAVE_TS" ] && want=$((want + 1)); [ -n "$HAVE_DART" ] && want=$((
 [ "$runs" -ge "$want" ] || fail "expected $want extractor runs in $C/frag, found $runs"
 # The checker must catch a broken fragment before it vouches for the real ones.
 if [ "$runs" -gt 0 ]; then
-  R=$(ls "$C"/frag/*.request.json | head -1); F="${R%.request.json}.fragment.json"
+  for R in "$C"/frag/jvm-1.request.json $(ls "$C"/frag/*.request.json | grep -v /jvm- | head -1); do   # jvm and one other
+  F="${R%.request.json}.fragment.json"
   broken() {   # broken <name> <text the checker must report> <python statement on the fragment f>
     python3 -I -c 'import json,sys; f=json.load(open(sys.argv[1])); exec(sys.argv[3]); json.dump(f,open(sys.argv[2],"w"))' "$F" "$C/$1.json" "$3"
     out=$(python3 -I test/checks/contract.py "$R" "$C/$1.json" || true)
@@ -221,12 +244,16 @@ if [ "$runs" -gt 0 ]; then
   broken bad-edge-kind "kind 'imports'" 'f["edges"][0]["kind"] = "imports"'
   broken outside "outside its file" 'n = next(n for n in f["nodes"] if n["kind"] not in ("file", "package")); n["line"] = 100000'
   broken unknown-module "unknown module" 'next(n for n in f["nodes"] if n["kind"] == "file")["module"] = "nobody"'
+  broken no-path "no path" 'next(n for n in f["nodes"] if n["kind"] == "file").pop("path")'
+  broken bad-lines "is not a list" 'f["edges"][0]["lines"] = 7'
+  done
 fi
 # An extractor that speaks another major version is rejected, and the scan goes on without it.
 if [ -n "$HAVE_TS" ]; then
   H="$C/home"; mkdir -p "$H/extractors/typescript"
   cat > "$H/extractors/typescript/extract.mjs" <<'JS'
 const v = +(process.env.FAKE_CONTRACT || 1), describe = process.argv[2] === "--describe";
+if (!describe && process.env.FAKE_NULL) { console.log("null"); process.exit(0); }
 console.log(JSON.stringify(describe
   ? { name: "fake", version: "0", contract: describe && process.env.FAKE_DESCRIBE ? 2 : 1, languages: ["typescript"],
       toolchain: { tool: "typescript", version: "5.9.3", source: process.argv[4], path: process.argv[3], supported: true } }
@@ -235,8 +262,11 @@ JS
   printf '{"name": "fake", "version": "0"}' > "$H/extractors/typescript/package.json"
   fake() { env DEPVIEWER_HOME="$H" "$@" java -cp "$OUT/classes" depviewer.DepScan --template viewer.html -o "$C/fake.json" test/fixture-ts > "$C/fake.log" 2>&1 || true; }
   fake FAKE_CONTRACT=2
-  grep -q "^TypeScript/JavaScript: the extractor printed contract 2, this depviewer reads contract 1; shop-web skipped" "$C/fake.log" \
+  grep -q "^TypeScript/JavaScript: the extractor printed contract 2, this depviewer reads contract 1; shop-web, skipped$" "$C/fake.log" \
     || { cat "$C/fake.log"; fail "a fragment of contract 2 was not rejected"; }
+  fake FAKE_NULL=1   # a fragment that is no object skips the run, it does not stop the scan
+  grep -q "^TypeScript/JavaScript: the extractor printed no fragment for shop-web, skipped$" "$C/fake.log" && [ -s "$C/fake.json" ] \
+    || { cat "$C/fake.log"; fail "a fragment that is no object was not skipped"; }
   fake FAKE_DESCRIBE=1
   grep -q "^TypeScript/JavaScript: extractor fake 0 speaks contract 2, this depviewer speaks contract 1; skipped$" "$C/fake.log" \
     || { cat "$C/fake.log"; fail "an extractor of contract 2 was not rejected"; }
