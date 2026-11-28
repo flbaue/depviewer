@@ -94,7 +94,7 @@ expect() {
   want=$1 text=$2; shift 2
   set +e; ./depviewer check "$@" > "$OUT/check.log" 2>&1; got=$?; set -e
   [ "$got" = "$want" ] || { cat "$OUT/check.log"; fail "check $*: exit $got, expected $want"; }
-  grep -q "$text" "$OUT/check.log" || { cat "$OUT/check.log"; fail "check $*: output lacks '$text'"; }
+  grep -q -- "$text" "$OUT/check.log" || { cat "$OUT/check.log"; fail "check $*: output lacks '$text'"; }
 }
 A="$OUT/arch"; rm -rf "$A"; mkdir -p "$A/project"
 expect 0 'no rules' --rules test/fixture-views.json test/fixture
@@ -107,7 +107,7 @@ expect 2 'version 2 is not supported' --rules "$A/v2.json" test/fixture
 printf '{"version": 1, "future": {"x": 1}, "views": [{"id": "a", "name": "A", "groups": [], "assign": {}, "match": [], "rules": [], "later": true}]}' > "$A/unknown.json"
 expect 0 'no rules' --rules "$A/unknown.json" test/fixture
 printf '{"views": [{"id": "a", "rules": [{"kind": "layers"}]}]}' > "$A/rules.json"
-expect 2 'not implemented yet' --rules "$A/rules.json" test/fixture
+expect 2 'view "a": rule 1: "id" is required' --rules "$A/rules.json" test/fixture
 printf '{"views": ' > "$A/broken.json"
 expect 2 'invalid JSON' --rules "$A/broken.json" test/fixture
 set +e; ./depviewer -o "$A/v2.html" --views "$A/v2.json" test/fixture > "$OUT/check.log" 2>&1; got=$?; set -e
@@ -129,12 +129,113 @@ echo ok
 step "assignment precedence (spec/wiki/functional-requirements/FR-028-decide-each-elements-group-by-precedence.md)"
 javac -Xlint:all -Werror -cp "$OUT/classes:$OUT/test-classes" -d "$OUT/test-classes" test/checks/AssignCheck.java
 java -cp "$OUT/classes:$OUT/test-classes" depviewer.AssignCheck "$OUT/fixture.json" test/fixture-architecture.json
-expect 0 'no rules' --rules test/fixture-architecture.json test/fixture
+expect 1 'layering' --rules test/fixture-architecture.json test/fixture
 grep -q "warning  overlap" "$OUT/check.log" && { cat "$OUT/check.log"; fail "overlap reported for test/fixture-architecture.json"; }
 sed 's/@interface//' test/fixture-architecture.json > "$A/overlap.json"
-expect 0 'warning  overlap  T:fixture:com.example.infra.InMemoryOrderRepository  selected by dom and by infra through F:fixture:src/main/java/com/example/infra/InMemoryOrderRepository.java, goes to dom (view layers)' --rules "$A/overlap.json" test/fixture
+expect 1 'warning  overlap  T:fixture:com.example.infra.InMemoryOrderRepository  selected by dom and by infra through F:fixture:src/main/java/com/example/infra/InMemoryOrderRepository.java, goes to dom (view layers)' --rules "$A/overlap.json" test/fixture
 [ "$(grep -c "warning  overlap" "$OUT/check.log")" = 1 ] || { cat "$OUT/check.log"; fail "expected exactly one overlap warning"; }
-expect 0 'goes to dom' --rules "$A/overlap.json" --model "$OUT/fixture.json"
+expect 1 'goes to dom' --rules "$A/overlap.json" --model "$OUT/fixture.json"
+echo ok
+
+step "architecture rules (spec/wiki/functional-requirements/FR-029-check-the-code-against-architecture-rules.md)"
+# variant <name>: a fresh copy of the fixture in $R/<name>, to add or change code for one case.
+R="$OUT/rules"; rm -rf "$R"; mkdir -p "$R"
+variant() { cp -R test/fixture "$R/$1"; }
+# rules <file> <rules JSON>: test/fixture-architecture.json with its rules replaced.
+rules() { python3 -I -c 'import json,sys; a=json.load(open("test/fixture-architecture.json")); a["views"][0]["rules"]=json.loads(sys.argv[2]); json.dump(a,open(sys.argv[1],"w"),indent=1)' "$1" "$2"; }
+count() { grep -c -- "$1" "$OUT/check.log" || true; }
+LAYER_LINE='src/main/java/com/example/domain/Order.java:25  error  layering  dom -> svc'
+
+# FR-030: the only layering violation is Order.total() -> PriceCalculator.gross; ungrouped notify code
+# (Notifications.kt -> Order, Main -> NotificationService) gives none in either direction.
+expect 1 "$LAYER_LINE" --rules test/fixture-architecture.json test/fixture
+[ "$(count '  layering  ')" = 1 ] || { cat "$OUT/check.log"; fail "FR-030: expected exactly one layering violation"; }
+grep -A1 -- "$LAYER_LINE" "$OUT/check.log" | grep -q '^    com.example.domain.Order.total() -> com.example.service.PriceCalculator.gross(double) (call)$' \
+  || { cat "$OUT/check.log"; fail "FR-037: reference line missing under the layering violation"; }
+rules "$R/strict.json" '[{"id": "layering", "kind": "layers", "order": ["app", "infra", "svc", "dom"], "strict": true}]'
+expect 1 'InMemoryOrderRepository.java:[0-9]*  error  layering  infra -> dom' --rules "$R/strict.json" test/fixture
+
+# FR-031: domain-pure reports no JDK type; a non-java.* external from the domain gives one violation.
+grep -q '  domain-pure  dom -> (external)' "$OUT/check.log" && { cat "$OUT/check.log"; fail "FR-031: domain-pure reported a JDK type"; }
+variant ext
+printf 'package com.example.domain;\n\nclass Xml {\n    String ns() {\n        return javax.xml.XMLConstants.XML_NS_URI;\n    }\n}\n' > "$R/ext/src/main/java/com/example/domain/Xml.java"
+expect 1 'Xml.java:5  error  domain-pure  dom -> (external)' --rules test/fixture-architecture.json "$R/ext"
+[ "$(count '  domain-pure  dom -> (external)')" = 1 ] || { cat "$OUT/check.log"; fail "FR-031: expected one domain-pure violation for javax.xml"; }
+rules "$R/forbid.json" '[{"id": "no-app-infra", "kind": "forbid", "from": "app", "to": "infra"}, {"id": "split", "kind": "independent", "groups": ["app", "infra"]}]'
+expect 1 'Main.java:14  error  no-app-infra  app -> infra' --rules "$R/forbid.json" test/fixture
+grep -q 'Main.java:14  error  split  app -> infra' "$OUT/check.log" || { cat "$OUT/check.log"; fail "FR-031: independent missed app -> infra"; }
+
+# FR-032: exactly one package cycle, domain and service.
+expect 1 'no-pkg-cycles' --rules test/fixture-architecture.json test/fixture
+[ "$(count '  no-pkg-cycles  ')" = 1 ] || { cat "$OUT/check.log"; fail "FR-032: expected exactly one package cycle"; }
+grep -q '  error  no-pkg-cycles  cycle com.example.domain, com.example.service$' "$OUT/check.log" || { cat "$OUT/check.log"; fail "FR-032: cycle members"; }
+
+# FR-033: a new package without a group is reported.
+variant misc
+mkdir -p "$R/misc/src/main/java/com/example/misc"
+printf 'package com.example.misc;\n\npublic class Util {\n}\n' > "$R/misc/src/main/java/com/example/misc/Util.java"
+rules "$R/ungrouped.json" '[{"id": "all-grouped", "kind": "no-ungrouped"}]'
+expect 1 'error  all-grouped  package com.example.misc is in no group' --rules "$R/ungrouped.json" "$R/misc"
+rules "$R/ungrouped-scope.json" '[{"id": "all-grouped", "kind": "no-ungrouped", "scope": "package:com.example.notify.**"}]'
+expect 1 'all-grouped  package com.example.notify is in no group' --rules "$R/ungrouped-scope.json" "$R/misc"
+grep -q 'com.example.misc' "$OUT/check.log" && { cat "$OUT/check.log"; fail "FR-033: scope ignored"; }
+
+# FR-034: a violating reference in src/test/ is reported only with "tests": true.
+variant tests
+printf 'package com.example.domain;\n\nclass PriceTest {\n    double gross() {\n        return com.example.service.PriceCalculator.gross(1);\n    }\n}\n' > "$R/tests/src/test/java/com/example/domain/PriceTest.java"
+expect 1 "$LAYER_LINE" --rules test/fixture-architecture.json "$R/tests"
+grep -q 'PriceTest' "$OUT/check.log" && { cat "$OUT/check.log"; fail "FR-034: a test source was checked"; }
+rules "$R/tests.json" '[{"id": "layering", "kind": "layers", "order": ["app", "infra", "svc", "dom"], "tests": true}]'
+expect 1 'src/test/java/com/example/domain/PriceTest.java:5  error  layering  dom -> svc' --rules "$R/tests.json" "$R/tests"
+
+# FR-029: edgeKinds, severity and --fail-on.
+rules "$R/kinds.json" '[{"id": "layering", "kind": "layers", "order": ["app", "infra", "svc", "dom"], "edgeKinds": ["extends", "implements"]}]'
+expect 0 'errors: 0,' --rules "$R/kinds.json" test/fixture
+rules "$R/warn.json" '[{"id": "layering", "kind": "layers", "order": ["app", "infra", "svc", "dom"], "severity": "warning"}]'
+expect 0 'Order.java:25  warning  layering  dom -> svc' --rules "$R/warn.json" test/fixture
+expect 1 'warning  layering' --rules "$R/warn.json" --fail-on warning test/fixture
+expect 0 'error  layering' --rules test/fixture-architecture.json --fail-on never test/fixture
+rules "$R/badrule.json" '[{"id": "x", "kind": "layers", "order": ["app", "nope"]}]'
+expect 2 'rule "x": unknown group "nope"' --rules "$R/badrule.json" test/fixture
+rules "$R/badkind.json" '[{"id": "x", "kind": "sideways"}]'
+expect 2 'rule "x": unknown kind "sideways"' --rules "$R/badkind.json" test/fixture
+echo ok
+
+step "check command (spec/wiki/functional-requirements/FR-035-run-the-check-from-the-command-line-and-in-ci.md)"
+# FR-036: exit 1 on the fixture; architecture.json found in the project root; --view; invalid arguments.
+expect 1 'layering' --rules test/fixture-architecture.json test/fixture
+variant root
+cp test/fixture-architecture.json "$R/root/architecture.json"
+expect 1 "$LAYER_LINE" "$R/root"
+expect 2 'needs --rules' --model "$OUT/fixture.json"
+expect 1 'layering' --rules test/fixture-architecture.json --view layers --model "$OUT/fixture.json"
+expect 2 'no view "nope"' --rules test/fixture-architecture.json --view nope --model "$OUT/fixture.json"
+expect 2 'unknown option --nope' --rules test/fixture-architecture.json --nope test/fixture
+expect 2 '--format must be text or json' --rules test/fixture-architecture.json --format xml test/fixture
+expect 2 '--fail-on must be error, warning or never' --rules test/fixture-architecture.json --fail-on all test/fixture
+# FR-036: a name-based error violation from Kotlin code fails the check; FR-038: exact is false for it.
+python3 -I -c 'import json,sys; a=json.load(open("test/fixture-architecture.json")); v=a["views"][0]; v["groups"].append({"id": "notify", "name": "Notify", "color": "#3a86ff", "match": ["package:com.example.notify.**"]}); v["rules"]=[{"id": "notify-no-domain", "kind": "forbid", "from": "notify", "to": "dom"}]; json.dump(a,open(sys.argv[1],"w"))' "$R/kotlin.json"
+expect 1 'Notifications.kt:[0-9]*  error  notify-no-domain  notify -> dom' --rules "$R/kotlin.json" test/fixture
+./depviewer check --rules "$R/kotlin.json" --format json test/fixture > "$R/kotlin-report.json" 2>/dev/null || true
+./depviewer check --rules test/fixture-architecture.json --format json test/fixture > "$R/dir.json" 2>/dev/null || true
+./depviewer check --rules test/fixture-architecture.json --format json --model "$OUT/fixture.json" > "$R/model.json" 2>/dev/null || true
+# FR-038: fingerprints ignore line numbers.
+variant moved
+python3 -I -c 'import sys; p=sys.argv[1]; s=open(p).read(); open(p,"w").write(s.replace("    // Deliberate upward", "\n    // Deliberate upward"))' "$R/moved/src/main/java/com/example/domain/Order.java"
+./depviewer check --rules test/fixture-architecture.json --format json "$R/moved" > "$R/moved.json" 2>/dev/null || true
+python3 -I test/checks/rules.py "$R/dir.json" "$R/model.json" "$R/moved.json" "$R/kotlin-report.json"
+# FR-039: --update-baseline, then everything is baselined; a removed reference shows as resolved.
+expect 0 'wrote 3 fingerprints' --rules test/fixture-architecture.json --baseline "$R/baseline.json" --update-baseline test/fixture
+expect 0 'baselined' --rules test/fixture-architecture.json --baseline "$R/baseline.json" test/fixture
+grep -q '  error  layering  dom -> svc  baselined$' "$OUT/check.log" || { cat "$OUT/check.log"; fail "FR-039: layering violation not baselined"; }
+variant fixed
+python3 -I -c 'import sys; p=sys.argv[1]; s=open(p).read(); open(p,"w").write(s.replace("return PriceCalculator.gross(net);", "return net;"))' "$R/fixed/src/main/java/com/example/domain/Order.java"
+expect 0 'resolved  layers|layering|com.example.domain.Order.total()|com.example.service.PriceCalculator.gross(double)' --rules test/fixture-architecture.json --baseline "$R/baseline.json" "$R/fixed"
+expect 2 '--update-baseline needs --baseline' --rules test/fixture-architecture.json --update-baseline test/fixture
+# --out writes the viewer with the resolved view and its violations.
+expect 1 'layering' --rules test/fixture-architecture.json --out "$R/check.html" test/fixture
+grep -q '"violations":\[{"rule":"layering"' "$R/check.html" || fail "--out: violations not embedded"
+grep -q '"matched":{' "$R/check.html" || fail "--out: pattern assignments not embedded"
 echo ok
 
 step "viewer script syntax"

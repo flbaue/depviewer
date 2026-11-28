@@ -26,10 +26,12 @@ final class Architecture {
     }
 
     final String text;
+    final Map<?, ?> root;
     final List<Object> views;
 
-    private Architecture(String text, List<Object> views) {
+    private Architecture(String text, Map<?, ?> root, List<Object> views) {
         this.text = text;
+        this.root = root;
         this.views = views;
     }
 
@@ -65,7 +67,8 @@ final class Architecture {
             if (!(groups instanceof List)) continue;
             for (Object g : (List<?>) groups) if (g instanceof Map) checkMatch(file, (Map<?, ?>) g);
         }
-        return new Architecture(text, list);
+        for (Object view : list) Rules.validate(file.toString(), (Map<?, ?>) view);
+        return new Architecture(text, (Map<?, ?>) root, list);
     }
 
     /** True when at least one view has a non-empty {@code rules} array. */

@@ -100,23 +100,41 @@ public class DepScan {
         throw new Failed(msg);
     }
 
-    /** {@code depviewer check}: exit 0 no failing violations, 1 failing violations, 2 invalid input. */
+    /** {@code depviewer check}: exit 0 no failing violations, 1 failing violations, 2 invalid input (spec FR-036). */
     static int check(String[] args, Path template) {
-        Path rules = null, model = null;
+        Path rules = null, model = null, out = null, baseline = null;
+        String viewId = null, format = "text", failOn = "error";
+        boolean updateBaseline = false;
         List<Path> inputs = new ArrayList<>();
+        List<String> scanOptions = new ArrayList<>();
         for (int i = 1; i < args.length; i++) {
             String a = args[i];
             boolean hasValue = i + 1 < args.length;
             switch (a) {
                 case "--rules": if (!hasValue) return invalid("--rules needs a file"); rules = Paths.get(args[++i]); break;
                 case "--model": if (!hasValue) return invalid("--model needs a file"); model = Paths.get(args[++i]); break;
+                case "--view": if (!hasValue) return invalid("--view needs a view id"); viewId = args[++i]; break;
+                case "--format": if (!hasValue) return invalid("--format needs text or json"); format = args[++i]; break;
+                case "--out": case "-o": if (!hasValue) return invalid(a + " needs a file"); out = Paths.get(args[++i]); break;
+                case "--baseline": if (!hasValue) return invalid("--baseline needs a file"); baseline = Paths.get(args[++i]); break;
+                case "--update-baseline": updateBaseline = true; break;
+                case "--fail-on": if (!hasValue) return invalid("--fail-on needs error, warning or never"); failOn = args[++i]; break;
+                case "--cp": case "-cp": case "--classpath": case "--title":
+                    if (!hasValue) return invalid(a + " needs a value");
+                    scanOptions.add(a); scanOptions.add(args[++i]);
+                    break;
+                case "--no-tests": scanOptions.add(a); break;
                 case "-h": case "--help": usage(); return 0;
                 default:
                     if (a.startsWith("-")) return invalid("unknown option " + a);
                     inputs.add(Paths.get(a));
             }
         }
+        if (!format.equals("text") && !format.equals("json")) return invalid("--format must be text or json");
+        if (!Set.of("error", "warning", "never").contains(failOn)) return invalid("--fail-on must be error, warning or never");
+        if (updateBaseline && baseline == null) return invalid("--update-baseline needs --baseline <file>");
         if (model != null && !inputs.isEmpty()) return invalid("check takes either project directories or --model, not both");
+        if (model != null && !scanOptions.isEmpty()) return invalid(scanOptions.get(0) + " only applies when check scans project directories");
         if (rules == null) {
             if (model != null) return invalid("check --model needs --rules");
             Path dir = inputs.isEmpty() ? Paths.get(".") : inputs.get(0);
@@ -129,30 +147,121 @@ public class DepScan {
         } catch (Architecture.Invalid e) {
             return invalid(e.getMessage());
         }
-        List<Map<?, ?>> patterned = arch.viewsWithPatterns();
-        if (!patterned.isEmpty()) {
-            List<Object> nodes;
+        List<Map<?, ?>> views = new ArrayList<>();
+        for (Object v : arch.views) if (viewId == null || viewId.equals(((Map<?, ?>) v).get("id"))) views.add((Map<?, ?>) v);
+        if (viewId != null && views.isEmpty()) return invalid("no view \"" + viewId + "\" in " + rules);
+        List<Map<?, ?>> checked = new ArrayList<>();
+        for (Map<?, ?> v : views) if (v.get("rules") instanceof List && !((List<?>) v.get("rules")).isEmpty()) checked.add(v);
+        List<Map<?, ?>> patterned = new ArrayList<>(arch.viewsWithPatterns());
+        patterned.retainAll(views);
+        Set<String> baselineIn = new LinkedHashSet<>();
+        if (baseline != null && !updateBaseline) {
             try {
-                nodes = modelNodes(model != null ? model : scanToJson(inputs, template));
+                Object b = Json.parse(Files.readString(baseline));
+                if (!(b instanceof List)) return invalid(baseline + ": a baseline is a JSON array of fingerprints");
+                for (Object f : (List<?>) b) {
+                    if (!(f instanceof String)) return invalid(baseline + ": a baseline is a JSON array of fingerprints");
+                    baselineIn.add((String) f);
+                }
+            } catch (IOException e) {
+                return invalid(baseline + ": cannot read (" + e.getMessage() + ")");
+            } catch (IllegalArgumentException e) {
+                return invalid(baseline + ": " + e.getMessage());
+            }
+        }
+        if (patterned.isEmpty() && checked.isEmpty() && out == null && !updateBaseline) {
+            if (format.equals("json")) {
+                System.out.println(Json.write(Report.json(Map.of(), List.of(), null, Map.of(), List.of(), 0)));
+            } else {
+                System.out.println("no rules in " + rules);
+            }
+            return 0;
+        }
+
+        Path modelFile;
+        Map<?, ?> modelData;
+        try {
+            modelFile = model != null ? model : scanToJson(inputs, template, scanOptions);
+            modelData = readModel(modelFile);
+        } catch (Failed e) {
+            return invalid(e.getMessage());
+        }
+        @SuppressWarnings("unchecked") List<Object> nodes = (List<Object>) modelData.get("nodes");
+        Rules.Graph g = new Rules.Graph(modelData);
+        java.io.PrintStream info = format.equals("json") ? System.err : System.out;
+        int overlaps = 0;
+        Map<String, String[]> groups = new LinkedHashMap<>();
+        Map<String, List<Rules.Violation>> byView = new LinkedHashMap<>();
+        List<Rules.Violation> all = new ArrayList<>();
+        for (Map<?, ?> view : views) {
+            boolean p = patterned.contains(view), c = checked.contains(view);
+            if (!p && !c) continue;
+            Architecture.Resolution res = Architecture.resolve(view, nodes);
+            for (Architecture.Overlap o : res.overlaps) info.println(o.message(String.valueOf(view.get("id"))));
+            overlaps += res.overlaps.size();
+            groups.put(String.valueOf(view.get("id")), res.group);
+            if (!c) continue;
+            List<Rules.Violation> vs = Rules.check(view, g, res);
+            byView.put(String.valueOf(view.get("id")), vs);
+            all.addAll(vs);
+        }
+        if (updateBaseline) {
+            Set<String> fps = new java.util.TreeSet<>();
+            for (Rules.Violation v : all) fps.add(v.fingerprint);
+            StringBuilder sb = new StringBuilder("[");
+            int k = 0;
+            for (String f : fps) sb.append(k++ > 0 ? "," : "").append("\n  ").append(Model.js(f));
+            sb.append(fps.isEmpty() ? "]\n" : "\n]\n");
+            try {
+                Files.writeString(baseline, sb.toString());
+            } catch (IOException e) {
+                return invalid(baseline + ": cannot write (" + e.getMessage() + ")");
+            }
+            info.println("wrote " + fps.size() + " fingerprints to " + baseline);
+            return 0;
+        }
+        Set<String> current = new LinkedHashSet<>();
+        for (Rules.Violation v : all) {
+            v.baselined = baselineIn.contains(v.fingerprint);
+            current.add(v.fingerprint);
+        }
+        List<String> resolved = new ArrayList<>();
+        for (String f : baselineIn) if (!current.contains(f)) resolved.add(f);
+        resolved.sort(null);
+
+        if (out != null) {
+            try {
+                String html = viewerHtml(template, Files.readString(modelFile), Report.embed(arch.root, nodes, byView, g));
+                Files.writeString(out, html);
+            } catch (IOException e) {
+                return invalid(out + ": cannot write (" + e.getMessage() + ")");
             } catch (Failed e) {
                 return invalid(e.getMessage());
             }
-            for (Map<?, ?> view : patterned)
-                for (Architecture.Overlap o : Architecture.resolve(view, nodes).overlaps) System.out.println(o.message(String.valueOf(view.get("id"))));
         }
-        if (!arch.hasRules()) {
-            System.out.println("no rules in " + rules);
-            return 0;
+        if (format.equals("json")) {
+            System.out.println(Json.write(Report.json(modelData, all, g, groups, resolved, overlaps)));
+        } else {
+            if (checked.isEmpty()) System.out.println("no rules in " + rules);
+            System.out.print(Report.text(all, g, groups));
+            for (String f : resolved) System.out.println("resolved  " + f);
+            long errors = all.stream().filter(v -> !v.baselined && v.severity.equals("error")).count();
+            long warnings = all.stream().filter(v -> !v.baselined && v.severity.equals("warning")).count();
+            long baselined = all.stream().filter(v -> v.baselined).count();
+            System.out.println("errors: " + errors + ", warnings: " + warnings + ", baselined: " + baselined
+                    + ", resolved: " + resolved.size() + ", overlaps: " + overlaps);
         }
-        return invalid(rules + ": rule checking is not implemented yet");
+        for (Rules.Violation v : all)
+            if (!v.baselined && (failOn.equals("warning") || failOn.equals("error") && v.severity.equals("error"))) return 1;
+        return 0;
     }
 
-    /** Scans the project directories with the default options into a temporary JSON model. */
-    static Path scanToJson(List<Path> inputs, Path template) {
+    /** Scans the project directories with the given scan options into a temporary JSON model. */
+    static Path scanToJson(List<Path> inputs, Path template, List<String> options) {
         try {
             Path tmp = Files.createTempFile("depviewer-check", ".json");
             tmp.toFile().deleteOnExit();
-            List<String> a = new ArrayList<>();
+            List<String> a = new ArrayList<>(options);
             if (template != null) { a.add("--template"); a.add(template.toString()); }
             a.add("-o"); a.add(tmp.toString());
             for (Path in : inputs) a.add(in.toString());
@@ -165,8 +274,7 @@ public class DepScan {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    static List<Object> modelNodes(Path model) {
+    static Map<?, ?> readModel(Path model) {
         Object root;
         try {
             root = Json.parse(Files.readString(model));
@@ -175,8 +283,9 @@ public class DepScan {
         } catch (IllegalArgumentException e) {
             throw new Failed(model + ": " + e.getMessage());
         }
-        if (!(root instanceof Map) || !(((Map<?, ?>) root).get("nodes") instanceof List)) throw new Failed(model + ": not a depviewer model");
-        return (List<Object>) ((Map<?, ?>) root).get("nodes");
+        if (!(root instanceof Map) || !(((Map<?, ?>) root).get("nodes") instanceof List) || !(((Map<?, ?>) root).get("edges") instanceof List))
+            throw new Failed(model + ": not a depviewer model");
+        return (Map<?, ?>) root;
     }
 
     static int invalid(String msg) {
@@ -291,25 +400,47 @@ public class DepScan {
     void writeOutput(Path out, Path template, Path views, String json) throws IOException {
         if (out.toString().endsWith(".json")) {
             Files.writeString(out, json);
-        } else {
-            if (template == null) template = Paths.get("viewer.html");
-            if (!Files.exists(template)) die("viewer template not found: " + template + " (use --template, or -o file.json)");
-            String html = Files.readString(template);
-            String marker = "/*DEPS_DATA*/null";
-            if (!html.contains(marker)) die("template has no data marker: " + template);
-            html = html.replace(marker, json);
-            if (views != null) {
-                String v;
-                try {
-                    v = Architecture.load(views).text.trim();
-                } catch (Architecture.Invalid e) {
-                    die("--views " + e.getMessage());
-                    return;
-                }
-                html = html.replace("/*DEPS_VIEWS*/null", v.replace("</", "<\\/"));
-            }
-            Files.writeString(out, html);
+            return;
         }
+        String v = null;
+        if (views != null) {
+            Architecture arch;
+            try {
+                arch = Architecture.load(views);
+            } catch (Architecture.Invalid e) {
+                die("--views " + e.getMessage());
+                return;
+            }
+            v = arch.text.trim();
+            if (!arch.viewsWithPatterns().isEmpty() || arch.hasRules()) v = resolvedViews(arch, json);
+        }
+        Files.writeString(out, viewerHtml(template, json, v));
+    }
+
+    /** The views with their pattern assignments and violations resolved against the model (spec FR-041, FR-042). */
+    static String resolvedViews(Architecture arch, String json) {
+        Map<?, ?> model = (Map<?, ?>) Json.parse(json);
+        @SuppressWarnings("unchecked") List<Object> nodes = (List<Object>) model.get("nodes");
+        Rules.Graph g = new Rules.Graph(model);
+        Map<String, List<Rules.Violation>> byView = new LinkedHashMap<>();
+        for (Object o : arch.views) {
+            Map<?, ?> view = (Map<?, ?>) o;
+            if (view.get("rules") instanceof List && !((List<?>) view.get("rules")).isEmpty())
+                byView.put(String.valueOf(view.get("id")), Rules.check(view, g, Architecture.resolve(view, nodes)));
+        }
+        return Report.embed(arch.root, nodes, byView, g);
+    }
+
+    /** The viewer template with the model and, if given, the views embedded. */
+    static String viewerHtml(Path template, String json, String views) throws IOException {
+        if (template == null) template = Paths.get("viewer.html");
+        if (!Files.exists(template)) die("viewer template not found: " + template + " (use --template, or -o file.json)");
+        String html = Files.readString(template);
+        String marker = "/*DEPS_DATA*/null";
+        if (!html.contains(marker)) die("template has no data marker: " + template);
+        html = html.replace(marker, json);
+        if (views != null) html = html.replace("/*DEPS_VIEWS*/null", views.replace("</", "<\\/"));
+        return html;
     }
 
     // ---------------------------------------------------------------- roots

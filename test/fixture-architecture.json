@@ -16,7 +16,14 @@
         { "id": "infra", "name": "Infrastructure", "color": "#c9a227",
           "match": ["path:**/infra/**"] }
       ],
-      "assign": { "F:fixture:src/main/java/com/example/app/Main.java": "app" }
+      "assign": { "F:fixture:src/main/java/com/example/app/Main.java": "app" },
+      "rules": [
+        { "id": "layering", "kind": "layers", "order": ["app", "infra", "svc", "dom"] },
+        { "id": "domain-pure", "kind": "allow-only", "from": "dom",
+          "to": ["dom", "ext:java.**"], "severity": "error",
+          "description": "The domain only uses itself and the JDK." },
+        { "id": "no-pkg-cycles", "kind": "no-cycles", "level": "package" }
+      ]
     }
   ]
 }
