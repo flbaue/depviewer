@@ -68,8 +68,9 @@ Scanned with `--views architecture.json` (or `check --out`), a view with `match`
   element that `no-ungrouped` reports lists the rule in its own details.
 - *Export views* writes `version`, `match` and `rules` back unchanged, with your manual assignments
   and without what the scanner resolved. Patterns, rules and violations always come from the
-  embedded file, and groups or views new in it are added: browser storage only keeps your own
-  groups and manual assignments.
+  embedded file, and groups or views new in it are added. Groups and manual assignments already
+  stored in this browser win over the file's: after a change to `assign` or a group's parent in the
+  file, delete the view in the browser (or use a private window) to see the file's version.
 
 ## Large projects
 
