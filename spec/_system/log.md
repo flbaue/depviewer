@@ -159,7 +159,7 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 - Built [[FR-030-enforce-a-layer-order]], [[FR-031-forbid-allow-only-or-separate-dependencies]], [[FR-032-report-cycles-as-violations]], [[FR-033-require-every-element-to-be-grouped]] and [[FR-034-exempt-test-sources-by-default]] in `src/depviewer/Rules.java`, on the groups `Architecture.resolve()` decides. Rules are validated when the file loads: an unknown kind or group exits 2.
 - Decided by the agent, as the pages leave it open: a use of a type and a call of one of its members from the same element are one violation, at the member, so `Order.total()` gives one `layering` violation, not two. `no-cycles` uses the package a file is in, and nested types are no cycle at `type` level. `no-ungrouped` reports the topmost element in scope with code below it and nothing grouped.
 - Evidence: the `architecture rules` step of `scripts/check.sh`, on copies of the fixture in `build/rules/`. It failed before the change. All criteria pass.
-- The maintainer set the milestone as the goal of the session but did not answer the plan question before the build, so the plan is only approved in the PR review.
+- The maintainer set the milestone as the goal of the session and approved the plan, with the decisions below, in the chat after the build had started.
 
 ## [2026-11-28] implement | FR-035 Run the check from the command line and in CI
 - Built [[FR-036-provide-the-check-command-and-its-exit-codes]], [[FR-037-report-violations-as-text]], [[FR-038-report-violations-as-versioned-json]] and [[FR-039-accept-existing-violations-in-a-baseline]] in `DepScan.check` and `src/depviewer/Report.java`.
