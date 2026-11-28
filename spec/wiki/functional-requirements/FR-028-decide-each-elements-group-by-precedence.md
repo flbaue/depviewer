@@ -17,8 +17,8 @@ release: m1-rules-and-check
 lane: backbone
 order: 3
 goal: []
-delivery:
-delivery-checked:
+delivery: implemented
+delivery-checked: "2026-11-28T08:20:16+01:00"
 ---
 
 # Decide each element's group by precedence
