@@ -65,6 +65,45 @@ else
   HAVE_TS=
 fi
 
+step "toolchain choice (spec/wiki/functional-requirements/FR-010-choose-the-toolchain-in-a-fixed-order.md)"
+if [ -n "$HAVE_TS" ]; then
+  T="$(pwd -P)/$OUT/toolchain"; rm -rf "$T"; mkdir -p "$T"
+  PINNED="$(pwd -P)/extractors/typescript/node_modules/typescript"
+  # tc <copy> <text in the log> [VAR=value...]: scan a copy of the TypeScript fixture, check its model and log
+  tc() {
+    name=$1 want=$2; shift 2
+    env "$@" ./depviewer -o "$T/$name.json" "$T/$name" > "$T/$name.log" 2>&1 || { cat "$T/$name.log"; fail "scan of $name failed"; }
+    grep -qF -- "$want" "$T/$name.log" || { cat "$T/$name.log"; fail "$name: log lacks '$want'"; }
+    python3 -I test/checks/typescript.py "$T/$name.json" >/dev/null
+  }
+  for c in plain project old; do cp -R test/fixture-ts "$T/$c"; done
+  ln -s "$PINNED" "$T/project/node_modules/typescript"
+  mkdir -p "$T/old/node_modules/typescript"
+  printf '{"name": "typescript", "version": "3.9.7"}' > "$T/old/node_modules/typescript/package.json"
+  # The project's own supported TypeScript is used.
+  tc project "typescript 5.9.3 (project: $T/project/node_modules/typescript) for shop-web"
+  # An unsupported project version is reported and the next candidate is tried.
+  tc old "TypeScript 3.9.7 (project: $T/old/node_modules/typescript) is not supported (needs >=5.0.0 <7.0.0), trying the next one"
+  grep "for shop-web" "$T/old.log" | grep -q "(project:" && fail "the unsupported project TypeScript was used"
+  # The override comes first; an unsupported override is reported and the project's own is used.
+  tc project "typescript 5.9.3 (override: $PINNED) for shop-web" DEPVIEWER_TYPESCRIPT="$PINNED"
+  tc project "TypeScript 3.9.7 (override: $T/old/node_modules/typescript) is not supported" DEPVIEWER_TYPESCRIPT="$T/old/node_modules/typescript"
+  grep -qF "typescript 5.9.3 (project: $T/project/node_modules/typescript) for shop-web" "$T/project.log" || fail "no fallback to the project's TypeScript"
+  # Then the tsc on the PATH, then the extractor's pinned copy.
+  mkdir -p "$T/bin" "$T/nobin"
+  ln -s "$PINNED/bin/tsc" "$T/bin/tsc"
+  tc plain "typescript 5.9.3 (path: $PINNED) for shop-web" PATH="$T/bin:$PATH"
+  for tool in java javac node; do ln -s "$(command -v "$tool")" "$T/nobin/$tool"; done
+  if PATH="$T/nobin:/usr/bin:/bin" sh -c 'command -v tsc' >/dev/null; then
+    echo "pinned case skipped: /usr/bin or /bin has a tsc"
+  else
+    tc plain "typescript 5.9.3 (pinned: $PINNED) for shop-web" PATH="$T/nobin:/usr/bin:/bin"
+  fi
+  echo ok
+else
+  echo "skipped: node not installed (set DEPVIEWER_NODE)"
+fi
+
 step "Dart (spec/wiki/functional-requirements/FR-006-analyse-dart-with-the-dart-analyzer.md)"
 DART_BIN=${DEPVIEWER_DART:-dart}
 if command -v "$DART_BIN" >/dev/null 2>&1; then
@@ -72,6 +111,11 @@ if command -v "$DART_BIN" >/dev/null 2>&1; then
   ./depviewer -o "$OUT/fixture-dart.json" test/fixture-dart 2> "$OUT/fixture-dart.log" || { cat "$OUT/fixture-dart.log"; fail "Dart scan failed"; }
   cat "$OUT/fixture-dart.log"
   python3 -I test/checks/dart.py "$OUT/fixture-dart.json"
+  grep -q "^Dart: dart [0-9.]* (\(override\|path\): .*) for shop_app, shop_core" "$OUT/fixture-dart.log" || fail "the chosen Dart SDK is not reported"
+  # FR-010: a broken override is reported and the next candidate is tried.
+  DEPVIEWER_DART="$OUT/no-such-dart" ./depviewer -o "$OUT/fixture-dart-next.json" test/fixture-dart > "$OUT/fixture-dart-next.log" 2>&1
+  grep -qF "Dart: Dart SDK (override: $OUT/no-such-dart) could not be run, trying the next one" "$OUT/fixture-dart-next.log" \
+    || { cat "$OUT/fixture-dart-next.log"; fail "a broken DEPVIEWER_DART is not reported"; }
   # FR-067: one note per module for the files analysis_options.yaml excludes.
   for m in shop_app shop_core; do
     [ "$(grep -c "^dart: $m: 1 file(s) skipped - excluded" "$OUT/fixture-dart.log")" = 1 ] || fail "no exclude note for module $m"

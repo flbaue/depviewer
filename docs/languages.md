@@ -31,16 +31,30 @@ Details: [spec](../spec/wiki/functional-requirements/FR-004-analyse-kotlin-by-na
 ## TypeScript / JavaScript
 
 Files `.ts .tsx .mts .cts .js .jsx .mjs .cjs` below each `package.json`, analysed with the
-TypeScript compiler API, respecting the project's `tsconfig.json`. Uses the project's own
-`typescript` package if installed, else a pinned copy that `npm ci` installs into
-`extractors/typescript/` on first use. Node is found as `node` on the `PATH`, or set
-`DEPVIEWER_NODE`. Details: [spec](../spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md).
+TypeScript compiler API, respecting the project's `tsconfig.json`. Node is found as `node` on the
+`PATH`, or set `DEPVIEWER_NODE`. Details: [spec](../spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md).
+
+The `typescript` package is chosen per module, in this order
+([spec](../spec/wiki/functional-requirements/FR-010-choose-the-toolchain-in-a-fixed-order.md)):
+
+1. `DEPVIEWER_TYPESCRIPT`, the folder of a `typescript` package;
+2. the project's own, in `node_modules/typescript` of the module or a parent folder;
+3. the package of the `tsc` on the `PATH`;
+4. a pinned copy that `npm ci` installs into `extractors/typescript/` on first use.
+
+Only TypeScript 5 and 6 are used (7 has no JavaScript compiler API). An unsupported version is
+reported and the next one is tried. The scan prints which one it chose, for example
+`TypeScript/JavaScript: typescript 5.9.3 (project: …/node_modules/typescript) for shop-web`. Two
+machines can therefore choose different versions; set `DEPVIEWER_TYPESCRIPT` in CI to pin one.
 
 ## Dart
 
 Analysed with the official Dart analyzer; all packages of a scan are analysed together, so
-references between them link to the real declarations. Needs `dart` on the `PATH` (Flutter's
-bundled `dart` works), or set `DEPVIEWER_DART`. The extractor's dependencies are installed with
+references between them link to the real declarations. The Dart SDK is chosen in this order:
+`DEPVIEWER_DART`, the project's Flutter SDK (FVM's `.fvm/flutter_sdk`, or `flutterRoot` in
+`.dart_tool/package_config.json`), then `dart` on the `PATH` (Flutter's bundled `dart` works). There
+is no pinned SDK. Dart 3.5 or later before 4 is used; another version is reported and the next one
+is tried. The extractor's dependencies are installed with
 `dart pub get` on first use. Run `dart pub get` / `flutter pub get` in your project first so imports
 of other packages resolve. Details: [spec](../spec/wiki/functional-requirements/FR-006-analyse-dart-with-the-dart-analyzer.md).
 

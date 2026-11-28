@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,9 +30,37 @@ final class Toolchain {
         Module(Path dir, String name) { this.dir = dir; this.name = name; }
     }
 
+    /** The toolchain chosen for a set of modules, as the extractor's --describe reported it. */
+    static final class Choice {
+        final String tool, version, source, path, extractor, extractorVersion;
+        final List<String> command;   // the extractor command, without the request file
+
+        Choice(Map<?, ?> describe, List<String> command) {
+            Map<?, ?> t = (Map<?, ?>) describe.get("toolchain");
+            tool = str(t.get("tool"));
+            version = str(t.get("version"));
+            source = str(t.get("source"));
+            path = str(t.get("path"));
+            extractor = str(describe.get("name"));
+            extractorVersion = str(describe.get("version"));
+            this.command = command;
+        }
+
+        String key() { return source + " " + path; }
+
+        @Override public String toString() { return tool + " " + version + " (" + source + ": " + path + ")"; }
+    }
+
+    /** A place to look for a toolchain: where it came from and the folder or executable. */
+    record Candidate(String source, String location) {}
+
     final String language, label;
     final Path home;
     int errors;
+    private String node;                                   // TypeScript: the Node.js that runs the extractor
+    private final Map<String, Choice> described = new HashMap<>();
+    private final Set<String> reported = new HashSet<>();
+    private Boolean pinnedReady;
 
     Toolchain(String language, String label, Path home) {
         this.language = language;
@@ -39,98 +68,207 @@ final class Toolchain {
         this.home = home;
     }
 
-    /** Scans all modules; prints a note and returns quietly when the toolchain is not installed. */
+    /** Scans all modules; prints a note and returns quietly when no supported toolchain is found. */
     void scan(List<Module> modules, boolean tests) throws IOException, InterruptedException {
         if (modules.isEmpty()) return;
-        List<String> base = command();
-        if (base == null) return;
-        // Dart: one run over all packages, so references between them (workspaces, path
-        // dependencies) resolve to the real declarations. TypeScript: one run per module.
-        List<List<Module>> runs = new ArrayList<>();
-        if (language.equals("dart")) runs.add(modules);
-        else for (Module m : modules) runs.add(List.of(m));
-        for (List<Module> run : runs) {
-            String names = run.stream().map(m -> m.name).collect(java.util.stream.Collectors.joining(", "));
-            Path input = Files.createTempFile("depviewer-" + language, ".json");
+        if (language.equals("typescript")) {
+            node = env("DEPVIEWER_NODE", "node");
+            if (!works(node, "--version")) {
+                System.err.println(label + ": skipped - Node.js not found (install Node 18+ or set DEPVIEWER_NODE).");
+                return;
+            }
+        }
+        // The toolchain is chosen per module (spec FR-010). Dart: one run per toolchain over all its
+        // packages, so references between them (workspaces, path dependencies) resolve to the real
+        // declarations. TypeScript: one run per module.
+        Map<String, List<Module>> runs = new LinkedHashMap<>();
+        Map<String, Choice> choices = new HashMap<>();
+        for (Module m : modules) {
+            Choice c = choose(m);
+            if (c == null) continue;
+            String run = language.equals("dart") ? c.key() : c.key() + "\n" + m.name;
+            choices.put(run, c);
+            runs.computeIfAbsent(run, k -> new ArrayList<>()).add(m);
+        }
+        for (Map.Entry<String, List<Module>> e : runs.entrySet()) run(e.getValue(), choices.get(e.getKey()), tests);
+    }
+
+    private void run(List<Module> run, Choice choice, boolean tests) throws IOException, InterruptedException {
+        String names = run.stream().map(m -> m.name).collect(java.util.stream.Collectors.joining(", "));
+        System.err.printf("%s: %s for %s%n", label, choice, names);
+        Path input = Files.createTempFile("depviewer-" + language, ".json");
+        try {
+            Module first = run.get(0);
+            StringBuilder sb = new StringBuilder("{\"root\":").append(js(first.dir.toString()))
+                    .append(",\"module\":").append(js(first.name));
+            if (language.equals("typescript")) sb.append(",\"typescript\":").append(js(choice.path));
+            sb.append(",\"files\":[");
+            boolean firstFile = true;
+            for (Module m : run) {
+                for (String[] f : m.files) {
+                    if (!tests && f[1].equals("1")) continue;
+                    if (!firstFile) sb.append(',');
+                    firstFile = false;
+                    sb.append("{\"path\":").append(js(f[0])).append(",\"test\":").append(f[1].equals("1"))
+                            .append(",\"module\":").append(js(m.name)).append(",\"root\":").append(js(m.dir.toString())).append('}');
+                }
+            }
+            Files.writeString(input, sb.append("]}").toString());
+            List<String> cmd = new ArrayList<>(choice.command);
+            cmd.add(input.toString());
             try {
-                Module first = run.get(0);
-                StringBuilder sb = new StringBuilder("{\"root\":").append(js(first.dir.toString()))
-                        .append(",\"module\":").append(js(first.name)).append(",\"files\":[");
-                boolean firstFile = true;
-                for (Module m : run) {
-                    for (String[] f : m.files) {
-                        if (!tests && f[1].equals("1")) continue;
-                        if (!firstFile) sb.append(',');
-                        firstFile = false;
-                        sb.append("{\"path\":").append(js(f[0])).append(",\"test\":").append(f[1].equals("1"))
-                                .append(",\"module\":").append(js(m.name)).append(",\"root\":").append(js(m.dir.toString())).append('}');
-                    }
-                }
-                Files.writeString(input, sb.append("]}").toString());
-                List<String> cmd = new ArrayList<>(base);
-                cmd.add(input.toString());
+                ProcessBuilder pb = new ProcessBuilder(cmd).redirectError(ProcessBuilder.Redirect.INHERIT);
+                Process p = pb.start();
+                String out;
+                try (InputStream in = p.getInputStream()) { out = new String(in.readAllBytes(), StandardCharsets.UTF_8); }
+                int code = p.waitFor();
+                if (code != 0) { System.err.printf("%s: extractor failed for %s (exit code %d), skipped%n", label, names, code); return; }
+                merge(first.name, Json.parse(out));
+            } catch (IOException | IllegalArgumentException | ClassCastException e) {
+                System.err.printf("%s: extractor failed for %s (%s), skipped%n", label, names, e.getMessage());
+            }
+        } finally {
+            Files.deleteIfExists(input);
+        }
+    }
+
+    // ------------------------------------------------ choosing the toolchain (spec FR-010)
+
+    /** The first candidate whose version the extractor supports, or null (the module is skipped). */
+    Choice choose(Module m) throws IOException, InterruptedException {
+        String tool = language.equals("dart") ? "Dart SDK" : "TypeScript";
+        for (Candidate c : candidates(m)) {
+            String key = c.source() + " " + c.location();
+            Choice known = described.get(key);
+            if (known != null) return known;
+            Object d = describe(c);
+            Map<?, ?> t = d instanceof Map && ((Map<?, ?>) d).get("toolchain") instanceof Map ? (Map<?, ?>) ((Map<?, ?>) d).get("toolchain") : null;
+            if (t != null && Boolean.TRUE.equals(t.get("supported"))) {
+                Choice choice = new Choice((Map<?, ?>) d, extractorCommand(c));
+                described.put(key, choice);
+                return choice;
+            }
+            if (!reported.add(key)) continue;
+            String where = c.source() + ": " + c.location();
+            if (t == null) System.err.printf("%s: %s (%s) could not be run, trying the next one%n", label, tool, where);
+            else if (t.get("version") == null) System.err.printf("%s: %s (%s): %s, trying the next one%n", label, tool, where, t.get("problem"));
+            else System.err.printf("%s: %s %s (%s) is not supported (needs %s), trying the next one%n",
+                    label, tool, t.get("version"), where, t.get("range"));
+        }
+        System.err.printf("%s: skipped %s - no supported %s found (%s).%n", label, m.name, tool,
+                language.equals("dart") ? "install Dart 3 or set DEPVIEWER_DART" : "add typescript to the project or set DEPVIEWER_TYPESCRIPT");
+        return null;
+    }
+
+    /** Where to look, in this order: override, the project's own, the PATH, the pinned copy. */
+    List<Candidate> candidates(Module m) throws IOException, InterruptedException {
+        List<Candidate> list = new ArrayList<>();
+        if (language.equals("typescript")) {
+            String override = System.getenv("DEPVIEWER_TYPESCRIPT");
+            if (override != null && !override.isEmpty()) list.add(new Candidate("override", Path.of(override).toAbsolutePath().normalize().toString()));
+            for (Path d = m.dir; d != null; d = d.getParent()) {   // as Node resolves `typescript` from the module
+                Path ts = d.resolve("node_modules/typescript");
+                if (Files.isRegularFile(ts.resolve("package.json"))) { list.add(new Candidate("project", ts.toString())); break; }
+            }
+            Path tsc = onPath("tsc");
+            if (tsc != null) {
+                Path pkg = tsc.toRealPath().getParent().getParent();   // <package>/bin/tsc
+                if (pkg != null && Files.isRegularFile(pkg.resolve("package.json"))) list.add(new Candidate("path", pkg.toString()));
+            }
+            if (pinnedTypeScript()) list.add(new Candidate("pinned", home.resolve("extractors/typescript/node_modules/typescript").toString()));
+        } else {
+            String override = System.getenv("DEPVIEWER_DART");
+            if (override != null && !override.isEmpty()) list.add(new Candidate("override", override));
+            Path project = projectDart(m.dir);
+            if (project != null) list.add(new Candidate("project", project.toString()));
+            Path dart = onPath("dart");
+            if (dart != null) list.add(new Candidate("path", dart.toString()));
+            // No pinned Dart SDK: it is too large to download on demand.
+        }
+        return list;
+    }
+
+    /** Flutter projects name their SDK: FVM's .fvm/flutter_sdk, or flutterRoot in .dart_tool/package_config.json. */
+    static Path projectDart(Path dir) throws IOException {
+        for (Path d = dir; d != null; d = d.getParent()) {
+            Path fvm = d.resolve(".fvm/flutter_sdk/bin/dart");
+            if (Files.isExecutable(fvm)) return fvm;
+            Path config = d.resolve(".dart_tool/package_config.json");
+            if (Files.isRegularFile(config)) {
                 try {
-                    ProcessBuilder pb = new ProcessBuilder(cmd).redirectError(ProcessBuilder.Redirect.INHERIT);
-                    Process p = pb.start();
-                    String out;
-                    try (InputStream in = p.getInputStream()) { out = new String(in.readAllBytes(), StandardCharsets.UTF_8); }
-                    int code = p.waitFor();
-                    if (code != 0) { System.err.printf("%s: extractor failed for %s (exit code %d), skipped%n", label, names, code); continue; }
-                    merge(first.name, Json.parse(out));
-                } catch (IOException | IllegalArgumentException | ClassCastException e) {
-                    System.err.printf("%s: extractor failed for %s (%s), skipped%n", label, names, e.getMessage());
+                    Object root = ((Map<?, ?>) Json.parse(Files.readString(config))).get("flutterRoot");
+                    if (root != null) {
+                        Path dart = Path.of(java.net.URI.create(root.toString())).resolve("bin/dart");
+                        if (Files.isExecutable(dart)) return dart;
+                    }
+                } catch (IllegalArgumentException | ClassCastException | java.nio.file.FileSystemNotFoundException ignored) {
                 }
-            } finally {
-                Files.deleteIfExists(input);
+                return null;   // the nearest package config decides
             }
         }
+        return null;
     }
 
-    // ------------------------------------------------ toolchain commands
-
-    List<String> command() throws IOException, InterruptedException {
-        switch (language) {
-            case "typescript": return nodeJs();
-            case "dart": return dart();
-            default: throw new IllegalStateException(language);
+    /** The first executable `name` on the PATH, or null. */
+    static Path onPath(String name) {
+        String path = System.getenv("PATH");
+        if (path == null) return null;
+        for (String dir : path.split(java.io.File.pathSeparator)) {
+            if (dir.isEmpty()) continue;
+            Path p = Path.of(dir, name);
+            if (Files.isRegularFile(p) && Files.isExecutable(p)) return p;
         }
+        return null;
     }
 
-    List<String> nodeJs() throws IOException, InterruptedException {
-        String node = env("DEPVIEWER_NODE", "node");
-        if (!works(node, "--version")) {
-            System.err.println(label + ": skipped - Node.js not found (install Node 18+ or set DEPVIEWER_NODE).");
+    /** The extractor's --describe output for a candidate, or null if it could not run. */
+    Object describe(Candidate c) throws IOException, InterruptedException {
+        List<String> cmd = extractorCommand(c);
+        if (cmd == null) return null;
+        cmd.add("--describe");
+        if (language.equals("typescript")) cmd.add(c.location());
+        cmd.add(c.source());
+        try {
+            Process p = new ProcessBuilder(cmd).redirectError(ProcessBuilder.Redirect.DISCARD).start();
+            String out;
+            try (InputStream in = p.getInputStream()) { out = new String(in.readAllBytes(), StandardCharsets.UTF_8); }
+            return p.waitFor() == 0 ? Json.parse(out.trim()) : null;
+        } catch (IOException | IllegalArgumentException e) {
             return null;
         }
-        Path dir = home.resolve("extractors/typescript");
-        if (!Files.exists(dir.resolve("node_modules/typescript/package.json"))) {
-            System.err.println(label + ": installing the extractor's dependencies (npm ci, one time)...");
-            Path npm = Path.of(node).getParent() != null ? Path.of(node).resolveSibling("npm") : Path.of("npm");
-            String npmCmd = Files.isExecutable(npm) ? npm.toString() : "npm";
-            if (run(dir, List.of(npmCmd, "ci", "--no-audit", "--no-fund", "--loglevel=error"), node) != 0) {
-                System.err.println(label + ": skipped - 'npm ci' failed in " + dir);
-                return null;
-            }
-        }
-        return new ArrayList<>(List.of(node, dir.resolve("extract.mjs").toString()));
     }
 
-    List<String> dart() throws IOException, InterruptedException {
-        String dart = env("DEPVIEWER_DART", "dart");
-        if (!works(dart, "--version")) {
-            System.err.println(label + ": skipped - Dart SDK not found (install Dart 3 or set DEPVIEWER_DART).");
-            return null;
-        }
+    /** The command that runs the extractor with a candidate's toolchain; null if it cannot be set up. */
+    List<String> extractorCommand(Candidate c) throws IOException, InterruptedException {
+        if (language.equals("typescript")) return new ArrayList<>(List.of(node, home.resolve("extractors/typescript/extract.mjs").toString()));
+        String dart = c.location();
+        if (!works(dart, "--version")) return null;
         Path dir = home.resolve("extractors/dart");
         Path config = dir.resolve(".dart_tool/package_config.json");
         if (!Files.exists(config)) {
             System.err.println(label + ": installing the extractor's dependencies (dart pub get, one time)...");
             if (run(dir, List.of(dart, "pub", "get"), null) != 0) {
-                System.err.println(label + ": skipped - 'dart pub get' failed in " + dir);
+                System.err.println(label + ": 'dart pub get' failed in " + dir);
                 return null;
             }
         }
         return new ArrayList<>(List.of(dart, "--packages=" + config, dir.resolve("bin/extract.dart").toString()));
+    }
+
+    /** The extractor's pinned TypeScript, installed with npm ci on first use. */
+    boolean pinnedTypeScript() throws InterruptedException {
+        if (pinnedReady != null) return pinnedReady;
+        Path dir = home.resolve("extractors/typescript");
+        if (!Files.exists(dir.resolve("node_modules/typescript/package.json"))) {
+            System.err.println(label + ": installing the extractor's pinned TypeScript (npm ci, one time)...");
+            Path npm = Path.of(node).getParent() != null ? Path.of(node).resolveSibling("npm") : Path.of("npm");
+            String npmCmd = Files.isExecutable(npm) ? npm.toString() : "npm";
+            if (run(dir, List.of(npmCmd, "ci", "--no-audit", "--no-fund", "--loglevel=error"), node) != 0) {
+                System.err.println(label + ": 'npm ci' failed in " + dir);
+                return pinnedReady = false;
+            }
+        }
+        return pinnedReady = true;
     }
 
     static String env(String name, String def) {

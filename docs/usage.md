@@ -193,7 +193,8 @@ output and VCS folders:
 
 A directory without any marker is scanned as a plain Java/Kotlin source root. Several markers in
 one tree (a monorepo, a Flutter app next to a backend) give several modules in one model. A
-language whose toolchain is missing is skipped with a note; the others are still scanned.
+language whose toolchain is missing is skipped with a note; the others are still scanned. Which
+toolchain each language uses is described in [languages](languages.md).
 
 ## Libraries and the classpath (Java, Kotlin)
 

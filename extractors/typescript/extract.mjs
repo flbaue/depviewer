@@ -1,8 +1,12 @@
 // depviewer extractor for TypeScript and JavaScript (spec/wiki/functional-requirements/FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler.md).
 //
-// Usage: node extract.mjs <input.json>
-//   input: { "root": "/abs/project", "module": "name", "files": [{ "path": "src/a.ts", "test": false }] }
+// Usage: node extract.mjs <request.json>
+//        node extract.mjs --describe [<typescript package folder> <source>]
+//   request: { "root": "/abs/project", "module": "name", "typescript": "/abs/node_modules/typescript",
+//              "files": [{ "path": "src/a.ts", "test": false }] }
 // Prints a depviewer fragment (spec/wiki/crosscutting-concepts/CC-009-fragment-format.md) to stdout; diagnostics go to stderr.
+// --describe prints the extractor's name, version and contract and whether the given TypeScript is
+// supported (spec/wiki/functional-requirements/FR-010-choose-the-toolchain-in-a-fixed-order.md).
 //
 // Uses the TypeScript compiler API and its type checker, so references are resolved exactly:
 // imports, re-exports and default exports are followed to the original declaration.
@@ -12,21 +16,46 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
-const input = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
-const root = path.resolve(input.root);
+const here = path.dirname(fileURLToPath(import.meta.url));
+const manifest = JSON.parse(fs.readFileSync(path.join(here, "package.json"), "utf8"));
+/** TypeScript versions whose compiler API this extractor uses: 5.x and 6.x (7 has no JavaScript API). */
+const RANGE = { min: [5, 0, 0], below: [7, 0, 0], text: ">=5.0.0 <7.0.0" };
 
-/** The project's own TypeScript (same version it is built with), else the extractor's pinned copy. */
-function loadTypeScript() {
-  for (const base of [path.join(root, "package.json"), fileURLToPath(import.meta.url)]) {
+const parseVersion = (v) => (/^(\d+)\.(\d+)\.(\d+)/.exec(v || "") || []).slice(1).map(Number);
+const compare = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+const inRange = (v) => v.length === 3 && compare(v, RANGE.min) >= 0 && compare(v, RANGE.below) < 0;
+
+/** The TypeScript package in `dir` (its folder), or the extractor's pinned copy. */
+function loadTypeScript(dir) {
+  return createRequire(path.join(here, "extract.mjs"))(dir || "typescript");
+}
+
+if (process.argv[2] === "--describe") {
+  const dir = process.argv[3] ? path.resolve(process.argv[3]) : path.join(here, "node_modules", "typescript");
+  const toolchain = { tool: "typescript", version: null, source: process.argv[4] || "pinned", path: dir, supported: false, range: RANGE.text };
+  try {
+    toolchain.version = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8")).version || null;
+  } catch {
+    toolchain.problem = "no TypeScript package";
+  }
+  if (toolchain.version && !inRange(parseVersion(toolchain.version))) toolchain.problem = "version not supported";
+  else if (toolchain.version) {
     try {
-      return createRequire(base)("typescript");
-    } catch {
-      /* try the next one */
+      const ts = loadTypeScript(dir);
+      if (typeof ts.createProgram !== "function") toolchain.problem = "no compiler API";
+      else toolchain.supported = true;
+    } catch (e) {
+      toolchain.problem = "could not be loaded";
     }
   }
-  throw new Error("typescript package not found (run 'npm ci' in extractors/typescript)");
+  const describe = { name: manifest.name, version: manifest.version, contract: 1, languages: ["typescript", "javascript"], toolchain };
+  process.stdout.write(JSON.stringify(describe) + "\n");
+  process.exit(0);
 }
-const ts = loadTypeScript();
+
+const input = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+const root = path.resolve(input.root);
+const ts = loadTypeScript(input.typescript);
 
 // ------------------------------------------------------------------ program
 

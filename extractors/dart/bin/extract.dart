@@ -1,8 +1,12 @@
 // depviewer extractor for Dart (spec/wiki/functional-requirements/FR-006-analyse-dart-with-the-dart-analyzer.md).
 //
-// Usage: dart --packages=<extractor>/.dart_tool/package_config.json extract.dart <input.json>
-//   input: { "root": "/abs/package", "module": "name", "files": [{ "path": "lib/a.dart", "test": false }] }
+// Usage: dart --packages=<extractor>/.dart_tool/package_config.json extract.dart <request.json>
+//        dart --packages=... extract.dart --describe [<source>]
+//   request: { "root": "/abs/package", "module": "name", "files": [{ "path": "lib/a.dart", "test": false }] }
 // Prints a depviewer fragment (spec/wiki/crosscutting-concepts/CC-009-fragment-format.md) to stdout; diagnostics go to stderr.
+//
+// --describe prints the extractor's name, version and contract and whether the Dart SDK running it
+// is supported (spec/wiki/functional-requirements/FR-010-choose-the-toolchain-in-a-fixed-order.md).
 //
 // Uses the Dart analyzer (resolved ASTs and the element model), so references are resolved exactly.
 
@@ -29,7 +33,40 @@ final kindOf = <String, String>{};
 final externalIds = <String>{};
 late Set<String> ourFiles;                 // absolute paths
 
+/// The extractor's own version, reported by --describe. Raise it when the fragment it prints changes.
+const extractorVersion = '1.0.0';
+
+/// Dart SDKs the pinned analyzer runs on, as in pubspec.yaml.
+const sdkRange = (min: [3, 5, 0], below: [4, 0, 0], text: '>=3.5.0 <4.0.0');
+
+void describe(String source) {
+  final m = RegExp(r'^(\d+)\.(\d+)\.(\d+)').firstMatch(Platform.version);
+  final version = m == null ? null : '${m[1]}.${m[2]}.${m[3]}';
+  int cmp(List<int> a, List<int> b) => a[0] != b[0] ? a[0] - b[0] : a[1] != b[1] ? a[1] - b[1] : a[2] - b[2];
+  final v = m == null ? null : [int.parse(m[1]!), int.parse(m[2]!), int.parse(m[3]!)];
+  final supported = v != null && cmp(v, sdkRange.min) >= 0 && cmp(v, sdkRange.below) < 0;
+  stdout.writeln(jsonEncode({
+    'name': 'depviewer-dart-extractor',
+    'version': extractorVersion,
+    'contract': 1,
+    'languages': ['dart'],
+    'toolchain': {
+      'tool': 'dart',
+      'version': version,
+      'source': source,
+      'path': Platform.resolvedExecutable,
+      'supported': supported,
+      'range': sdkRange.text,
+      if (!supported) 'problem': 'version not supported',
+    },
+  }));
+}
+
 Future<void> main(List<String> args) async {
+  if (args.isNotEmpty && args.first == '--describe') {
+    describe(args.length > 1 ? args[1] : 'path');
+    return;
+  }
   final input = jsonDecode(File(args.first).readAsStringSync()) as Map<String, dynamic>;
   final defaultRoot = p.normalize(p.absolute(input['root'] as String));
   // One run may cover several packages (all Dart packages of a scan): each file names its module and root.

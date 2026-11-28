@@ -17,8 +17,8 @@ release: m2-extractor-contract
 lane: backbone
 order: 9
 goal: []
-delivery:
-delivery-checked:
+delivery: implemented
+delivery-checked: "2026-11-28T15:25:13Z"
 ---
 
 # Choose the toolchain in a fixed order
