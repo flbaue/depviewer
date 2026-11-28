@@ -265,3 +265,6 @@ greppable: `grep '^## \[' _system/log.md | tail -5`.
 ## [2026-11-28] accept | m2-extractor-contract pages, and FR-007 and FR-010 amended
 - Accepted by the maintainer: [[CC-002-extractor-contract]], [[FR-005-analyse-typescript-and-javascript-with-the-typescript-compiler]], [[FR-006-analyse-dart-with-the-dart-analyzer]] and [[FR-012-link-the-modules-of-a-monorepo]]. The maintainer confirmed the new wording of the three FRs, whose criteria pass in `scripts/check.sh`, so they are `implemented` again with a new `delivery-checked`.
 - Amended at the maintainer's request: [[FR-007-skip-a-language-whose-toolchain-is-missing]] gets the exception for Java and Kotlin (the scan stops, `check` exits 2), and [[FR-010-choose-the-toolchain-in-a-fixed-order]] names it and the JDK that runs depviewer as the last Java candidate. Both describe what is built; they go to `review` for the maintainer to accept the wording, and `delivery.py` marked them `outdated` until then.
+
+## [2026-11-28] accept | FR-007 and FR-010 as amended
+- Accepted by the maintainer: the amended [[FR-007-skip-a-language-whose-toolchain-is-missing]] and [[FR-010-choose-the-toolchain-in-a-fixed-order]]. Their criteria pass in `scripts/check.sh`, and the built behaviour is what they now say, so both are `implemented` again with a new `delivery-checked`.

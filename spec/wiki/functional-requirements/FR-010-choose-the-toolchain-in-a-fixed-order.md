@@ -2,7 +2,7 @@
 id: FR-010
 type: functional-requirement
 title: Choose the toolchain in a fixed order
-status: review
+status: accepted
 created: 2026-11-27
 updated: 2026-11-28
 sources: ["[[SRC-003-adr-0001-architecture-for-language-support]]", "[[SRC-028-github-issue-12-toolchain-selection-user-s-first-pinned-fallback-and-analysis-prov]]"]
@@ -17,8 +17,8 @@ release: m2-extractor-contract
 lane: backbone
 order: 9
 goal: []
-delivery: outdated
-delivery-checked: "2026-11-28T15:25:13Z"
+delivery: implemented
+delivery-checked: "2026-11-28T19:36:40Z"
 ---
 
 # Choose the toolchain in a fixed order
